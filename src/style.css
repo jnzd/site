@@ -217,9 +217,14 @@ figure { margin: 3rem 0; }
 .figure-body > * + * { margin-top: 1rem; }
 .figure-body > pre.listing { width: 100%; }
 .figure-body td { border-bottom: 0; padding: 0.2rem 0.9rem; white-space: nowrap; }
-.figure-body td img { width: 2.6rem; height: 2.6rem; max-width: none; object-fit: contain; box-sizing: border-box; background: #fff; border-radius: 10px; padding: 0.45rem; display: block; box-shadow: 0 0 0 1px var(--line); }
+.figure-body td img { width: 2.2rem; height: 2.2rem; max-width: none; object-fit: contain; display: block; }
+/* The logos are dark on transparent (as in the PDF). On the dark theme, invert
+   their lightness but keep their hue: black marks turn white, and DeepL's navy
+   mark turns light blue with a dark glyph. */
+.figure-body td img { filter: invert(1) hue-rotate(180deg); }
+@media (prefers-color-scheme: light) { .figure-body td img { filter: none; } }
 /* A column holding only a logo keeps the logo's width. */
-.figure-body td:has(> img:only-child) { width: 2.6rem; }
+.figure-body td:has(> img:only-child) { width: 2.2rem; }
 .figure-body ol.algorithm-lines { background: var(--panel); border-radius: 6px; padding: 1rem 1.2rem 1rem 3rem; margin-inline: auto; }
 .figure-body .katex-display { margin: 0.5rem 0; }
 .figure-body .katex-display > .katex { white-space: normal; }
@@ -231,6 +236,14 @@ figure { margin: 3rem 0; }
    longer one is a centred block of left-aligned text. */
 figcaption { margin-top: 1rem; font-size: 0.85rem; line-height: 1.55; color: var(--muted); width: fit-content; margin-inline: auto; }
 tr.rule-before td { border-top: 1px solid var(--line); padding-top: 0.5rem; }
+/* Tables with vertical rules in LaTeX: compact rows, rules between columns,
+   top and bottom rules, and group labels centred against their rows. */
+.figure-body table.ruled, table.ruled { width: auto; margin-inline: auto; border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); }
+table.ruled td { padding: 0.05rem 0.9rem; line-height: 1.55; border-bottom: 0; }
+table.ruled tr:first-child td, table.ruled tr.rule-before td { padding-top: 0.45rem; }
+table.ruled tr:last-child td, table.ruled tr:has(+ tr.rule-before) td { padding-bottom: 0.45rem; }
+table.ruled td.span { vertical-align: middle; border-bottom: 0; }
+table.ruled .rule-left { border-left: 1px solid var(--line); }
 figcaption p { display: inline; margin: 0; }
 figcaption .label {
   font: 0.78rem var(--mono);

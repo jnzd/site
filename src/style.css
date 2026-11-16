@@ -5,22 +5,25 @@
 @font-face { font-family: "IBM Plex Sans"; font-weight: 600; font-style: italic; font-display: swap; src: url(fonts/ibm-plex-sans-latin-600-italic.woff2) format("woff2"); }
 @font-face { font-family: "IBM Plex Mono"; font-weight: 400; font-style: normal; font-display: swap; src: url(fonts/ibm-plex-mono-latin-400-normal.woff2) format("woff2"); }
 
-/* ---- Theme: change these to restyle the whole site ---- */
+/* ---- Theme: change these to restyle the whole site ----
+   Ink & vermilion: black, white and greys with a single vermilion accent.
+   Code is highlighted mostly by weight; logical operators take the accent. */
 :root {
-  --bg: #0c0d10;
-  --text: #e4e2dc;
+  --bg: #0a0a0a;
+  --text: #ececec;
   --strong: #ffffff;
-  --muted: #9b988f;
-  --faint: #5d5b56;
-  --line: #26272c;
-  --accent: #6fd0a8;
-  --tok-kw: #f08fc0;
-  --tok-op: #7fd08a;
-  --tok-str: #c8a2f5;
-  --tok-com: #8a8880;
-  --fig-blue: #7aa7ff;
-  --fig-purple: #d58cf0;
-  --panel: #121318;
+  --muted: #8c8c8c;
+  --faint: #4a4a4a;
+  --line: #222222;
+  --accent: #ff6a3d;
+  --tok-kw: #ececec;
+  --tok-op: #ff6a3d;
+  --tok-str: #9a9a9a;
+  --tok-com: #6a6a6a;
+  --tok-fn: #ececec;
+  --fig-blue: #ff6a3d;
+  --fig-purple: #9a9a9a;
+  --panel: #141414;
   --column: 40rem;
   --sans: "IBM Plex Sans", "Helvetica Neue", system-ui, sans-serif;
   --mono: "IBM Plex Mono", ui-monospace, Menlo, monospace;
@@ -28,20 +31,21 @@
 }
 @media (prefers-color-scheme: light) {
   :root {
-    --bg: #fbfaf7;
-    --text: #25262a;
+    --bg: #fafafa;
+    --text: #141414;
     --strong: #000000;
-    --muted: #6a6862;
-    --faint: #a9a69f;
-    --line: #e2dfd8;
-    --accent: #14795a;
-    --tok-kw: #b0206f;
-    --tok-op: #1c7a2e;
-    --tok-str: #7a2bb8;
-    --tok-com: #77746c;
-    --fig-blue: #1f4fd0;
-    --fig-purple: #8a1fb0;
-    --panel: #f3f1ec;
+    --muted: #6b6b6b;
+    --faint: #b3b3b3;
+    --line: #e4e4e4;
+    --accent: #d4380d;
+    --tok-kw: #141414;
+    --tok-op: #d4380d;
+    --tok-str: #6b6b6b;
+    --tok-com: #9a9a9a;
+    --tok-fn: #141414;
+    --fig-blue: #d4380d;
+    --fig-purple: #6b6b6b;
+    --panel: #f1f1f1;
     color-scheme: light;
   }
 }
@@ -92,7 +96,7 @@ strong { color: var(--strong); font-weight: 600; }
 .byline { display: flex; flex-wrap: wrap; gap: 0.4rem 1.5rem; justify-content: center; margin: 0 0 1.5rem; color: var(--muted); font-size: 0.95rem; }
 .byline.people { font-size: 0.85rem; margin-top: -0.75rem; }
 .byline .author { color: var(--strong); font-weight: 600; }
-.actions { display: flex; gap: 0.75rem; margin: 0; }
+.actions { display: flex; flex-wrap: wrap; justify-content: center; gap: 0.75rem; margin: 0; }
 .button {
   display: inline-block;
   padding: 0.5rem 1.1rem;
@@ -103,6 +107,8 @@ strong { color: var(--strong); font-weight: 600; }
   font-size: 0.9rem;
 }
 .button:hover { border-color: var(--accent); text-decoration: none; }
+.button.primary { background: var(--strong); border-color: var(--strong); color: var(--bg); }
+.button.primary:hover { background: var(--accent); border-color: var(--accent); }
 .hero-visual { margin-top: 2.5rem; width: min(100%, 34rem); }
 .scroll-hint {
   position: absolute;
@@ -190,9 +196,10 @@ pre {
 /* ---- Listings, algorithms and syntax colours ---- */
 .tok-kw { color: var(--tok-kw); font-weight: 600; }
 .tok-op { color: var(--tok-op); font-weight: 600; }
+.tok-fn { color: var(--tok-fn); }
 .tok-str { color: var(--tok-str); }
 .tok-com { color: var(--tok-com); }
-.tok-id { color: var(--fig-blue); }
+.tok-id { color: var(--tok-fn); }
 pre.listing { font-size: 0.78rem; line-height: 1.55; background: var(--panel); border: 0; padding: 1rem 1rem 1rem 0; width: 100%; }
 pre.listing .line { counter-increment: line; }
 pre.listing .line::before { content: counter(line); display: inline-block; width: 2.6rem; padding-right: 1rem; text-align: right; color: var(--faint); user-select: none; }
@@ -208,18 +215,43 @@ svg.diagram .mono { font-family: var(--mono); }
 figure { margin: 3rem 0; }
 .figure-body { font-size: 0.9rem; }
 .figure-body > * { width: fit-content; max-width: 100%; margin-inline: auto; overflow-x: auto; }
+/* Diagrams and images are inline by default, which auto margins do not centre. */
+.figure-body > svg, .figure-body > img { display: block; }
 .figure-body > * + * { margin-top: 1rem; }
 .figure-body > pre.listing { width: 100%; }
 .figure-body td { border-bottom: 0; padding: 0.2rem 0.9rem; white-space: nowrap; }
-.figure-body td img { width: 2.2rem; background: #fff; border-radius: 6px; padding: 4px; display: block; }
+.figure-body td img { width: 2.2rem; height: 2.2rem; max-width: none; object-fit: contain; display: block; }
+/* The logos are dark on transparent (as in the PDF). On the dark theme, invert
+   their lightness but keep their hue: black marks turn white, and DeepL's navy
+   mark turns light blue with a dark glyph. */
+.figure-body td img { filter: invert(1) hue-rotate(180deg); }
+@media (prefers-color-scheme: light) { .figure-body td img { filter: none; } }
+/* A column holding only a logo keeps the logo's width. */
+.figure-body td:has(> img:only-child) { width: 2.2rem; }
 .figure-body ol.algorithm-lines { background: var(--panel); border-radius: 6px; padding: 1rem 1.2rem 1rem 3rem; margin-inline: auto; }
 .figure-body .katex-display { margin: 0.5rem 0; }
 .figure-body .katex-display > .katex { white-space: normal; }
 .figure-body blockquote { font-size: 0.95rem; }
 /* Figures may grow wider than the text column on large screens. */
-@media (min-width: 64rem) { figure:not(.algorithm):not(.table) { margin-inline: -7rem; } figure:not(.algorithm):not(.table) > figcaption { margin-inline: 7rem; } }
+@media (min-width: 64rem) { figure:not(.algorithm):not(.table) { margin-inline: -7rem; } figure:not(.algorithm):not(.table) > figcaption { max-width: var(--column); } }
 .figure-body img, .figure-body svg, .figure-body video, .figure-body canvas { max-width: 100%; height: auto; }
-figcaption { margin-top: 1rem; font-size: 0.85rem; line-height: 1.55; color: var(--muted); }
+/* Like LaTeX: a caption that fits on one line is centred under the figure; a
+   longer one is a centred block of left-aligned text. */
+figcaption { margin-top: 1rem; font-size: 0.85rem; line-height: 1.55; color: var(--muted); width: fit-content; margin-inline: auto; }
+tr.rule-before td { border-top: 1px solid var(--line); padding-top: 0.5rem; }
+/* Tables with vertical rules in LaTeX: compact rows, rules between columns,
+   top and bottom rules, and group labels centred against their rows. */
+.figure-body table.ruled, table.ruled { width: auto; margin-inline: auto; border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); }
+table.ruled td { padding: 0.05rem 0.9rem; line-height: 1.55; border-bottom: 0; }
+table.ruled tr:first-child td, table.ruled tr.rule-before td { padding-top: 0.45rem; }
+table.ruled tr:last-child td, table.ruled tr:has(+ tr.rule-before) td { padding-bottom: 0.45rem; }
+table.ruled td.span { vertical-align: middle; border-bottom: 0; }
+table.ruled .rule-left { border-left: 1px solid var(--line); }
+/* A merged table (two tables side by side) may grow past the figure, up to
+   the window edges, before it has to scroll. */
+.figure-body > .table-scroll:has(> table.merged) { width: max-content; max-width: calc(100vw - 3rem); position: relative; left: 50%; transform: translateX(-50%); margin-inline: 0; }
+table.ruled.merged { font-size: 0.84rem; }
+table.ruled.merged td { padding-inline: 0.75rem; }
 figcaption p { display: inline; margin: 0; }
 figcaption .label {
   font: 0.78rem var(--mono);
@@ -228,8 +260,19 @@ figcaption .label {
   color: var(--text);
   margin-right: 0.8em;
 }
-figure.table figcaption { margin: 0 0 0.9rem; }
+figure.table figcaption { margin: 0 auto 0.9rem; }
 .table-scroll { overflow-x: auto; }
+/* Boxes that scroll sideways fade out on each edge with more content beyond
+   it (site.js sets data-more). */
+[data-more="right"] { -webkit-mask-image: linear-gradient(to right, #000 calc(100% - 3.5rem), transparent); mask-image: linear-gradient(to right, #000 calc(100% - 3.5rem), transparent); }
+[data-more="left"] { -webkit-mask-image: linear-gradient(to left, #000 calc(100% - 3.5rem), transparent); mask-image: linear-gradient(to left, #000 calc(100% - 3.5rem), transparent); }
+[data-more="both"] { -webkit-mask-image: linear-gradient(to right, transparent, #000 3.5rem, #000 calc(100% - 3.5rem), transparent); mask-image: linear-gradient(to right, transparent, #000 3.5rem, #000 calc(100% - 3.5rem), transparent); }
+.figure-body > .table-scroll.prose { width: 100%; }
+/* A display formula fills the column (KaTeX centres it), so its own width
+   cannot come out a pixel too narrow and scroll for nothing. */
+.figure-body > .katex-display, .figure-body > :has(> .katex-display) { width: 100%; }
+.figure-body .table-scroll.prose td { white-space: normal; vertical-align: top; min-width: 7rem; }
+.figure-body .table-scroll.prose td:first-child { min-width: 0; }
 table { border-collapse: collapse; width: 100%; font-size: 0.88rem; font-variant-numeric: tabular-nums; }
 th {
   font: 400 0.72rem var(--mono);
@@ -252,6 +295,8 @@ td { padding: 0.55rem 0.7rem; border-bottom: 1px solid var(--line); vertical-ali
 a.ref { font-variant-numeric: tabular-nums; }
 .footnotes p { margin: 0; }
 .references { font-size: 0.9rem; color: var(--muted); padding-left: 2.2rem; overflow-wrap: anywhere; }
+.link-original { font-size: 0.9em; font-style: italic; color: var(--muted); }
+.references .ref-original { display: block; margin-top: 0.2rem; font-size: 0.8rem; font-style: italic; }
 .references li:target, .footnote-item:target { color: var(--text); }
 .references .ref-link { white-space: nowrap; }
 .references .ref-link::before { content: "\2197\00a0"; }
@@ -271,43 +316,94 @@ a.ref { font-variant-numeric: tabular-nums; }
 }
 .rail.visible { opacity: 1; }
 .rail::before {
-  /* filled part of the line, driven by --progress from site.js */
+  /* filled part of the line; site.js sets --p (0..1) on the rail only, and
+     the fill scales on the compositor, so scrolling stays smooth */
   content: "";
   position: absolute;
   inset: 0 0 auto 0;
-  height: calc(var(--progress, 0) * 100%);
+  height: 100%;
+  transform: scaleY(var(--p, 0));
+  transform-origin: top;
+  will-change: transform;
   background: var(--accent);
 }
 .rail::after {
   content: "";
   position: absolute;
   left: -3.5px;
-  top: calc(var(--progress, 0) * 100% - 4px);
+  top: -4px;
+  transform: translateY(var(--py, 0px));
+  will-change: transform;
   width: 8px;
   height: 8px;
   border-radius: 50%;
   background: var(--accent);
 }
-.rail a { position: absolute; right: 0; transform: translateY(-50%); display: flex; align-items: center; padding: 6px 0 6px 12px; }
-.rail .tick { order: 2; width: 9px; height: 1px; background: var(--faint); margin-right: -4px; }
+.rail:not(.visible) { pointer-events: none; }
+/* Ticks end at the line: long for chapters, medium for sections, short for
+   subsections. Each tick box is 14px wide, so all labels share one edge. */
+.rail a { position: absolute; right: 0; width: 14px; height: 9px; transform: translateY(-50%); }
+.rail .tick { position: absolute; right: 0; top: 4px; height: 1px; background: var(--faint); }
+.rail a.l1 .tick { width: 14px; }
+.rail a.l2 .tick { width: 9px; }
+.rail a.l3 .tick { width: 5px; }
+.rail a.passed .tick { background: var(--muted); }
+.rail a.hot .tick, .rail a:focus-visible .tick { background: var(--accent); }
 .rail .name {
-  order: 1;
-  margin-right: 0.8rem;
+  position: absolute;
+  right: calc(100% + 0.55rem);
+  top: 50%;
+  transform: translateY(-50%);
   font: 0.72rem var(--mono);
   color: var(--muted);
   white-space: nowrap;
   opacity: 0;
-  transition: opacity 0.15s;
+  transition: opacity 0.08s linear;
   pointer-events: none;
 }
-.rail a:hover .name, .rail a.current .name { opacity: 1; }
-.rail a.current .name { color: var(--text); }
-.rail a.current .tick { background: var(--accent); }
+.rail a.near .name, .rail a.hot .name, .rail a:focus-visible .name { background: var(--bg); padding-left: 0.3rem; }
+.rail a.hot .name, .rail a:focus-visible .name { opacity: 1; color: var(--text); }
+/* Hovering anywhere in this band left of the line names the nearest tick. */
+.rail-zone { position: absolute; top: -6px; bottom: -6px; right: 0; width: 9rem; cursor: pointer; }
+/* Where you are: chapter above, current section below, riding with the dot. */
+.rail-trail {
+  position: absolute;
+  right: calc(14px + 0.55rem);
+  top: 0;
+  transform: translateY(calc(var(--py, 0px) - 50%));
+  text-align: right;
+  pointer-events: none;
+  will-change: transform;
+  transition: opacity 0.1s ease;
+}
+/* Both lines are cut to the free margin (--room, measured by site.js), so the
+   label never runs into the text. The section number stays bright and the
+   title is grey, so the number survives even in a narrow margin. */
+.rail-trail > span { display: block; white-space: nowrap; font-family: var(--mono); max-width: var(--room, 12rem); margin-left: auto; overflow: hidden; text-overflow: ellipsis; }
+.rail-trail .c { font-size: 0.66rem; letter-spacing: 0.04em; color: var(--muted); }
+.rail-trail .s { font-size: 0.72rem; color: var(--muted); }
+.rail-trail .s .num { color: var(--text); }
+.rail-trail .s:empty { display: none; }
+.rail.hovering .rail-trail { opacity: 0; }
+/* While hovering, a backdrop fades the text behind the labels out, so the
+   (single) full name stays legible even where it reaches over the text. */
+.rail-scrim {
+  position: absolute;
+  top: -12vh;
+  bottom: -12vh;
+  right: 1px; /* stops just left of the line, which stays visible */
+  width: 28rem;
+  background: linear-gradient(to right, transparent, var(--bg) 8rem);
+  opacity: 0;
+  transition: opacity 0.12s ease;
+  pointer-events: none;
+}
+.rail.hovering .rail-scrim { opacity: 0.94; }
 @media (max-width: 68rem) { .rail { display: none; } }
 
 /* Thin progress bar, shown where the rail is hidden. */
 .progress { position: fixed; inset: 0 0 auto 0; height: 2px; z-index: 10; display: none; }
-.progress span { display: block; height: 100%; width: calc(var(--progress, 0) * 100%); background: var(--accent); }
+.progress span { display: block; height: 100%; width: 100%; transform: scaleX(var(--p, 0)); transform-origin: left; background: var(--accent); will-change: transform; }
 @media (max-width: 68rem) { .progress { display: block; } }
 
 /* ---- Footer ---- */
@@ -329,6 +425,37 @@ a.ref { font-variant-numeric: tabular-nums; }
 }
 
 @media print {
-  .rail, .progress, .scroll-hint, .actions { display: none; }
+  .rail, .progress, .scroll-hint, .actions, .hero-visual { display: none; }
   .hero { min-height: 0; }
 }
+
+/* ---- Web-only illustrations (site.config.json: heroVisual, inserts) ---- */
+.hero-layers, .refinement-tree svg { display: block; width: 100%; height: auto; overflow: visible; }
+:is(.hero-layers, .refinement-tree) .mono { font-family: var(--mono); }
+:is(.hero-layers, .refinement-tree) .txt { fill: var(--text); }
+:is(.hero-layers, .refinement-tree) .mut { fill: var(--muted); }
+:is(.hero-layers, .refinement-tree) .acc { fill: var(--accent); }
+.refinement-tree .fn { fill: var(--tok-fn); }
+.refinement-tree .kw { fill: var(--tok-kw); font-weight: 600; }
+.refinement-tree .op { fill: var(--tok-op); font-weight: 600; }
+.refinement-tree .cap { font: 600 8.5px var(--mono); letter-spacing: 0.14em; text-transform: uppercase; fill: var(--muted); }
+.refinement-tree .pill { fill: var(--panel); stroke: var(--line); }
+.refinement-tree .pill.on { stroke: color-mix(in srgb, var(--accent) 55%, var(--line)); }
+.refinement-tree .pill.gone { fill: none; stroke: var(--line); stroke-dasharray: 3 3; }
+.refinement-tree .tw { fill: none; stroke: var(--accent); stroke-width: 1.4; }
+.refinement-tree .tw.gone { stroke: var(--faint); stroke-width: 1.2; stroke-dasharray: 3 4; }
+/* Branches draw in once the figure scrolls into view (site.js adds .in-view). */
+.refinement-tree.animate .tw:not(.gone) { stroke-dasharray: var(--len); stroke-dashoffset: var(--len); }
+.refinement-tree.animate.in-view .tw:not(.gone) { animation: tree-draw 0.9s ease-out forwards; }
+@keyframes tree-draw { to { stroke-dashoffset: 0; } }
+.refinement-tree svg { max-width: 44rem; margin-inline: auto; }
+.refinement-tree .tree-narrow { display: none; }
+@media (max-width: 34rem) {
+  .refinement-tree .tree-wide { display: none; }
+  .refinement-tree .tree-narrow { display: block; max-width: 22rem; }
+}
+.refinement-tree figcaption .webonly { font-style: italic; }
+.hero-layers .ring { fill: none; stroke: var(--muted); }
+/* On phones the drawing is small: larger layer names, no subtitles. */
+@media (max-width: 34rem) { .hero-layers .name { font-size: 17px; } .hero-layers .sub { display: none; } }
+.hero-layers .ripple { fill: none; stroke: var(--accent); }

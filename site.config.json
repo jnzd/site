@@ -3,11 +3,11 @@
   "subtitle": "Extending the Lex language with refinement, so abstract legal specifications can be made concrete for specific use cases",
   "institution": "ETH Zurich",
   "pdf": "https://www.research-collection.ethz.ch/server/api/core/bitstreams/c7094a51-2753-4824-b1bc-6ba6cfc578af/content",
-  "code": "https://github.com/jnzd/masters-thesis-report",
-  "referenceLinks": {
-    "semesterproject": [
-      { "label": "Slides", "url": "https://docs.google.com/presentation/d/1MjPegW905-86KeMHA7fMMUwP-kXshuczzJR4sVQUzVE/edit?usp=sharing" }
-    ]
+  "publication": {
+    "label": "Lex paper · CCS ’26",
+    "title": "Lex: Turning Laws into Enforceable Security Policies",
+    "venue": "ACM CCS 2026",
+    "url": "https://doi.org/10.1145/3830454.3846777"
   },
   "tikzFigures": [
     "system-model.svg",
@@ -34,5 +34,23 @@
     "igloo",
     "van2020eflint",
     "zingg2022verified"
-  ]
+  ],
+  "referenceUpdates": {
+    "lex": "Hublet, François, Jakob Merane, Jonas Degelo, Wei-En Hsieh, Srđan Krstić, and David Basin. 2026. <a href=\"https://doi.org/10.1145/3830454.3846777\">“Lex: Turning Laws into Enforceable Security Policies.”</a> In <em>ACM Conference on Computer and Communications Security (CCS 2026)</em>. <a href=\"https://doi.org/10.1145/3830454.3846777\">https://doi.org/10.1145/3830454.3846777</a>."
+  },
+  "linkUpdates": {
+    "https://gitlab.inf.ethz.ch/OU-BASIN/lex/": "https://github.com/francois-hublet/lex"
+  },
+  "heroVisual": "src/hero-visual.html",
+  "inserts": [
+    {
+      "after": "section:lex-pretix-refinement",
+      "file": "src/inserts/refinement-tree.html"
+    }
+  ],
+  "referenceLinks": {
+    "semesterproject": [
+      { "label": "Slides", "url": "https://docs.google.com/presentation/d/1MjPegW905-86KeMHA7fMMUwP-kXshuczzJR4sVQUzVE/edit?usp=sharing" }
+    ]
+  }
 }

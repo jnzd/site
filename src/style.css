@@ -244,6 +244,11 @@ table.ruled tr:first-child td, table.ruled tr.rule-before td { padding-top: 0.45
 table.ruled tr:last-child td, table.ruled tr:has(+ tr.rule-before) td { padding-bottom: 0.45rem; }
 table.ruled td.span { vertical-align: middle; border-bottom: 0; }
 table.ruled .rule-left { border-left: 1px solid var(--line); }
+/* A merged table (two tables side by side) may grow past the figure, up to
+   the window edges, before it has to scroll. */
+.figure-body > .table-scroll:has(> table.merged) { width: max-content; max-width: calc(100vw - 3rem); position: relative; left: 50%; transform: translateX(-50%); margin-inline: 0; }
+table.ruled.merged { font-size: 0.84rem; }
+table.ruled.merged td { padding-inline: 0.75rem; }
 figcaption p { display: inline; margin: 0; }
 figcaption .label {
   font: 0.78rem var(--mono);

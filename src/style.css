@@ -212,18 +212,25 @@ svg.diagram .mono { font-family: var(--mono); }
 figure { margin: 3rem 0; }
 .figure-body { font-size: 0.9rem; }
 .figure-body > * { width: fit-content; max-width: 100%; margin-inline: auto; overflow-x: auto; }
+/* Diagrams and images are inline by default, which auto margins do not centre. */
+.figure-body > svg, .figure-body > img { display: block; }
 .figure-body > * + * { margin-top: 1rem; }
 .figure-body > pre.listing { width: 100%; }
 .figure-body td { border-bottom: 0; padding: 0.2rem 0.9rem; white-space: nowrap; }
-.figure-body td img { width: 2.2rem; background: #fff; border-radius: 6px; padding: 4px; display: block; }
+.figure-body td img { width: 2.6rem; height: 2.6rem; max-width: none; object-fit: contain; box-sizing: border-box; background: #fff; border-radius: 10px; padding: 0.45rem; display: block; box-shadow: 0 0 0 1px var(--line); }
+/* A column holding only a logo keeps the logo's width. */
+.figure-body td:has(> img:only-child) { width: 2.6rem; }
 .figure-body ol.algorithm-lines { background: var(--panel); border-radius: 6px; padding: 1rem 1.2rem 1rem 3rem; margin-inline: auto; }
 .figure-body .katex-display { margin: 0.5rem 0; }
 .figure-body .katex-display > .katex { white-space: normal; }
 .figure-body blockquote { font-size: 0.95rem; }
 /* Figures may grow wider than the text column on large screens. */
-@media (min-width: 64rem) { figure:not(.algorithm):not(.table) { margin-inline: -7rem; } figure:not(.algorithm):not(.table) > figcaption { margin-inline: 7rem; } }
+@media (min-width: 64rem) { figure:not(.algorithm):not(.table) { margin-inline: -7rem; } figure:not(.algorithm):not(.table) > figcaption { max-width: var(--column); } }
 .figure-body img, .figure-body svg, .figure-body video, .figure-body canvas { max-width: 100%; height: auto; }
-figcaption { margin-top: 1rem; font-size: 0.85rem; line-height: 1.55; color: var(--muted); }
+/* Like LaTeX: a caption that fits on one line is centred under the figure; a
+   longer one is a centred block of left-aligned text. */
+figcaption { margin-top: 1rem; font-size: 0.85rem; line-height: 1.55; color: var(--muted); width: fit-content; margin-inline: auto; }
+tr.rule-before td { border-top: 1px solid var(--line); padding-top: 0.5rem; }
 figcaption p { display: inline; margin: 0; }
 figcaption .label {
   font: 0.78rem var(--mono);
@@ -232,7 +239,7 @@ figcaption .label {
   color: var(--text);
   margin-right: 0.8em;
 }
-figure.table figcaption { margin: 0 0 0.9rem; }
+figure.table figcaption { margin: 0 auto 0.9rem; }
 .table-scroll { overflow-x: auto; }
 /* Boxes that scroll sideways fade out on each edge with more content beyond
    it (site.js sets data-more). */

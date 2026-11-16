@@ -342,6 +342,37 @@ a.ref { font-variant-numeric: tabular-nums; }
 }
 
 @media print {
-  .rail, .progress, .scroll-hint, .actions { display: none; }
+  .rail, .progress, .scroll-hint, .actions, .hero-visual { display: none; }
   .hero { min-height: 0; }
 }
+
+/* ---- Web-only illustrations (site.config.json: heroVisual, inserts) ---- */
+.hero-layers, .refinement-tree svg { display: block; width: 100%; height: auto; overflow: visible; }
+:is(.hero-layers, .refinement-tree) .mono { font-family: var(--mono); }
+:is(.hero-layers, .refinement-tree) .txt { fill: var(--text); }
+:is(.hero-layers, .refinement-tree) .mut { fill: var(--muted); }
+:is(.hero-layers, .refinement-tree) .acc { fill: var(--accent); }
+.refinement-tree .fn { fill: var(--fig-blue); }
+.refinement-tree .kw { fill: var(--tok-kw); font-weight: 600; }
+.refinement-tree .op { fill: var(--tok-op); font-weight: 600; }
+.refinement-tree .cap { font: 600 8.5px var(--mono); letter-spacing: 0.14em; text-transform: uppercase; fill: var(--muted); }
+.refinement-tree .pill { fill: var(--panel); stroke: var(--line); }
+.refinement-tree .pill.on { stroke: color-mix(in srgb, var(--accent) 55%, var(--line)); }
+.refinement-tree .pill.gone { fill: none; stroke: var(--line); stroke-dasharray: 3 3; }
+.refinement-tree .tw { fill: none; stroke: var(--accent); stroke-width: 1.4; }
+.refinement-tree .tw.gone { stroke: var(--faint); stroke-width: 1.2; stroke-dasharray: 3 4; }
+/* Branches draw in once the figure scrolls into view (site.js adds .in-view). */
+.refinement-tree.animate .tw:not(.gone) { stroke-dasharray: var(--len); stroke-dashoffset: var(--len); }
+.refinement-tree.animate.in-view .tw:not(.gone) { animation: tree-draw 0.9s ease-out forwards; }
+@keyframes tree-draw { to { stroke-dashoffset: 0; } }
+.refinement-tree svg { max-width: 44rem; margin-inline: auto; }
+.refinement-tree .tree-narrow { display: none; }
+@media (max-width: 34rem) {
+  .refinement-tree .tree-wide { display: none; }
+  .refinement-tree .tree-narrow { display: block; max-width: 22rem; }
+}
+.refinement-tree figcaption .webonly { font-style: italic; }
+.hero-layers .ring { fill: none; stroke: var(--muted); }
+/* On phones the drawing is small: larger layer names, no subtitles. */
+@media (max-width: 34rem) { .hero-layers .name { font-size: 17px; } .hero-layers .sub { display: none; } }
+.hero-layers .ripple { fill: none; stroke: var(--accent); }

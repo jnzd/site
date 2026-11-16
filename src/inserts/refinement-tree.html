@@ -1,0 +1,75 @@
+<!-- Web-only figure: the Article 13(1) refinement from Figures 2.11 and 5.1 as a tree. -->
+<figure class="refinement-tree web-only">
+          <svg class="tree-wide" viewBox="0 0 640 262" role="img" aria-label="Refinement of Article 13(1): automated communication is refined to email only, with fax and automated calls assumed never to occur; marketing consent is refined to consent given and not withdrawn since; and an over-18 requirement is added.">
+            <text class="cap" x="20" y="14">Article 13(1)</text>
+            <text class="cap" x="620" y="14" text-anchor="end">Refined for an email-only system</text>
+
+            <!-- abstract events -->
+            <rect class="pill" x="20" y="54" width="210" height="34" rx="17"/>
+            <text class="mono fn" x="125" y="75.5" font-size="12" text-anchor="middle">automatedCommunication</text>
+            <rect class="pill" x="20" y="180" width="210" height="34" rx="17"/>
+            <text class="mono fn" x="125" y="201.5" font-size="12" text-anchor="middle">marketingConsent</text>
+            <path d="M125 90 V176" stroke="var(--line)" stroke-width="1.3" fill="none"/>
+            <path d="M120.5 170 L125 177 L129.5 170" stroke="var(--muted)" stroke-width="1.3" fill="none"/>
+            <rect x="98" y="124" width="54" height="18" rx="4" fill="var(--bg)"/>
+            <text class="mono kw" x="125" y="137" font-size="10.5" text-anchor="middle">oblige</text>
+
+            <!-- branches -->
+            <path class="tw" d="M230 71 C 285 71, 280 32, 330 32" style="--len:120; animation-delay:.1s"/>
+            <path class="tw gone" d="M230 71 C 285 71, 280 72, 330 72"/>
+            <path class="tw gone" d="M230 71 C 285 71, 280 112, 330 112"/>
+            <path class="tw" d="M230 197 C 285 197, 280 174, 330 174" style="--len:120; animation-delay:.35s"/>
+            <path class="tw" d="M230 197 C 285 197, 280 226, 330 226" style="--len:120; animation-delay:.55s"/>
+
+            <!-- concrete events -->
+            <rect class="pill on" x="330" y="17" width="96" height="30" rx="15"/>
+            <text class="mono fn" x="378" y="36.5" font-size="12" text-anchor="middle">email</text>
+
+            <rect class="pill gone" x="330" y="57" width="96" height="30" rx="15"/>
+            <text class="mono mut" x="378" y="76.5" font-size="12" text-anchor="middle">fax</text>
+            <text class="mono mut" x="436" y="76.5" font-size="10.5">× assume false</text>
+
+            <rect class="pill gone" x="330" y="97" width="140" height="30" rx="15"/>
+            <text class="mono mut" x="400" y="116.5" font-size="12" text-anchor="middle">automatedCall</text>
+            <text class="mono mut" x="480" y="116.5" font-size="10.5">× assume false</text>
+
+            <rect class="pill on" x="326" y="159" width="304" height="30" rx="15"/>
+            <text class="mono" x="478" y="178.5" font-size="11.5" text-anchor="middle"><tspan class="op">¬</tspan><tspan class="fn">userWithdrawsConsent</tspan><tspan class="op"> S </tspan><tspan class="fn">userGivesConsent</tspan></text>
+
+            <rect class="pill on" x="330" y="211" width="96" height="30" rx="15"/>
+            <text class="mono fn" x="378" y="230.5" font-size="12" text-anchor="middle">over18</text>
+            <text class="mono acc" x="436" y="230.5" font-size="10.5">+ added</text>
+          </svg>
+
+          <svg class="tree-narrow" viewBox="0 0 340 404" role="img" aria-label="Refinement of Article 13(1): automated communication is refined to email only, with fax and automated calls assumed never to occur; marketing consent is refined to consent given and not withdrawn since; and an over-18 requirement is added.">
+            <text class="cap" x="170" y="12" text-anchor="middle">Article 13(1) → email-only system</text>
+            <rect class="pill" x="70" y="26" width="200" height="32" rx="16"/>
+            <text class="mono fn" x="170" y="46.5" font-size="12" text-anchor="middle">automatedCommunication</text>
+            <path class="tw" d="M170 58 C 170 82, 48 74, 48 100" style="--len:150"/>
+            <path class="tw gone" d="M170 58 C 170 82, 132 74, 132 100"/>
+            <path class="tw gone" d="M170 58 C 170 82, 256 74, 256 100"/>
+            <rect class="pill on" x="8" y="100" width="80" height="28" rx="14"/>
+            <text class="mono fn" x="48" y="118.5" font-size="11.5" text-anchor="middle">email</text>
+            <rect class="pill gone" x="96" y="100" width="72" height="28" rx="14"/>
+            <text class="mono mut" x="132" y="118.5" font-size="11.5" text-anchor="middle">fax</text>
+            <rect class="pill gone" x="176" y="100" width="156" height="28" rx="14"/>
+            <text class="mono mut" x="254" y="118.5" font-size="11.5" text-anchor="middle">automatedCall</text>
+            <text class="mono mut" x="254" y="144" font-size="10" text-anchor="middle">× assume false (both)</text>
+
+            <path d="M170 156 V214" stroke="var(--line)" stroke-width="1.3" fill="none"/>
+            <path d="M165.5 208 L170 215 L174.5 208" stroke="var(--muted)" stroke-width="1.3" fill="none"/>
+            <rect x="143" y="176" width="54" height="18" rx="4" fill="var(--bg)"/>
+            <text class="mono kw" x="170" y="189" font-size="10.5" text-anchor="middle">oblige</text>
+
+            <rect class="pill" x="70" y="220" width="200" height="32" rx="16"/>
+            <text class="mono fn" x="170" y="240.5" font-size="12" text-anchor="middle">marketingConsent</text>
+            <path class="tw" d="M170 252 V290" style="--len:40; animation-delay:.3s"/>
+            <rect class="pill on" x="10" y="290" width="320" height="30" rx="15"/>
+            <text class="mono" x="170" y="309.5" font-size="11" text-anchor="middle"><tspan class="op">¬</tspan><tspan class="fn">userWithdrawsConsent</tspan><tspan class="op"> S </tspan><tspan class="fn">userGivesConsent</tspan></text>
+            <path class="tw" d="M170 320 V348" style="--len:28; animation-delay:.6s"/>
+            <rect class="pill on" x="122" y="348" width="96" height="30" rx="15"/>
+            <text class="mono fn" x="170" y="367.5" font-size="12" text-anchor="middle">over18</text>
+            <text class="mono acc" x="226" y="367.5" font-size="10.5">+ added</text>
+          </svg>
+          <figcaption>Refinement of Article 13(1) from Figures 2.11 and 5.1. In an email-only system, <code>fax</code> and <code>automatedCall</code> are assumed never to occur, consent means given and not withdrawn since, and <code>over18</code> is added as a new obligation. <span class="webonly">Illustration added for the web version.</span></figcaption>
+        </figure>

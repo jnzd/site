@@ -40,5 +40,12 @@
   },
   "linkUpdates": {
     "https://gitlab.inf.ethz.ch/OU-BASIN/lex/": "https://github.com/francois-hublet/lex"
-  }
+  },
+  "heroVisual": "src/hero-visual.html",
+  "inserts": [
+    {
+      "after": "section:lex-pretix-refinement",
+      "file": "src/inserts/refinement-tree.html"
+    }
+  ]
 }

@@ -29,6 +29,7 @@ function render() {
     bibliographyOrder: config.bibliographyOrder || [],
     referenceUpdates: config.referenceUpdates || {},
     linkUpdates: config.linkUpdates || {},
+    inserts: (config.inserts || []).map((x) => ({ after: x.after, html: fs.readFileSync(at(x.file), 'utf8') })),
   });
   fs.rmSync(bib, { force: true });
   for (const w of warnings) console.warn('warning:', w);
@@ -53,7 +54,8 @@ function render() {
   const fill = {
     lang: 'en', title: meta.title, subtitle: config.subtitle || '', description: config.subtitle || meta.title,
     author: meta.author, institution: [meta.department, config.institution].filter(Boolean).join(', '), date: meta.date,
-    byline, people, actions, publication, rail, content: html,
+    byline, people, actions, publication, rail,
+    heroVisual: config.heroVisual ? fs.readFileSync(at(config.heroVisual), 'utf8') : '', content: html,
   };
   return fs.readFileSync(at('src/template.html'), 'utf8')
     .replace(/\{\{\{(\w+)\}\}\}/g, (_, k) => fill[k] ?? '')

@@ -28,6 +28,7 @@ function render() {
     state, macros: katexMacros(thesisDir), figuresDir: at('public/figures'), tikzFiles: config.tikzFigures || [],
     bibliographyOrder: config.bibliographyOrder || [],
     referenceUpdates: config.referenceUpdates || {},
+    linkUpdates: config.linkUpdates || {},
   });
   fs.rmSync(bib, { force: true });
   for (const w of warnings) console.warn('warning:', w);

@@ -190,6 +190,7 @@ pre {
 /* ---- Listings, algorithms and syntax colours ---- */
 .tok-kw { color: var(--tok-kw); font-weight: 600; }
 .tok-op { color: var(--tok-op); font-weight: 600; }
+.tok-fn { color: var(--fig-blue); }
 .tok-str { color: var(--tok-str); }
 .tok-com { color: var(--tok-com); }
 .tok-id { color: var(--fig-blue); }
@@ -263,6 +264,7 @@ td { padding: 0.55rem 0.7rem; border-bottom: 1px solid var(--line); vertical-ali
 a.ref { font-variant-numeric: tabular-nums; }
 .footnotes p { margin: 0; }
 .references { font-size: 0.9rem; color: var(--muted); padding-left: 2.2rem; overflow-wrap: anywhere; }
+.link-original { font-size: 0.9em; font-style: italic; color: var(--muted); }
 .references .ref-original { display: block; margin-top: 0.2rem; font-size: 0.8rem; font-style: italic; }
 .references li:target, .footnote-item:target { color: var(--text); }
 :target { scroll-margin-top: 2rem; }

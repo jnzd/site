@@ -3,7 +3,6 @@
   "subtitle": "Extending the Lex language with refinement, so abstract legal specifications can be made concrete for specific use cases",
   "institution": "ETH Zurich",
   "pdf": "https://www.research-collection.ethz.ch/server/api/core/bitstreams/c7094a51-2753-4824-b1bc-6ba6cfc578af/content",
-  "code": "https://github.com/jnzd/masters-thesis-report",
   "tikzFigures": [
     "system-model.svg",
     "capability-lattice.svg",

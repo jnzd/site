@@ -44,3 +44,22 @@
   if (document.fonts) document.fonts.ready.then(layout);
   layout();
 })();
+
+// Sideways-scrolling boxes (wide formulas, code, tables) fade out on each edge
+// that has more content beyond it, so it is clear they continue.
+(() => {
+  const boxes = document.querySelectorAll('.table-scroll, .katex-display, pre, ol.algorithm-lines');
+  function mark(el) {
+    const max = el.scrollWidth - el.clientWidth;
+    const left = el.scrollLeft > 1;
+    const right = max > 1 && el.scrollLeft < max - 1;
+    const more = left && right ? 'both' : left ? 'left' : right ? 'right' : '';
+    if (more) el.dataset.more = more; else delete el.dataset.more;
+  }
+  const markAll = () => boxes.forEach(mark);
+  boxes.forEach((el) => el.addEventListener('scroll', () => mark(el), { passive: true }));
+  window.addEventListener('resize', markAll);
+  window.addEventListener('load', markAll);
+  if (document.fonts) document.fonts.ready.then(markAll);
+  markAll();
+})();

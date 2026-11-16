@@ -230,6 +230,17 @@ figcaption .label {
 }
 figure.table figcaption { margin: 0 0 0.9rem; }
 .table-scroll { overflow-x: auto; }
+/* Boxes that scroll sideways fade out on each edge with more content beyond
+   it (site.js sets data-more). */
+[data-more="right"] { -webkit-mask-image: linear-gradient(to right, #000 calc(100% - 3.5rem), transparent); mask-image: linear-gradient(to right, #000 calc(100% - 3.5rem), transparent); }
+[data-more="left"] { -webkit-mask-image: linear-gradient(to left, #000 calc(100% - 3.5rem), transparent); mask-image: linear-gradient(to left, #000 calc(100% - 3.5rem), transparent); }
+[data-more="both"] { -webkit-mask-image: linear-gradient(to right, transparent, #000 3.5rem, #000 calc(100% - 3.5rem), transparent); mask-image: linear-gradient(to right, transparent, #000 3.5rem, #000 calc(100% - 3.5rem), transparent); }
+.figure-body > .table-scroll.prose { width: 100%; }
+/* A display formula fills the column (KaTeX centres it), so its own width
+   cannot come out a pixel too narrow and scroll for nothing. */
+.figure-body > .katex-display, .figure-body > :has(> .katex-display) { width: 100%; }
+.figure-body .table-scroll.prose td { white-space: normal; vertical-align: top; min-width: 7rem; }
+.figure-body .table-scroll.prose td:first-child { min-width: 0; }
 table { border-collapse: collapse; width: 100%; font-size: 0.88rem; font-variant-numeric: tabular-nums; }
 th {
   font: 400 0.72rem var(--mono);

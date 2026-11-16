@@ -63,7 +63,8 @@
       "title": "Lex: A Language for Formalizing Legal Provisions",
       "subtitle": "The talk on the practical work that introduced Lex, which the thesis builds on",
       "kind": "Practical work talk, ETH Zurich",
-      "date": "2024"
+      "date": "2024",
+      "short": "Practical-work talk"
     },
     {
       "slug": "master-thesis",
@@ -72,7 +73,8 @@
       "subtitle": "The talk on this master's thesis: refining abstract legal specifications in Lex for a concrete system",
       "kind": "Master's thesis talk, ETH Zurich",
       "date": "2025",
-      "button": "The talk"
+      "button": "The talk",
+      "short": "Thesis talk"
     }
   ]
 }

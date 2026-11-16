@@ -96,6 +96,8 @@ function renderTalkPage(talk, thesis) {
     `<button class="button primary" type="button" data-present>Present <span aria-hidden="true">▸</span></button>`,
     `<a class="button" href="../">${esc(talk.thesisLabel || 'Read the thesis')}</a>`,
     talk.slides && `<a class="button" href="${esc(talk.slides)}">Original slides <span aria-hidden="true">↗</span></a>`,
+    // The other talks, by their short name ("Thesis talk", "Practical-work talk").
+    ...(config.talks || []).filter((t) => t.slug !== talk.slug).map((t) => `<a class="button" href="../${esc(t.slug)}/" title="${esc(t.title)}">${esc(t.short || t.title)}</a>`),
   ].filter(Boolean).join('');
   const byline = [
     `<span class="author">${esc(thesis.meta.author)}</span>`,

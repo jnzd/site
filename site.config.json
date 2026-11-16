@@ -47,5 +47,10 @@
       "after": "section:lex-pretix-refinement",
       "file": "src/inserts/refinement-tree.html"
     }
-  ]
+  ],
+  "referenceLinks": {
+    "semesterproject": [
+      { "label": "Slides", "url": "https://docs.google.com/presentation/d/1MjPegW905-86KeMHA7fMMUwP-kXshuczzJR4sVQUzVE/edit?usp=sharing" }
+    ]
+  }
 }

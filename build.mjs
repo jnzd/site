@@ -27,6 +27,7 @@ function render() {
   const { html, toc, warnings } = postprocess(raw, {
     state, macros: katexMacros(thesisDir), figuresDir: at('public/figures'), tikzFiles: config.tikzFigures || [],
     bibliographyOrder: config.bibliographyOrder || [],
+    referenceLinks: config.referenceLinks || {},
     referenceUpdates: config.referenceUpdates || {},
     linkUpdates: config.linkUpdates || {},
     inserts: (config.inserts || []).map((x) => ({ after: x.after, html: fs.readFileSync(at(x.file), 'utf8') })),

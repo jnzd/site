@@ -298,6 +298,8 @@ a.ref { font-variant-numeric: tabular-nums; }
 .link-original { font-size: 0.9em; font-style: italic; color: var(--muted); }
 .references .ref-original { display: block; margin-top: 0.2rem; font-size: 0.8rem; font-style: italic; }
 .references li:target, .footnote-item:target { color: var(--text); }
+.references .ref-link { white-space: nowrap; }
+.references .ref-link::before { content: "\2197\00a0"; }
 :target { scroll-margin-top: 2rem; }
 
 /* ---- Section rail (right edge) ---- */

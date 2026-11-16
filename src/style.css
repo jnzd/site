@@ -331,21 +331,47 @@ a.ref { font-variant-numeric: tabular-nums; }
   border-radius: 50%;
   background: var(--accent);
 }
-.rail a { position: absolute; right: 0; transform: translateY(-50%); display: flex; align-items: center; padding: 6px 0 6px 12px; }
-.rail .tick { order: 2; width: 9px; height: 1px; background: var(--faint); margin-right: -4px; }
+.rail:not(.visible) { pointer-events: none; }
+/* Ticks end at the line: long for chapters, medium for sections, short for
+   subsections. Each tick box is 14px wide, so all labels share one edge. */
+.rail a { position: absolute; right: 0; width: 14px; height: 9px; transform: translateY(-50%); }
+.rail .tick { position: absolute; right: 0; top: 4px; height: 1px; background: var(--faint); transition: background 0.15s; }
+.rail a.l1 .tick { width: 14px; }
+.rail a.l2 .tick { width: 9px; }
+.rail a.l3 .tick { width: 5px; }
+.rail a.passed .tick { background: var(--muted); }
+.rail a.hot .tick, .rail a:focus-visible .tick { background: var(--accent); }
 .rail .name {
-  order: 1;
-  margin-right: 0.8rem;
+  position: absolute;
+  right: calc(100% + 0.55rem);
+  top: 50%;
+  transform: translateY(-50%);
   font: 0.72rem var(--mono);
   color: var(--muted);
   white-space: nowrap;
   opacity: 0;
-  transition: opacity 0.15s;
+  transition: opacity 0.18s ease, color 0.18s ease;
   pointer-events: none;
 }
-.rail a:hover .name, .rail a.current .name { opacity: 1; }
-.rail a.current .name { color: var(--text); }
-.rail a.current .tick { background: var(--accent); }
+.rail a.near .name, .rail a.hot .name, .rail a:focus-visible .name { background: var(--bg); padding-left: 0.3rem; }
+.rail a.hot .name, .rail a:focus-visible .name { opacity: 1; color: var(--text); }
+/* Hovering anywhere in this band left of the line names the nearest tick. */
+.rail-zone { position: absolute; top: -6px; bottom: -6px; right: 0; width: 9rem; cursor: pointer; }
+/* Where you are: chapter above, current section below, riding with the dot. */
+.rail-trail {
+  position: absolute;
+  right: calc(14px + 0.55rem);
+  top: calc(var(--progress, 0) * 100%);
+  transform: translateY(-50%);
+  text-align: right;
+  pointer-events: none;
+  transition: opacity 0.18s ease;
+}
+.rail-trail span { display: block; white-space: nowrap; font-family: var(--mono); }
+.rail-trail .c { font-size: 0.66rem; letter-spacing: 0.04em; color: var(--muted); }
+.rail-trail .s { font-size: 0.72rem; color: var(--text); }
+.rail-trail .s:empty { display: none; }
+.rail.hovering .rail-trail { opacity: 0; }
 @media (max-width: 68rem) { .rail { display: none; } }
 
 /* Thin progress bar, shown where the rail is hidden. */

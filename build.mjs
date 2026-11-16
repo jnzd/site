@@ -48,8 +48,11 @@ function render() {
     pub && `<a class="button" href="${esc(pub.url)}" title="${esc(pub.title)} (${esc(pub.venue)})">${esc(pub.label)} <span aria-hidden="true">↗</span></a>`,
     config.code && `<a class="button" href="${esc(config.code)}">Source</a>`,
   ].filter(Boolean).join('');
+  // Every chapter, section and subsection gets a tick (long, medium, short);
+  // site.js positions them and adds the hover labels and the current trail.
   const rail = toc.map((s) =>
-    `<a href="#${esc(s.id)}" data-target="${esc(s.id)}"><span class="tick"></span><span class="name">${s.num ? s.num + ' ' : ''}${esc(s.text)}</span></a>`).join('');
+    `<a class="l${s.level || 1}" href="#${esc(s.id)}" data-target="${esc(s.id)}"><span class="tick"></span><span class="name">${s.num ? s.num + ' ' : ''}${esc(s.text)}</span></a>`).join('')
+    + '<div class="rail-zone" aria-hidden="true"></div><div class="rail-trail" aria-hidden="true"><span class="c"></span><span class="s"></span></div>';
 
   const fill = {
     lang: 'en', title: meta.title, subtitle: config.subtitle || '', description: config.subtitle || meta.title,

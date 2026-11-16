@@ -5,18 +5,20 @@
   const post = document.querySelector('.post');
   const links = rail ? [...rail.querySelectorAll('a')] : [];
   const sections = links.map((a) => document.getElementById(a.dataset.target));
+  const levels = links.map((a) => Number(a.className.match(/l(\d)/)?.[1] || 1));
+  const names = links.map((a) => a.querySelector('.name').textContent);
+  const trail = rail && rail.querySelector('.rail-trail');
   let start = 0;
   let span = 1;
+  let pos = []; // each tick's position on the rail, 0..1
 
-  // Each section's tick sits at the same fraction of the rail as the
-  // section's position within the article.
+  // Each tick sits at the same fraction of the rail as its heading's position
+  // within the article.
   function layout() {
     start = post.offsetTop;
     span = Math.max(1, post.offsetHeight - window.innerHeight * 0.5);
-    links.forEach((a, i) => {
-      const y = sections[i].getBoundingClientRect().top + window.scrollY;
-      a.style.top = Math.min(100, Math.max(0, ((y - start) / span) * 100)) + '%';
-    });
+    pos = sections.map((s) => Math.min(1, Math.max(0, (s.getBoundingClientRect().top + window.scrollY - start) / span)));
+    links.forEach((a, i) => { a.style.top = (pos[i] * 100) + '%'; });
     update();
   }
 
@@ -30,7 +32,59 @@
     sections.forEach((s, i) => {
       if (s.getBoundingClientRect().top <= window.innerHeight * 0.3) current = i;
     });
-    links.forEach((a, i) => a.classList.toggle('current', i === current));
+    links.forEach((a, i) => {
+      a.classList.toggle('passed', pos[i] <= progress);
+      if (i === current) a.setAttribute('aria-current', 'location'); else a.removeAttribute('aria-current');
+    });
+    if (trail) {
+      let chapter = current;
+      while (chapter > 0 && levels[chapter] !== 1) chapter--;
+      trail.querySelector('.c').textContent = chapter >= 0 ? names[chapter] : '';
+      trail.querySelector('.s').textContent = current > chapter ? names[current] : '';
+    }
+  }
+
+  // Hovering in the band left of the line: the nearest tick (within 14px) is
+  // highlighted; other ticks within 70px show their names in grey, fading with
+  // distance. In a long stretch with no ticks nearby, the closest tick above
+  // and below are shown instead. Labels never overlap: closer ones win.
+  const zone = rail && rail.querySelector('.rail-zone');
+  if (zone) {
+    const RANGE = 70, HIT = 14, GAP = 15;
+    let lit = [];
+    let hot = -1;
+    const clear = () => {
+      lit.forEach((i) => { links[i].classList.remove('hot', 'near'); links[i].querySelector('.name').style.opacity = ''; });
+      lit = [];
+      hot = -1;
+    };
+    zone.addEventListener('mousemove', (e) => {
+      clear();
+      const r = rail.getBoundingClientRect();
+      const y = e.clientY - r.top;
+      const dist = pos.map((p, i) => ({ i, ty: p * r.height, d: Math.abs(p * r.height - y) })).sort((p, q) => p.d - q.d);
+      let pick = dist.filter((x) => x.d <= RANGE);
+      if (!pick.length) {
+        const above = dist.find((x) => x.ty < y), below = dist.find((x) => x.ty >= y);
+        pick = [above, below].filter(Boolean).map((x) => ({ ...x, far: true }));
+      }
+      const taken = [];
+      for (const x of pick) {
+        if (taken.some((t) => Math.abs(t - x.ty) < GAP)) continue;
+        taken.push(x.ty);
+        lit.push(x.i);
+        if (x === pick[0] && x.d <= HIT && !x.far) { links[x.i].classList.add('hot'); hot = x.i; continue; }
+        links[x.i].classList.add('near');
+        links[x.i].querySelector('.name').style.opacity = x.far ? 0.55 : Math.max(0.2, 1 - x.d / RANGE).toFixed(2);
+      }
+      rail.classList.add('hovering');
+    });
+    zone.addEventListener('mouseleave', () => { clear(); rail.classList.remove('hovering'); });
+    zone.addEventListener('click', () => {
+      if (hot < 0) return;
+      // Same as following the tick's link (scrolls smoothly via CSS).
+      links[hot].click();
+    });
   }
 
   let queued = false;

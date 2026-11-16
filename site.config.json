@@ -50,7 +50,17 @@
   ],
   "referenceLinks": {
     "semesterproject": [
-      { "label": "Slides", "url": "https://docs.google.com/presentation/d/1MjPegW905-86KeMHA7fMMUwP-kXshuczzJR4sVQUzVE/edit?usp=sharing" }
+      { "label": "Talk", "url": "practical-work/" }
     ]
-  }
+  },
+  "talks": [
+    {
+      "slug": "practical-work",
+      "source": "talks/practical-work.html",
+      "title": "Lex: A Language for Formalizing Legal Provisions",
+      "subtitle": "The talk on the practical work that introduced Lex, which the thesis builds on",
+      "kind": "Practical work talk, ETH Zurich",
+      "date": "2024"
+    }
+  ]
 }

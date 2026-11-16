@@ -1,5 +1,5 @@
 // Present mode for talk pages: shows the title and then one slide at a time,
-// scaled to fill the window. Arrow keys, space and page keys move; Esc leaves
+// on a fixed 16:9 stage scaled to the window. Arrow keys, space and page keys move; Esc leaves
 // and returns to the slide in the article. ?present opens a page in it.
 (() => {
   const slides = [document.querySelector('.hero'), ...document.querySelectorAll('.slide')];
@@ -16,17 +16,27 @@
   const count = bar.querySelector('.count');
   let i = -1;
 
-  // Largest zoom (up to 1.6x) at which the slide fits the window.
+  // The stage is 960x540; one scale for the window, the same for every slide.
+  const STAGE_W = 960, STAGE_H = 540;
+  const setScale = () => document.documentElement.style.setProperty('--scale',
+    Math.min(window.innerWidth / STAGE_W, window.innerHeight / STAGE_H).toFixed(4));
+
+  // A slide that overflows the stage (down, or sideways inside a code block,
+  // table or formula) gets a larger stage, i.e. is shrunk, just enough to fit.
+  function overflows(el) {
+    if (el.scrollHeight > el.clientHeight + 1 || el.scrollWidth > el.clientWidth + 1) return true;
+    return [...el.querySelectorAll('pre, .table-scroll, .katex-display')].some((b) => b.scrollWidth > b.clientWidth + 1);
+  }
   function fit(el) {
-    el.style.setProperty('--zoom', 1);
-    const fits = (z) => {
-      el.style.setProperty('--zoom', z);
-      return el.scrollHeight <= el.clientHeight + 1 && el.scrollWidth <= el.clientWidth + 1;
-    };
-    let lo = 0.5, hi = 1.6;
-    if (fits(hi)) return;
-    for (let k = 0; k < 8; k++) { const mid = (lo + hi) / 2; if (fits(mid)) lo = mid; else hi = mid; }
-    el.style.setProperty('--zoom', lo);
+    el.style.setProperty('--fit', 1);
+    if (!overflows(el)) return;
+    let lo = 0.4, hi = 1;
+    for (let k = 0; k < 10; k++) {
+      const mid = (lo + hi) / 2;
+      el.style.setProperty('--fit', mid);
+      if (overflows(el)) hi = mid; else lo = mid;
+    }
+    el.style.setProperty('--fit', lo);
   }
 
   function show(n) {
@@ -44,6 +54,7 @@
     const y = window.innerHeight * 0.3;
     let n = 0;
     slides.forEach((s, k) => { if (s.getBoundingClientRect().top <= y) n = k; });
+    setScale();
     document.body.classList.add('presenting');
     show(n);
     document.documentElement.requestFullscreen?.().catch(() => {});
@@ -52,7 +63,7 @@
   function exit() {
     const el = slides[i];
     document.body.classList.remove('presenting');
-    slides.forEach((s) => { s.classList.remove('current'); s.style.removeProperty('--zoom'); });
+    slides.forEach((s) => { s.classList.remove('current'); s.style.removeProperty('--fit'); });
     if (document.fullscreenElement) document.exitFullscreen?.();
     el?.scrollIntoView({ behavior: 'instant', block: 'start' });
   }
@@ -76,6 +87,6 @@
     e.preventDefault();
   });
   document.addEventListener('fullscreenchange', () => { if (!document.fullscreenElement && presenting()) exit(); });
-  window.addEventListener('resize', () => { if (presenting()) fit(slides[i]); });
+  window.addEventListener('resize', () => { if (presenting()) setScale(); });
   if (new URLSearchParams(location.search).has('present')) enter();
 })();

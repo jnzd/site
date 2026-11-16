@@ -2,6 +2,7 @@
   Practical work talk (2024): "Lex: A Language for Formalizing Legal Provisions".
   One <section class="slide"> per slide of the original deck; data-slide is its
   number there. See lib/talk.mjs for the markup this file may use.
+  class="notes": commentary for readers, hidden in present mode.
 -->
 
 <section class="slide part" data-slide="2">
@@ -197,7 +198,7 @@
       </ol>
     </div>
   </div>
-  <p>Every rule inherits a label from its position, such as
+  <p class="notes">Every rule inherits a label from its position, such as
   <code>U.S. Code / title 26 / title[1] A / chapter 1 / chapter[1] B / section III / article 121</code>,
   so the compiled formula can always be traced back to the text. The thesis covers
   this in <a data-thesis="subsection:lex-section-labels"></a>.</p>
@@ -265,7 +266,7 @@
       </div>
     </div>
   </div>
-  <p>The rule is marked <code>enforceable</code>: the compiler must be able to enforce
+  <p class="notes">The rule is marked <code>enforceable</code>: the compiler must be able to enforce
   it by suppressing <code>PersonalDataProcessing</code>.</p>
 </section>
 
@@ -347,7 +348,7 @@
     \prfrule{REG$_R$}{r : \phi \Rightarrow \psi \in R \quad \Gamma \vdash \psi : \Cau}{\Gamma \vdash \comply(r) : \Cau}
     \qquad
     \prfrule{REG$_E$}{\Gamma \vdash \exc(r) : \Cau}{\Gamma \vdash \comply(r) : \Cau}$$
-  <p>The GDPR obligation above uses the first way: it is enforced by suppressing
+  <p class="notes">The GDPR obligation above uses the first way: it is enforced by suppressing
   <code>PersonalDataProcessing</code>.</p>
 </section>
 
@@ -376,6 +377,7 @@
   WhyEnf can enforce. The exception becomes <code>Exception2</code>, the constitutive
   rule becomes <code>lawfulness</code>, and the obligation becomes the formula under
   $\Always$.</p>
+  <div class="side-by-side code-pair">
   <pre data-lang="mfotl" data-title="MFOTL formula">
     let Exception2(w) = isMinor(w)
     let lawfulness(_p1) = ∃c. ∃ep. ∃prp. ∃w. ∃x. ∃y. ∃z.
@@ -406,7 +408,8 @@
     fun day(t__: time) -> time
     Exception2(w__: int)
   </pre>
-  <p>The thesis's <a data-thesis="appendixcompiled-lex-examples"></a> has the compiled
+  </div>
+  <p class="notes">The thesis's <a data-thesis="appendixcompiled-lex-examples"></a> has the compiled
   output of its own examples.</p>
 </section>
 
@@ -427,7 +430,7 @@
     <li class="step">Compile and linearize as strings</li>
     <li class="stage">WhyEnf files</li>
   </ol>
-  <p>The thesis extends this pipeline with refinement; see
+  <p class="notes">The thesis extends this pipeline with refinement; see
   <a data-thesis="section:implementation-in-the-lex-compiler"></a>.</p>
 </section>
 

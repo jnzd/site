@@ -10,6 +10,7 @@ import { fileURLToPath } from 'node:url';
 import { execFileSync } from 'node:child_process';
 import { preprocess, katexMacros } from './lib/preprocess.mjs';
 import { postprocess } from './lib/postprocess.mjs';
+import { renderTalk } from './lib/talk.mjs';
 
 const root = path.dirname(fileURLToPath(import.meta.url));
 const at = (...p) => path.join(root, ...p);
@@ -50,21 +51,59 @@ function render() {
     pub && `<a class="button" href="${esc(pub.url)}" title="${esc(pub.title)} (${esc(pub.venue)})">${esc(pub.label)} <span aria-hidden="true">↗</span></a>`,
     config.code && `<a class="button" href="${esc(config.code)}">Source</a>`,
   ].filter(Boolean).join('');
-  // Every chapter, section and subsection gets a tick (long, medium, short);
-  // site.js positions them and adds the hover labels and the current trail.
-  const rail = toc.map((s) =>
-    `<a class="l${s.level || 1}" href="#${esc(s.id)}" data-target="${esc(s.id)}" data-num="${esc(s.num || '')}"><span class="tick"></span><span class="name">${s.num ? s.num + ' ' : ''}${esc(s.text)}</span></a>`).join('')
-    + '<div class="rail-zone" aria-hidden="true"></div><div class="rail-trail" aria-hidden="true"><span class="c"></span><span class="s"></span></div>';
+  const rail = renderRail(toc);
 
   const fill = {
     lang: 'en', title: meta.title, subtitle: config.subtitle || '', description: config.subtitle || meta.title,
     author: meta.author, institution: [meta.department, config.institution].filter(Boolean).join(', '), date: meta.date,
     byline, people, actions, rail,
     heroVisual: config.heroVisual ? fs.readFileSync(at(config.heroVisual), 'utf8') : '', content: html,
+    root: '', scripts: '', bodyClass: 'thesis',
   };
+  // Reference numbers as they appear on the thesis page, for the talks.
+  const refs = {};
+  [...html.matchAll(/<li id="ref-([^"]+)">/g)].forEach((m, i) => { refs[m[1]] = i + 1; });
+  const ids = new Set([...html.matchAll(/\sid="([^"]+)"/g)].map((m) => m[1]));
+  return { page: fillTemplate(fill), toc, refs, ids, meta };
+}
+
+function fillTemplate(fill) {
   return fs.readFileSync(at('src/template.html'), 'utf8')
     .replace(/\{\{\{(\w+)\}\}\}/g, (_, k) => fill[k] ?? '')
     .replace(/\{\{(\w+)\}\}/g, (_, k) => esc(fill[k] ?? ''));
+}
+
+// Every chapter, section and subsection gets a tick (long, medium, short);
+// site.js positions them and adds the hover labels and the current trail.
+function renderRail(toc) {
+  return toc.map((s) =>
+    `<a class="l${s.level || 1}" href="#${esc(s.id)}" data-target="${esc(s.id)}" data-num="${esc(s.num || '')}"><span class="tick"></span><span class="name">${s.num ? s.num + ' ' : ''}${esc(s.text)}</span></a>`).join('')
+    + '<div class="rail-zone" aria-hidden="true"></div><div class="rail-trail" aria-hidden="true"><span class="c"></span><span class="s"></span></div>';
+}
+
+// A talk (see lib/talk.mjs) becomes dist/<slug>/index.html, linked to the thesis.
+function renderTalkPage(talk, thesis) {
+  const { html, toc, warnings } = renderTalk(fs.readFileSync(at(talk.source), 'utf8'), {
+    macros: katexMacros(thesisDir), thesisToc: thesis.toc, thesisRefs: thesis.refs,
+    thesisIds: thesis.ids, figuresDir: at('public/figures'),
+  });
+  for (const w of warnings) console.warn('warning:', w);
+  const actions = [
+    `<button class="button primary" type="button" data-present>Present <span aria-hidden="true">▸</span></button>`,
+    `<a class="button" href="../">${esc(talk.thesisLabel || 'Read the thesis')}</a>`,
+    talk.slides && `<a class="button" href="${esc(talk.slides)}">Original slides <span aria-hidden="true">↗</span></a>`,
+  ].filter(Boolean).join('');
+  const byline = [
+    `<span class="author">${esc(thesis.meta.author)}</span>`,
+    talk.kind && `<span>${esc(talk.kind)}</span>`,
+    talk.date && `<span>${esc(talk.date)}</span>`,
+  ].filter(Boolean).join('');
+  return fillTemplate({
+    lang: 'en', title: talk.title, subtitle: talk.subtitle || '', description: talk.subtitle || talk.title,
+    author: thesis.meta.author, institution: config.institution, date: talk.date,
+    byline, people: '', actions, rail: renderRail(toc), heroVisual: '', content: html,
+    root: '../', scripts: '<script src="../talk.js" defer></script>', bodyClass: 'talk',
+  });
 }
 
 function copyFonts(pkg, files, dest) {
@@ -80,13 +119,18 @@ function build() {
   if (fs.existsSync(at('public'))) fs.cpSync(at('public'), dist, { recursive: true });
 
   if (fs.existsSync(path.join(thesisDir, 'assets'))) fs.cpSync(path.join(thesisDir, 'assets'), path.join(dist, 'assets'), { recursive: true, filter: (f) => !f.endsWith('.pdf') });
-  // Links to the stylesheet and script carry a hash of their content, so a
+  // Links to the stylesheet and scripts carry a hash of their content, so a
   // browser fetches the new file after every change instead of a cached one.
   const version = (f) => crypto.createHash('sha256').update(fs.readFileSync(at(f))).digest('hex').slice(0, 10);
-  const html = render()
-    .replace('href="style.css"', `href="style.css?v=${version('src/style.css')}"`)
-    .replace('src="site.js"', `src="site.js?v=${version('src/site.js')}"`);
-  fs.writeFileSync(path.join(dist, 'index.html'), html);
+  const stamps = { 'style.css': version('src/style.css'), 'site.js': version('src/site.js'), 'talk.js': version('src/talk.js') };
+  const stamp = (html) => html.replace(/(href|src)="((?:\.\.\/)?)(style\.css|site\.js|talk\.js)"/g, (_, attr, root, f) => `${attr}="${root}${f}?v=${stamps[f]}"`);
+  const thesis = render();
+  fs.writeFileSync(path.join(dist, 'index.html'), stamp(thesis.page));
+  for (const talk of config.talks || []) {
+    fs.mkdirSync(path.join(dist, talk.slug), { recursive: true });
+    fs.writeFileSync(path.join(dist, talk.slug, 'index.html'), stamp(renderTalkPage(talk, thesis)));
+  }
+  fs.copyFileSync(at('src/talk.js'), path.join(dist, 'talk.js'));
   fs.copyFileSync(at('src/style.css'), path.join(dist, 'style.css'));
   fs.copyFileSync(at('src/site.js'), path.join(dist, 'site.js'));
 
@@ -113,7 +157,7 @@ if (process.argv.includes('--serve')) {
     clearTimeout(timer);
     timer = setTimeout(() => { try { build(); } catch (e) { console.error(e.message); } }, 100);
   };
-  for (const dir of [at('src'), at('public')]) fs.watch(dir, { recursive: true }, rebuild);
+  for (const dir of [at('src'), at('public'), at('talks')]) fs.watch(dir, { recursive: true }, rebuild);
   // The thesis folder may contain this site: only react to its LaTeX sources.
   fs.watch(thesisDir, { recursive: true }, (_event, file) => {
     if (file && /\.(tex|bib)$/.test(file) && !/(^|[\\/])(node_modules|dist|\.git)[\\/]/.test(file)) rebuild();

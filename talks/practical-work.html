@@ -1,0 +1,455 @@
+<!--
+  Practical work talk (2024): "Lex: A Language for Formalizing Legal Provisions".
+  One <section class="slide"> per slide of the original deck; data-slide is its
+  number there. See lib/talk.mjs for the markup this file may use.
+  class="notes": commentary for readers, hidden in present mode.
+-->
+
+<section class="slide part" data-slide="2">
+  <h2 id="motivation">Motivation</h2>
+</section>
+
+<section class="slide" id="why-formalize" data-slide="3">
+  <h3>Why formalize the law?</h3>
+  <p>Laws are written in natural language, but much of what they say has a logical
+  structure: conditions, obligations, exceptions, deadlines. Writing that structure
+  down formally has three benefits.</p>
+  <ul>
+    <li><strong>It shows the logical structure.</strong> A formalization removes some
+    ambiguity and lets us reason clearly about what a provision means.</li>
+    <li><strong>It opens the law to a broader audience.</strong> A formal reading can
+    make parts of a law easier to understand, and automated tools built on it can
+    make the law more accessible.</li>
+    <li><strong>It enables automation.</strong> With runtime verification, we can check
+    that the behaviour of a computer system complies with the law.</li>
+  </ul>
+</section>
+
+<section class="slide" id="runtime-verification" data-slide="4">
+  <h3>Formalizing the law for runtime verification</h3>
+  <p>Runtime verification comes in two forms. <em>Monitoring</em> checks, online or
+  offline, that a system's behaviour complies with a policy. <em>Enforcement</em> goes
+  further: it runs alongside the system and can correct its behaviour, so it is
+  inherently online.</p>
+  <figure>
+    <div class="figure-body">{{figure:system-model.svg}}</div>
+    <figcaption>The enforcer $\mathcal{E}$ observes events from the system $S$ and
+    answers with commands that suppress or cause events, guided by a policy $P$.
+    Adapted from Hublet, Kvamme and Krstić, “Towards an Enforceable GDPR
+    Specification” (2024); see also <a data-thesis="fig:system-model">Figure 2.2 in the thesis</a>.</figcaption>
+  </figure>
+  <p>State-of-the-art enforcement tools require the law to be encoded as logical
+  formulas. Translating legal text directly into formulas is difficult and error-prone,
+  and the result is hard to check against the original. A good formalization should
+  therefore also be <em>readable</em>.</p>
+</section>
+
+<section class="slide" id="contributions" data-slide="5">
+  <h3>This work</h3>
+  <p>Lex is an intermediate language between the law in natural language and runtime
+  verification policies written as logical formulas. It stays readable by keeping the
+  hierarchical structure of the law, and it has mechanisms that make the logical
+  structure explicit.</p>
+  <p>The rest of this page covers:</p>
+  <ol>
+    <li><a href="#theory">Formalizing the law</a>: vagueness and the logical structure of legal texts.</li>
+    <li><a href="#temporal-logic">Temporal logic</a>: metric first-order temporal logic and its enforceable fragment.</li>
+    <li><a href="#lex">The Lex language</a>: hierarchy, rules and the type system, shown on <a href="#gdpr">an example from the GDPR</a>.</li>
+  </ol>
+</section>
+
+<section class="slide part" data-slide="6">
+  <h2 id="theory">Formalizing the law: some theory</h2>
+</section>
+
+<section class="slide" id="vagueness" data-slide="7">
+  <h3>Vagueness and the human element</h3>
+  <p>Vagueness is inherent to the law, and scholars debate whether it could ever be
+  eliminated entirely. Lex does not try to. It formalizes the <em>logical structure</em>
+  of legal texts and leaves vague terms as inputs: where a provision is ambiguous, a
+  human decides, and that decision is given to the system as an event.</p>
+</section>
+
+<section class="slide" id="logical-structure" data-slide="8">
+  <h3>The logical structure of the law</h3>
+  <ul>
+    <li><strong>Exceptions.</strong> Legal texts often specify when another section of
+    the law does <em>not</em> apply.</li>
+    <li><strong>Brute and institutional facts.</strong> Brute facts are “facts of nature”,
+    such as a person's age or a car's speed. Institutional facts are derived from brute
+    facts: a person may vote in Switzerland if they are over 18 and a Swiss citizen, so
+    “having the right to vote” is an institutional fact.</li>
+  </ul>
+  <p>This structure differs from that of common programming languages, which is why
+  Lex has dedicated constructs for it.</p>
+</section>
+
+<section class="slide" id="rules" data-slide="9">
+  <h3>Three kinds of rules</h3>
+  <p>A toy example shows the three kinds of rules Lex distinguishes:</p>
+  <ol>
+    <li><strong>Obligation rule:</strong> <em>To enter the building, authorization is required.</em></li>
+    <li><strong>Constitutive rule:</strong> <em>Employees are authorized to enter the building.</em></li>
+    <li><strong>Exception rule:</strong> <em>During time off, (2) does not apply.</em></li>
+  </ol>
+  <p>Obligations say what must hold, constitutive rules derive institutional facts such
+  as “authorized”, and exceptions switch other rules off. The thesis formalizes this as
+  <a data-thesis="section:cre-meta-logic"></a>.</p>
+</section>
+
+<section class="slide part" data-slide="10">
+  <h2 id="temporal-logic">Temporal logic</h2>
+</section>
+
+<section class="slide" id="mfotl" data-slide="11">
+  <h3>Metric first-order temporal logic</h3>
+  <p>MFOTL extends first-order predicate logic ($\phi \land \psi$, $\phi \lor \psi$,
+  $\neg\phi$, $P(x)$, …) with temporal operators. Each operator carries an interval
+  $I$ that bounds how far into the future or past it looks.</p>
+  <div class="table-scroll">
+  <table class="ruled operators">
+    <tr><td>Always</td><td>$\Always_I \phi$</td><td class="rule-left">Historically</td><td>$\Historically_I \phi$</td></tr>
+    <tr><td>Until</td><td>$\phi \UUntil_I \psi$</td><td class="rule-left">Since</td><td>$\phi \Since_I \psi$</td></tr>
+    <tr><td>Next</td><td>$\Next_I \phi$</td><td class="rule-left">Previous</td><td>$\Prev_I \phi$</td></tr>
+    <tr><td>Eventually</td><td>$\Eventually_I \phi$</td><td class="rule-left">Once</td><td>$\Once_I \phi$</td></tr>
+  </table>
+  </div>
+  <p>Future operators are on the left, past operators on the right. The thesis defines
+  the logic in <a data-thesis="section:mfotl"></a>.</p>
+</section>
+
+<section class="slide" id="emfotl" data-slide="12">
+  <h3>Enforceable MFOTL</h3>
+  <p>Enforceable MFOTL is the policy language of the WhyEnf enforcer <cite data-ref="whyenf"></cite>,
+  a subset of MFOTL in which every predicate is marked with a capability:</p>
+  <ul>
+    <li><strong>Causable:</strong> the system can create the event, e.g. “send a notification to the user”.</li>
+    <li><strong>Suppressable:</strong> the system can prevent the action, e.g. “a user makes a public comment”.</li>
+    <li><strong>Observable:</strong> the system can take no action on the event.</li>
+  </ul>
+  <p>A type system decides whether a formula can be enforced: a formula typed $\Cau$
+  can be made true by causing events, one typed $\Sup$ can be made false by suppressing
+  them. Two of its rules:</p>
+  $$\prfrule{$\neg^{\Cau}$}{\Gamma \vdash \phi : \Sup}{\Gamma \vdash \neg\phi : \Cau}
+    \qquad
+    \prfrule{$\lor^{\Cau}_{L}$}{\Gamma \vdash \phi : \Cau}{\Gamma \vdash \phi \lor \psi : \Cau}$$
+  <p>See <a data-thesis="subsection:emfotl"></a> for the capabilities as used in the thesis.</p>
+</section>
+
+<section class="slide" id="emfotl-example" data-slide="13">
+  <h3>Example: two ways to enforce an implication</h3>
+  <p>There are two ways to “cause” (make true) the formula $\phi \Rightarrow \psi$.
+  Rewriting it as $\neg\phi \lor \psi$ gives one derivation per disjunct:</p>
+  <div class="derivations">
+    <figure>
+      $$\dfrac{\dfrac{\dfrac{\Gamma \vdash \phi : \Sup}{\Gamma \vdash \neg\phi : \Cau}\,{\scriptsize\neg^{\Cau}}}{\Gamma \vdash \neg\phi \lor \psi : \Cau}\,{\scriptsize\lor^{\Cau}_{L}}}{\Gamma \vdash \phi \Rightarrow \psi : \Cau}$$
+      <figcaption>Suppress the left-hand side</figcaption>
+    </figure>
+    <figure>
+      $$\dfrac{\dfrac{\Gamma \vdash \psi : \Cau}{\Gamma \vdash \neg\phi \lor \psi : \Cau}\,{\scriptsize\lor^{\Cau}_{R}}}{\Gamma \vdash \phi \Rightarrow \psi : \Cau}$$
+      <figcaption>Cause the right-hand side</figcaption>
+    </figure>
+  </div>
+</section>
+
+<section class="slide part" data-slide="14">
+  <h2 id="lex">The Lex language</h2>
+</section>
+
+<section class="slide" id="goals" data-slide="15">
+  <h3>Goals for Lex</h3>
+  <ul>
+    <li>High readability, to be evaluated in a planned user study.</li>
+    <li>Close correspondence to legal texts in structure and form.</li>
+    <li>Relatively easy auditing of whether a formalization accurately represents the law it formalizes.</li>
+    <li>Two compilation targets: a documentation-like HTML representation of the
+    formalization, and a logical formula that recent runtime enforcers can enforce.
+    The compiler checks the enforceability requirements itself.</li>
+  </ul>
+</section>
+
+<section class="slide" id="section-labels" data-slide="16">
+  <h3>Section labels</h3>
+  <p>A Lex file mirrors the hierarchy of the law it formalizes. Here is
+  <a href="https://www.law.cornell.edu/uscode/text/26/121">26 U.S. Code § 121</a>,
+  “Exclusion of gain from sale of principal residence”. The US Code nests titles,
+  chapters and sections more deeply than most laws, so Lex lets a level repeat:
+  <code>title[1]</code> is a level below <code>title</code>.</p>
+  <div class="side-by-side">
+    <pre data-lang="lex" data-title="Lex">
+      law "U.S. Code"
+      title "26"
+      title[1] "A"
+      chapter "1"
+      chapter[1] "B"
+      section "III"
+      article "121"
+    </pre>
+    <div class="code-block">
+      <div class="code-title">Generated documentation</div>
+      <ol class="label-path">
+        <li><span class="lvl">law</span> U.S. Code</li>
+        <li><span class="lvl">title</span> 26</li>
+        <li><span class="lvl">title[1]</span> A</li>
+        <li><span class="lvl">chapter</span> 1</li>
+        <li><span class="lvl">chapter[1]</span> B</li>
+        <li><span class="lvl">section</span> III</li>
+        <li><span class="lvl">article</span> 121</li>
+      </ol>
+    </div>
+  </div>
+  <p class="notes">Every rule inherits a label from its position, such as
+  <code>U.S. Code / title 26 / title[1] A / chapter 1 / chapter[1] B / section III / article 121</code>,
+  so the compiled formula can always be traced back to the text. The thesis covers
+  this in <a data-thesis="subsection:lex-section-labels"></a>.</p>
+</section>
+
+<section class="slide" id="events-and-types" data-slide="17">
+  <h3>Events and types</h3>
+  <p>A formalization starts by declaring the types and events it talks about. Each
+  event has a docstring, which the generated documentation uses to phrase rules in
+  plain English.</p>
+  <pre data-lang="lex" data-title="Lex · GDPR (EU)">
+    type entity   is string
+    type person   is string
+    type task     is int
+    type action   is int
+    type data     is int
+    type consent  is int
+
+    event Nominates
+      """ Controller {c} nominates processor {p} to perform data processing task {t} """
+      c: entity
+      p: entity
+      t: task
+  </pre>
+</section>
+
+<section class="slide part" data-slide="18">
+  <h2 id="gdpr">Example: data processing under the GDPR</h2>
+</section>
+
+<section class="slide" id="obligation-rules" data-slide="19">
+  <h3>Obligation rules</h3>
+  <p>Article 5(1)(a) of the GDPR requires personal data to be processed lawfully,
+  fairly and transparently. In Lex, this is an obligation rule. The generated
+  documentation shows the rule next to its plain-English reading and the original
+  text.</p>
+  <div class="lexdoc">
+    <div class="lexdoc-head"><span class="lvl">article</span> 5 <span class="path">law GDPR / chapter II</span></div>
+    <div class="lexdoc-xml"><span class="xml">XML: GDPR</span> Grundsätze für die Verarbeitung personenbezogener Daten</div>
+    <div class="lexdoc-sub"><span class="lvl">paragraph</span> 1 <span class="path">law GDPR / chapter II / article 5</span></div>
+    <div class="lexdoc-sub"><span class="lvl">point</span> a <span class="path">law GDPR / chapter II / article 5 / paragraph 1</span></div>
+    <div class="lexdoc-body">
+      <pre data-lang="lex">
+        rule
+          whenever
+            PersonalDataProcessing(ep, x, z)
+          oblige
+            lawfulness(ep)
+            fairness(ep)
+            transparency(ep)
+        enforceable
+        suppressing PersonalDataProcessing
+      </pre>
+      <div class="reading">
+        <div class="reading-label">Reading</div>
+        <p>Whenever all of the following happen:</p>
+        <ul><li><var>x</var> is processing personal data <var>z</var> as part of processing operation <var>ep</var></li></ul>
+        <p>Then the following <strong>shall be obligatory</strong>:</p>
+        <ul>
+          <li>processing <var>ep</var> is lawful</li>
+          <li>processing <var>ep</var> is fair</li>
+          <li>processing <var>ep</var> is transparent</li>
+        </ul>
+        <p class="source"><span class="xml">XML: GDPR</span> <em>Personenbezogene Daten müssen […] a) auf rechtmäßige Weise, nach Treu und Glauben und in einer für die betroffene Person nachvollziehbaren Weise verarbeitet werden („Rechtmäßigkeit, Verarbeitung nach Treu und Glauben, Transparenz“);</em></p>
+      </div>
+    </div>
+  </div>
+  <p class="notes">The rule is marked <code>enforceable</code>: the compiler must be able to enforce
+  it by suppressing <code>PersonalDataProcessing</code>.</p>
+</section>
+
+<section class="slide" id="constitutive-rules" data-slide="20">
+  <h3>Constitutive rules</h3>
+  <p>When is processing lawful? Article 6(1)(a) answers: <em>“Processing shall be lawful
+  only if and to the extent that at least one of the following applies: (a) the data
+  subject has given consent to the processing of his or her personal data for one or
+  more specific purposes”</em> (<a href="https://gdpr-info.eu/art-6-gdpr/">GDPR Art. 6</a>).
+  A constitutive rule derives the institutional fact <code>lawfulness(ep)</code> from
+  brute facts.</p>
+  <div class="lexdoc">
+    <div class="lexdoc-head"><span class="lvl">article</span> 6 <span class="path">law GDPR / chapter II</span></div>
+    <div class="lexdoc-xml"><span class="xml">XML: GDPR</span> Rechtmäßigkeit der Verarbeitung</div>
+    <div class="lexdoc-sub"><span class="lvl">paragraph</span> 1 · <span class="lvl">point</span> 1 · <span class="lvl">subpoint</span> a <span class="path">law GDPR / chapter II / article 6</span></div>
+    <div class="lexdoc-body">
+      <pre data-lang="lex">
+        rule
+          whenever
+            PersonalDataProcessing(ep, x, z)
+            HasPurpose(ep, prp)
+            ONCE (GiveConsent(w, c) AND Authorizes(c, prp))
+            ONCE Nominates(y, x)
+            PersonalData(z, w)
+          constitute
+            lawfulness(ep)
+      </pre>
+      <div class="reading">
+        <div class="reading-label">Reading</div>
+        <p>Whenever all of the following happen:</p>
+        <ul>
+          <li><var>x</var> is processing personal data <var>z</var> as part of processing operation <var>ep</var></li>
+          <li>processing operation <var>ep</var> has purpose <var>prp</var></li>
+          <li>at some point in the past, data subject <var>w</var> gave consent <var>c</var>, and consent <var>c</var> authorizes usage of personal data for purpose <var>prp</var></li>
+          <li>at some point in the past, controller <var>y</var> nominated processor <var>x</var> to process personal data on <var>y</var>'s behalf</li>
+          <li><var>z</var> is personal data of data subject <var>w</var></li>
+        </ul>
+        <p>Then the following <strong>shall be constituted</strong>:</p>
+        <ul><li>processing <var>ep</var> is lawful</li></ul>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="slide" id="exception-rules" data-slide="21">
+  <h3>Exception rules</h3>
+  <p>Article 8 sets conditions for a child's consent. In a simplified form: consent
+  given by a minor does not make processing lawful. The exception refers to the rule
+  it disables by its section label.</p>
+  <div class="lexdoc">
+    <div class="lexdoc-head"><span class="lvl">article</span> 8 <span class="path">law GDPR / chapter II</span></div>
+    <div class="lexdoc-xml"><span class="xml">XML: GDPR</span> Bedingungen für die Einwilligung eines Kindes in Bezug auf Dienste der Informationsgesellschaft</div>
+    <div class="lexdoc-sub"><span class="lvl">paragraph</span> 1 <span class="path">law GDPR / chapter II / article 8</span></div>
+    <div class="lexdoc-body">
+      <pre data-lang="lex">
+        rule
+          whenever
+            isMinor(w)
+          except
+            article 6 paragraph 1 point 1 subpoint a
+      </pre>
+      <div class="reading">
+        <div class="reading-label">Reading</div>
+        <p>Whenever all of the following happen:</p>
+        <ul><li>data subject <var>w</var> is a minor</li></ul>
+        <p>Then <a href="#constitutive-rules">article 6 paragraph 1 point 1 subpoint a</a> <strong>shall not apply</strong>.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="slide" id="type-system" data-slide="22">
+  <h3>Lifting the EMFOTL type system to Lex</h3>
+  <p>An obligation rule $r : \phi \Rightarrow \psi$ is complied with (made true) in one
+  of three ways: suppress its conditions, cause its effects, or cause one of the
+  exceptions to the rule.</p>
+  $$\prfrule{REG$_L$}{r : \phi \Rightarrow \psi \in R \quad \Gamma \vdash \phi : \Sup}{\Gamma \vdash \comply(r) : \Cau}
+    \qquad
+    \prfrule{REG$_R$}{r : \phi \Rightarrow \psi \in R \quad \Gamma \vdash \psi : \Cau}{\Gamma \vdash \comply(r) : \Cau}
+    \qquad
+    \prfrule{REG$_E$}{\Gamma \vdash \exc(r) : \Cau}{\Gamma \vdash \comply(r) : \Cau}$$
+  <p class="notes">The GDPR obligation above uses the first way: it is enforced by suppressing
+  <code>PersonalDataProcessing</code>.</p>
+</section>
+
+<section class="slide" id="temporal-patterns" data-slide="23">
+  <h3>Temporal patterns</h3>
+  <p>Conditions in Lex can carry a temporal pattern written in words. Each pattern
+  compiles to an MFOTL operator and determines whether the condition looks into the
+  past or the future, which in turn affects how it can be typed.</p>
+  <div class="table-scroll">
+  <table class="ruled patterns">
+    <tr><td><em>Lex pattern</em></td><td><em>Formula</em></td><td><em>Looks at</em></td></tr>
+    <tr class="rule-before"><td>—</td><td>$\phi$</td><td>Present</td></tr>
+    <tr><td><code>eventually [itv]</code></td><td>$\Eventually_I \phi$</td><td>Future</td></tr>
+    <tr><td><code>eventually delaying if</code> $\psi$ <code>[itv]</code></td><td>$\psi \UUntil_I \phi$</td><td>Future</td></tr>
+    <tr><td><code>always in the future [itv]</code></td><td>$\Always_I \phi$</td><td>Future</td></tr>
+    <tr><td><code>once [itv]</code></td><td>$\Once_I \phi$</td><td>Past</td></tr>
+    <tr><td><code>always in the past [itv]</code></td><td>$\Historically_I \phi$</td><td>Past</td></tr>
+    <tr><td><code>always since</code> $\psi$ <code>[itv]</code></td><td>$\phi \Since_I \psi$</td><td>Past</td></tr>
+  </table>
+  </div>
+</section>
+
+<section class="slide" id="compiled-result" data-slide="24">
+  <h3>The compiled result</h3>
+  <p>The three GDPR rules compile to a single MFOTL formula and a signature that
+  WhyEnf can enforce. The exception becomes <code>Exception2</code>, the constitutive
+  rule becomes <code>lawfulness</code>, and the obligation becomes the formula under
+  $\Always$.</p>
+  <div class="side-by-side code-pair">
+  <pre data-lang="mfotl" data-title="MFOTL formula">
+    let Exception2(w) = isMinor(w)
+    let lawfulness(_p1) = ∃c. ∃ep. ∃prp. ∃w. ∃x. ∃y. ∃z.
+                          ((((((PersonalDataProcessing(ep, x, z)
+                                ∧ HasPurpose(ep, prp))
+                                ∧ ⧫ (GiveConsent(w, c)
+                                ∧ Authorizes(c, prp)))
+                                ∧ ⧫ Nominates(y, x))
+                                ∧ PersonalData(z, w))
+                             ∧ ¬Exception2(w))
+                          ; _p1 <- ep)
+
+    □ ∀ep. ∀x. ∀z. (PersonalDataProcessing(ep, x, z) ∧:L ⊤)
+        →:L ((lawfulness(ep) ∧ fairness(ep)) ∧ transparency(ep))
+  </pre>
+  <pre data-lang="mfotl" data-title="MFOTL signature">
+    Authorizes(c__: int, prp__: string)
+    GiveConsent(w__: int, c__: int)
+    HasPurpose(ep__: int, prp__: string)
+    Nominates(y__: int, x__: int)
+    PersonalData(z__: int, w__: int)
+    PersonalDataProcessing(ep__: int, x__: int, z__: int)-
+    fairness(ep__: int)
+    isMinor(w__: int)
+    lawfulness(ep__: int)
+    transparency(ep__: int)
+    ts(~return_value__: time)
+    fun day(t__: time) -> time
+    Exception2(w__: int)
+  </pre>
+  </div>
+  <p class="notes">The thesis's <a data-thesis="appendixcompiled-lex-examples"></a> has the compiled
+  output of its own examples.</p>
+</section>
+
+<section class="slide" id="pipeline" data-slide="25">
+  <h3>The compilation pipeline</h3>
+  <p>The compiler passes a Lex file through four intermediate representations before
+  writing the files WhyEnf reads.</p>
+  <ol class="pipeline">
+    <li class="stage">.lex file</li>
+    <li class="step">Parse Lex code</li>
+    <li class="stage"><code>lex</code></li>
+    <li class="step">Type terms, compute labels, collect exceptions</li>
+    <li class="stage"><code>tlex</code></li>
+    <li class="step">Sort rules topologically, check enforceability</li>
+    <li class="stage"><code>elex</code></li>
+    <li class="step">Prepare signature and MFOTL formula</li>
+    <li class="stage"><code>clex</code></li>
+    <li class="step">Compile and linearize as strings</li>
+    <li class="stage">WhyEnf files</li>
+  </ol>
+  <p class="notes">The thesis extends this pipeline with refinement; see
+  <a data-thesis="section:implementation-in-the-lex-compiler"></a>.</p>
+</section>
+
+<section class="slide part">
+  <h2 id="outlook">Outlook</h2>
+</section>
+
+<section class="slide" id="future-work" data-slide="26">
+  <h3>Future work, and where it went</h3>
+  <ul>
+    <li><strong>Refinement.</strong> Users should be able to take an existing
+    formalization and specify how its high-level events map to the events of a given
+    system, so that one formalization can be reused across use cases. This became the
+    master's thesis: <a href="../">Refinement in Lex</a>, in particular
+    <a data-thesis="chapter:refinement-of-cre-enforcement"></a> and
+    <a data-thesis="section:methodology-refinement-of-lex-specifications"></a>.</li>
+    <li><strong>Tooling:</strong> a VS Code extension and a language server.</li>
+    <li><strong>A formalization of the GDPR.</strong></li>
+    <li><strong>A user study</strong> on the usability of Lex.</li>
+  </ul>
+  <p>Lex itself has since been published as <cite data-ref="lex"></cite>.</p>
+</section>

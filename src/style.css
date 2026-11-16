@@ -374,11 +374,29 @@ a.ref { font-variant-numeric: tabular-nums; }
   will-change: transform;
   transition: opacity 0.1s ease;
 }
-.rail-trail span { display: block; white-space: nowrap; font-family: var(--mono); }
+/* Both lines are cut to the free margin (--room, measured by site.js), so the
+   label never runs into the text. The section number stays bright and the
+   title is grey, so the number survives even in a narrow margin. */
+.rail-trail > span { display: block; white-space: nowrap; font-family: var(--mono); max-width: var(--room, 12rem); margin-left: auto; overflow: hidden; text-overflow: ellipsis; }
 .rail-trail .c { font-size: 0.66rem; letter-spacing: 0.04em; color: var(--muted); }
-.rail-trail .s { font-size: 0.72rem; color: var(--text); }
+.rail-trail .s { font-size: 0.72rem; color: var(--muted); }
+.rail-trail .s .num { color: var(--text); }
 .rail-trail .s:empty { display: none; }
 .rail.hovering .rail-trail { opacity: 0; }
+/* While hovering, a backdrop fades the text behind the labels out, so the
+   (single) full name stays legible even where it reaches over the text. */
+.rail-scrim {
+  position: absolute;
+  top: -12vh;
+  bottom: -12vh;
+  right: 1px; /* stops just left of the line, which stays visible */
+  width: 28rem;
+  background: linear-gradient(to right, transparent, var(--bg) 8rem);
+  opacity: 0;
+  transition: opacity 0.12s ease;
+  pointer-events: none;
+}
+.rail.hovering .rail-scrim { opacity: 0.94; }
 @media (max-width: 68rem) { .rail { display: none; } }
 
 /* Thin progress bar, shown where the rail is hidden. */

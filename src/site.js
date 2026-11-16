@@ -9,6 +9,8 @@
   const sections = links.map((a) => document.getElementById(a.dataset.target));
   const levels = links.map((a) => Number(a.className.match(/l(\d)/)?.[1] || 1));
   const names = links.map((a) => a.querySelector('.name').textContent);
+  const nums = links.map((a) => a.dataset.num || '');
+  const esc = (t) => t.replace(/&/g, '&amp;').replace(/</g, '&lt;');
   const trail = rail && rail.querySelector('.rail-trail');
   const trailC = trail && trail.querySelector('.c');
   const trailS = trail && trail.querySelector('.s');
@@ -24,6 +26,13 @@
     pos = tops.map((t) => Math.min(1, Math.max(0, (t - start) / span)));
     links.forEach((a, i) => { a.style.top = (pos[i] * 100) + '%'; });
     railH = rail ? rail.getBoundingClientRect().height : 0;
+    // Free margin between the text column and the labels, for the trail.
+    if (rail) {
+      const cs = getComputedStyle(post);
+      const textRight = post.getBoundingClientRect().right - parseFloat(cs.paddingRight);
+      const labelRight = rail.getBoundingClientRect().left - 14 - 9;
+      rail.style.setProperty('--room', Math.max(56, labelRight - textRight - 24) + 'px');
+    }
     passedUpTo = -1;
     links.forEach((a) => a.classList.remove('passed'));
     shownCurrent = -2;
@@ -56,13 +65,16 @@
       let chapter = current;
       while (chapter > 0 && levels[chapter] !== 1) chapter--;
       trailC.textContent = chapter >= 0 ? names[chapter] : '';
-      trailS.textContent = current > chapter ? names[current] : '';
+      if (current > chapter) {
+        const n = nums[current], title = n ? names[current].slice(n.length).trim() : names[current];
+        trailS.innerHTML = n ? `<span class="num">${esc(n)}</span> ${esc(title)}` : esc(title);
+      } else trailS.textContent = '';
     }
   }
 
   // Hovering in the band left of the line: the nearest tick (within 14px) is
-  // highlighted; other ticks within 70px show their names in grey, fading with
-  // distance. In a long stretch with no ticks nearby, the closest tick above
+  // highlighted with its full name; other ticks within 70px show their numbers
+  // in grey, fading with distance. In a long stretch with no ticks nearby, the closest tick above
   // and below are shown instead. Labels never overlap: closer ones win.
   // Work is done at most once per frame, with the rail measured on entry.
   const zone = rail && rail.querySelector('.rail-zone');
@@ -70,7 +82,12 @@
     const RANGE = 70, HIT = 14, GAP = 15;
     let lit = [], hot = -1, railTop = 0, lastY = null, pending = false;
     const clear = () => {
-      lit.forEach((i) => { links[i].classList.remove('hot', 'near'); links[i].querySelector('.name').style.opacity = ''; });
+      lit.forEach((i) => {
+        links[i].classList.remove('hot', 'near');
+        const nm = links[i].querySelector('.name');
+        nm.style.opacity = '';
+        nm.textContent = names[i];
+      });
       lit = [];
       hot = -1;
     };
@@ -92,6 +109,8 @@
         lit.push(x.i);
         if (x === pick[0] && x.d <= HIT && !x.far) { links[x.i].classList.add('hot'); hot = x.i; continue; }
         links[x.i].classList.add('near');
+        // Neighbours show only their number; only the nearest is named in full.
+        if (nums[x.i]) links[x.i].querySelector('.name').textContent = nums[x.i];
         links[x.i].querySelector('.name').style.opacity = x.far ? 0.55 : Math.max(0.2, 1 - x.d / RANGE).toFixed(2);
       }
     };

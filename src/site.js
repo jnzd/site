@@ -1,46 +1,62 @@
 // Section rail and reading progress.
+// Scrolling only reads window.scrollY: heading positions are measured once
+// (and again on resize or when fonts load), and only what changed is written.
 (() => {
-  const root = document.documentElement;
   const rail = document.querySelector('.rail');
+  const bar = document.querySelector('.progress');
   const post = document.querySelector('.post');
   const links = rail ? [...rail.querySelectorAll('a')] : [];
   const sections = links.map((a) => document.getElementById(a.dataset.target));
   const levels = links.map((a) => Number(a.className.match(/l(\d)/)?.[1] || 1));
   const names = links.map((a) => a.querySelector('.name').textContent);
   const trail = rail && rail.querySelector('.rail-trail');
-  let start = 0;
-  let span = 1;
-  let pos = []; // each tick's position on the rail, 0..1
+  const trailC = trail && trail.querySelector('.c');
+  const trailS = trail && trail.querySelector('.s');
+  let start = 0, span = 1, railH = 0;
+  let tops = [];  // each heading's position in the document, px
+  let pos = [];   // each tick's position on the rail, 0..1
+  let shownCurrent = -2, passedUpTo = -1, visible = null;
 
-  // Each tick sits at the same fraction of the rail as its heading's position
-  // within the article.
   function layout() {
-    start = post.offsetTop;
+    start = post.getBoundingClientRect().top + window.scrollY;
     span = Math.max(1, post.offsetHeight - window.innerHeight * 0.5);
-    pos = sections.map((s) => Math.min(1, Math.max(0, (s.getBoundingClientRect().top + window.scrollY - start) / span)));
+    tops = sections.map((s) => s.getBoundingClientRect().top + window.scrollY);
+    pos = tops.map((t) => Math.min(1, Math.max(0, (t - start) / span)));
     links.forEach((a, i) => { a.style.top = (pos[i] * 100) + '%'; });
+    railH = rail ? rail.getBoundingClientRect().height : 0;
+    passedUpTo = -1;
+    links.forEach((a) => a.classList.remove('passed'));
+    shownCurrent = -2;
     update();
   }
 
   function update() {
-    const y = window.scrollY + window.innerHeight * 0.25;
-    const progress = Math.min(1, Math.max(0, (y - start) / span));
-    root.style.setProperty('--progress', progress.toFixed(4));
+    const sy = window.scrollY;
+    const progress = Math.min(1, Math.max(0, (sy + window.innerHeight * 0.25 - start) / span));
+    if (bar) bar.style.setProperty('--p', progress.toFixed(4));
     if (!rail) return;
-    rail.classList.toggle('visible', window.scrollY > window.innerHeight * 0.5);
+    rail.style.setProperty('--p', progress.toFixed(4));
+    rail.style.setProperty('--py', (progress * railH).toFixed(1) + 'px');
+    const show = sy > window.innerHeight * 0.5;
+    if (show !== visible) { rail.classList.toggle('visible', show); visible = show; }
+    // Ticks before the progress point are "passed" (positions are sorted).
+    let upTo = -1;
+    while (upTo + 1 < pos.length && pos[upTo + 1] <= progress) upTo++;
+    for (let i = Math.min(upTo, passedUpTo) + 1; i <= Math.max(upTo, passedUpTo); i++) links[i].classList.toggle('passed', i <= upTo);
+    passedUpTo = upTo;
+    // The current heading is the last one above 30% of the window.
+    const line = sy + window.innerHeight * 0.3;
     let current = -1;
-    sections.forEach((s, i) => {
-      if (s.getBoundingClientRect().top <= window.innerHeight * 0.3) current = i;
-    });
-    links.forEach((a, i) => {
-      a.classList.toggle('passed', pos[i] <= progress);
-      if (i === current) a.setAttribute('aria-current', 'location'); else a.removeAttribute('aria-current');
-    });
+    while (current + 1 < tops.length && tops[current + 1] <= line) current++;
+    if (current === shownCurrent) return;
+    if (shownCurrent >= 0) links[shownCurrent].removeAttribute('aria-current');
+    if (current >= 0) links[current].setAttribute('aria-current', 'location');
+    shownCurrent = current;
     if (trail) {
       let chapter = current;
       while (chapter > 0 && levels[chapter] !== 1) chapter--;
-      trail.querySelector('.c').textContent = chapter >= 0 ? names[chapter] : '';
-      trail.querySelector('.s').textContent = current > chapter ? names[current] : '';
+      trailC.textContent = chapter >= 0 ? names[chapter] : '';
+      trailS.textContent = current > chapter ? names[current] : '';
     }
   }
 
@@ -48,21 +64,22 @@
   // highlighted; other ticks within 70px show their names in grey, fading with
   // distance. In a long stretch with no ticks nearby, the closest tick above
   // and below are shown instead. Labels never overlap: closer ones win.
+  // Work is done at most once per frame, with the rail measured on entry.
   const zone = rail && rail.querySelector('.rail-zone');
   if (zone) {
     const RANGE = 70, HIT = 14, GAP = 15;
-    let lit = [];
-    let hot = -1;
+    let lit = [], hot = -1, railTop = 0, lastY = null, pending = false;
     const clear = () => {
       lit.forEach((i) => { links[i].classList.remove('hot', 'near'); links[i].querySelector('.name').style.opacity = ''; });
       lit = [];
       hot = -1;
     };
-    zone.addEventListener('mousemove', (e) => {
+    const render = () => {
+      pending = false;
+      if (lastY === null) return;
       clear();
-      const r = rail.getBoundingClientRect();
-      const y = e.clientY - r.top;
-      const dist = pos.map((p, i) => ({ i, ty: p * r.height, d: Math.abs(p * r.height - y) })).sort((p, q) => p.d - q.d);
+      const y = lastY - railTop;
+      const dist = pos.map((p, i) => ({ i, ty: p * railH, d: Math.abs(p * railH - y) })).sort((p, q) => p.d - q.d);
       let pick = dist.filter((x) => x.d <= RANGE);
       if (!pick.length) {
         const above = dist.find((x) => x.ty < y), below = dist.find((x) => x.ty >= y);
@@ -77,14 +94,19 @@
         links[x.i].classList.add('near');
         links[x.i].querySelector('.name').style.opacity = x.far ? 0.55 : Math.max(0.2, 1 - x.d / RANGE).toFixed(2);
       }
+    };
+    zone.addEventListener('mouseenter', () => {
+      const r = rail.getBoundingClientRect();
+      railTop = r.top;
+      railH = r.height;
       rail.classList.add('hovering');
     });
-    zone.addEventListener('mouseleave', () => { clear(); rail.classList.remove('hovering'); });
-    zone.addEventListener('click', () => {
-      if (hot < 0) return;
-      // Same as following the tick's link (scrolls smoothly via CSS).
-      links[hot].click();
+    zone.addEventListener('mousemove', (e) => {
+      lastY = e.clientY;
+      if (!pending) { pending = true; requestAnimationFrame(render); }
     });
+    zone.addEventListener('mouseleave', () => { lastY = null; clear(); rail.classList.remove('hovering'); });
+    zone.addEventListener('click', () => { if (hot >= 0) links[hot].click(); });
   }
 
   let queued = false;
@@ -189,6 +211,7 @@ const reduceMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
   function tick(now) {
     const dt = Math.min(50, now - (last || now));
     last = now;
+    if (!running) return;
     if (document.hidden) { requestAnimationFrame(tick); return; }
     if (now - lastSpawn > 1500) { spawn(); lastSpawn = now; }
     for (let i = live.length - 1; i >= 0; i--) {
@@ -208,7 +231,12 @@ const reduceMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
     }
     requestAnimationFrame(tick);
   }
-  requestAnimationFrame(tick);
+  // Only animate while the drawing is on screen.
+  let running = false;
+  new IntersectionObserver(([e]) => {
+    if (e.isIntersecting && !running) { running = true; last = 0; requestAnimationFrame(tick); }
+    else if (!e.isIntersecting) running = false;
+  }).observe(svg);
 })();
 
 // Web-only figures draw their branches once they scroll into view.

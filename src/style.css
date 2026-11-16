@@ -314,18 +314,24 @@ a.ref { font-variant-numeric: tabular-nums; }
 }
 .rail.visible { opacity: 1; }
 .rail::before {
-  /* filled part of the line, driven by --progress from site.js */
+  /* filled part of the line; site.js sets --p (0..1) on the rail only, and
+     the fill scales on the compositor, so scrolling stays smooth */
   content: "";
   position: absolute;
   inset: 0 0 auto 0;
-  height: calc(var(--progress, 0) * 100%);
+  height: 100%;
+  transform: scaleY(var(--p, 0));
+  transform-origin: top;
+  will-change: transform;
   background: var(--accent);
 }
 .rail::after {
   content: "";
   position: absolute;
   left: -3.5px;
-  top: calc(var(--progress, 0) * 100% - 4px);
+  top: -4px;
+  transform: translateY(var(--py, 0px));
+  will-change: transform;
   width: 8px;
   height: 8px;
   border-radius: 50%;
@@ -335,7 +341,7 @@ a.ref { font-variant-numeric: tabular-nums; }
 /* Ticks end at the line: long for chapters, medium for sections, short for
    subsections. Each tick box is 14px wide, so all labels share one edge. */
 .rail a { position: absolute; right: 0; width: 14px; height: 9px; transform: translateY(-50%); }
-.rail .tick { position: absolute; right: 0; top: 4px; height: 1px; background: var(--faint); transition: background 0.15s; }
+.rail .tick { position: absolute; right: 0; top: 4px; height: 1px; background: var(--faint); }
 .rail a.l1 .tick { width: 14px; }
 .rail a.l2 .tick { width: 9px; }
 .rail a.l3 .tick { width: 5px; }
@@ -350,7 +356,7 @@ a.ref { font-variant-numeric: tabular-nums; }
   color: var(--muted);
   white-space: nowrap;
   opacity: 0;
-  transition: opacity 0.18s ease, color 0.18s ease;
+  transition: opacity 0.08s linear;
   pointer-events: none;
 }
 .rail a.near .name, .rail a.hot .name, .rail a:focus-visible .name { background: var(--bg); padding-left: 0.3rem; }
@@ -361,11 +367,12 @@ a.ref { font-variant-numeric: tabular-nums; }
 .rail-trail {
   position: absolute;
   right: calc(14px + 0.55rem);
-  top: calc(var(--progress, 0) * 100%);
-  transform: translateY(-50%);
+  top: 0;
+  transform: translateY(calc(var(--py, 0px) - 50%));
   text-align: right;
   pointer-events: none;
-  transition: opacity 0.18s ease;
+  will-change: transform;
+  transition: opacity 0.1s ease;
 }
 .rail-trail span { display: block; white-space: nowrap; font-family: var(--mono); }
 .rail-trail .c { font-size: 0.66rem; letter-spacing: 0.04em; color: var(--muted); }
@@ -376,7 +383,7 @@ a.ref { font-variant-numeric: tabular-nums; }
 
 /* Thin progress bar, shown where the rail is hidden. */
 .progress { position: fixed; inset: 0 0 auto 0; height: 2px; z-index: 10; display: none; }
-.progress span { display: block; height: 100%; width: calc(var(--progress, 0) * 100%); background: var(--accent); }
+.progress span { display: block; height: 100%; width: 100%; transform: scaleX(var(--p, 0)); transform-origin: left; background: var(--accent); will-change: transform; }
 @media (max-width: 68rem) { .progress { display: block; } }
 
 /* ---- Footer ---- */

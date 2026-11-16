@@ -1,6 +1,7 @@
 // Builds the LaTeX thesis (see site.config.json) into a single static page in dist/.
 //   node build.mjs          one-off build
 //   node build.mjs --serve  build, watch for changes, serve on localhost
+import crypto from 'node:crypto';
 import fs from 'node:fs';
 import path from 'node:path';
 import http from 'node:http';
@@ -79,7 +80,13 @@ function build() {
   if (fs.existsSync(at('public'))) fs.cpSync(at('public'), dist, { recursive: true });
 
   if (fs.existsSync(path.join(thesisDir, 'assets'))) fs.cpSync(path.join(thesisDir, 'assets'), path.join(dist, 'assets'), { recursive: true, filter: (f) => !f.endsWith('.pdf') });
-  fs.writeFileSync(path.join(dist, 'index.html'), render());
+  // Links to the stylesheet and script carry a hash of their content, so a
+  // browser fetches the new file after every change instead of a cached one.
+  const version = (f) => crypto.createHash('sha256').update(fs.readFileSync(at(f))).digest('hex').slice(0, 10);
+  const html = render()
+    .replace('href="style.css"', `href="style.css?v=${version('src/style.css')}"`)
+    .replace('src="site.js"', `src="site.js?v=${version('src/site.js')}"`);
+  fs.writeFileSync(path.join(dist, 'index.html'), html);
   fs.copyFileSync(at('src/style.css'), path.join(dist, 'style.css'));
   fs.copyFileSync(at('src/site.js'), path.join(dist, 'site.js'));
 

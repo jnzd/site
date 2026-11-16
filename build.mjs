@@ -43,13 +43,17 @@ function render() {
     config.pdf && `<a class="button" href="${esc(config.pdf)}">Read the PDF</a>`,
     config.code && `<a class="button" href="${esc(config.code)}">Source</a>`,
   ].filter(Boolean).join('');
+  const pub = config.publication;
+  const publication = pub
+    ? `${esc(pub.text)} <a href="${esc(pub.url)}"><em>${esc(pub.title)}</em></a> (${esc(pub.venue)}).`
+    : '';
   const rail = toc.map((s) =>
     `<a href="#${esc(s.id)}" data-target="${esc(s.id)}"><span class="tick"></span><span class="name">${s.num ? s.num + ' ' : ''}${esc(s.text)}</span></a>`).join('');
 
   const fill = {
     lang: 'en', title: meta.title, subtitle: config.subtitle || '', description: config.subtitle || meta.title,
     author: meta.author, institution: [meta.department, config.institution].filter(Boolean).join(', '), date: meta.date,
-    byline, people, actions, rail, content: html,
+    byline, people, actions, publication, rail, content: html,
   };
   return fs.readFileSync(at('src/template.html'), 'utf8')
     .replace(/\{\{\{(\w+)\}\}\}/g, (_, k) => fill[k] ?? '')

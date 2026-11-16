@@ -40,22 +40,21 @@ function render() {
     `<span>${esc([meta.thesistype, config.institution].filter(Boolean).join(', '))}</span>`,
     meta.date && `<span>${esc(meta.date)}</span>`,
   ].filter(Boolean).join('');
-  // The thesis PDF is the main action; a related paper gets a quieter
-  // button, with its full title as a short line underneath.
+  // The thesis PDF is the main action; a related paper gets a quieter button
+  // (its full title shows on hover).
   const pub = config.publication;
   const actions = [
     config.pdf && `<a class="button primary" href="${esc(config.pdf)}">Read the PDF</a>`,
     pub && `<a class="button" href="${esc(pub.url)}" title="${esc(pub.title)} (${esc(pub.venue)})">${esc(pub.label)} <span aria-hidden="true">↗</span></a>`,
     config.code && `<a class="button" href="${esc(config.code)}">Source</a>`,
   ].filter(Boolean).join('');
-  const publication = pub ? `<em>${esc(pub.title)}</em>` : '';
   const rail = toc.map((s) =>
     `<a href="#${esc(s.id)}" data-target="${esc(s.id)}"><span class="tick"></span><span class="name">${s.num ? s.num + ' ' : ''}${esc(s.text)}</span></a>`).join('');
 
   const fill = {
     lang: 'en', title: meta.title, subtitle: config.subtitle || '', description: config.subtitle || meta.title,
     author: meta.author, institution: [meta.department, config.institution].filter(Boolean).join(', '), date: meta.date,
-    byline, people, actions, publication, rail,
+    byline, people, actions, rail,
     heroVisual: config.heroVisual ? fs.readFileSync(at(config.heroVisual), 'utf8') : '', content: html,
   };
   return fs.readFileSync(at('src/template.html'), 'utf8')

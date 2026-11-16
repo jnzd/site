@@ -86,7 +86,7 @@ const reduceMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
   const accentLine = 'color-mix(in srgb, var(--accent) 55%, var(--line))';
   const layers = [
     { name: 'Law', sub: 'Directive 2002/58/EC', dots: 34, color: 'var(--faint)', r: 1.6 },
-    { name: 'Lex specification', sub: 'abstract events', dots: 20, color: 'var(--fig-blue)', r: 2 },
+    { name: 'Lex specification', sub: 'abstract events', dots: 20, color: 'var(--tok-fn)', r: 2 },
     { name: 'Refinement', sub: 'assume · strengthen', dots: 0, accent: true },
     { name: 'Running system', sub: 'enforced at runtime', dots: 8, color: 'var(--accent)', r: 2.6 },
   ];
@@ -129,7 +129,7 @@ const reduceMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
     if (live.length >= 4) return;
     const [x, dy] = inside();
     const stops = rnd() < 0.5;
-    live.push({ c: el('circle', { cx: x, r: 2.2, fill: 'var(--fig-blue)' }, fx), x, dy, t: 0, end: stops ? 2 : 3, stops });
+    live.push({ c: el('circle', { cx: x, r: 2.2, fill: 'var(--tok-fn)' }, fx), x, dy, t: 0, end: stops ? 2 : 3, stops });
   }
   let last = 0, lastSpawn = -2000;
   function tick(now) {
@@ -143,7 +143,7 @@ const reduceMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
       const pos = Math.min(p.t, p.end);
       const y = yOf(0) + pos * GAP + p.dy;
       p.c.setAttribute('cy', y);
-      p.c.setAttribute('fill', pos > 2 ? 'var(--accent)' : 'var(--fig-blue)');
+      p.c.setAttribute('fill', pos > 2 ? 'var(--accent)' : 'var(--tok-fn)');
       p.c.setAttribute('opacity', Math.min(1, p.t * 3));
       if (p.t >= p.end) {
         const mark = el('circle', { cx: p.x, cy: y, r: 3, class: p.stops ? 'ring' : 'ripple', 'stroke-width': 1.2 }, fx);

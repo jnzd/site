@@ -5,22 +5,25 @@
 @font-face { font-family: "IBM Plex Sans"; font-weight: 600; font-style: italic; font-display: swap; src: url(fonts/ibm-plex-sans-latin-600-italic.woff2) format("woff2"); }
 @font-face { font-family: "IBM Plex Mono"; font-weight: 400; font-style: normal; font-display: swap; src: url(fonts/ibm-plex-mono-latin-400-normal.woff2) format("woff2"); }
 
-/* ---- Theme: change these to restyle the whole site ---- */
+/* ---- Theme: change these to restyle the whole site ----
+   Ink & vermilion: black, white and greys with a single vermilion accent.
+   Code is highlighted mostly by weight; logical operators take the accent. */
 :root {
-  --bg: #0c0d10;
-  --text: #e4e2dc;
+  --bg: #0a0a0a;
+  --text: #ececec;
   --strong: #ffffff;
-  --muted: #9b988f;
-  --faint: #5d5b56;
-  --line: #26272c;
-  --accent: #6fd0a8;
-  --tok-kw: #f08fc0;
-  --tok-op: #7fd08a;
-  --tok-str: #c8a2f5;
-  --tok-com: #8a8880;
-  --fig-blue: #7aa7ff;
-  --fig-purple: #d58cf0;
-  --panel: #121318;
+  --muted: #8c8c8c;
+  --faint: #4a4a4a;
+  --line: #222222;
+  --accent: #ff6a3d;
+  --tok-kw: #ececec;
+  --tok-op: #ff6a3d;
+  --tok-str: #9a9a9a;
+  --tok-com: #6a6a6a;
+  --tok-fn: #ececec;
+  --fig-blue: #ff6a3d;
+  --fig-purple: #9a9a9a;
+  --panel: #141414;
   --column: 40rem;
   --sans: "IBM Plex Sans", "Helvetica Neue", system-ui, sans-serif;
   --mono: "IBM Plex Mono", ui-monospace, Menlo, monospace;
@@ -28,20 +31,21 @@
 }
 @media (prefers-color-scheme: light) {
   :root {
-    --bg: #fbfaf7;
-    --text: #25262a;
+    --bg: #fafafa;
+    --text: #141414;
     --strong: #000000;
-    --muted: #6a6862;
-    --faint: #a9a69f;
-    --line: #e2dfd8;
-    --accent: #14795a;
-    --tok-kw: #b0206f;
-    --tok-op: #1c7a2e;
-    --tok-str: #7a2bb8;
-    --tok-com: #77746c;
-    --fig-blue: #1f4fd0;
-    --fig-purple: #8a1fb0;
-    --panel: #f3f1ec;
+    --muted: #6b6b6b;
+    --faint: #b3b3b3;
+    --line: #e4e4e4;
+    --accent: #d4380d;
+    --tok-kw: #141414;
+    --tok-op: #d4380d;
+    --tok-str: #6b6b6b;
+    --tok-com: #9a9a9a;
+    --tok-fn: #141414;
+    --fig-blue: #d4380d;
+    --fig-purple: #6b6b6b;
+    --panel: #f1f1f1;
     color-scheme: light;
   }
 }
@@ -192,10 +196,10 @@ pre {
 /* ---- Listings, algorithms and syntax colours ---- */
 .tok-kw { color: var(--tok-kw); font-weight: 600; }
 .tok-op { color: var(--tok-op); font-weight: 600; }
-.tok-fn { color: var(--fig-blue); }
+.tok-fn { color: var(--tok-fn); }
 .tok-str { color: var(--tok-str); }
 .tok-com { color: var(--tok-com); }
-.tok-id { color: var(--fig-blue); }
+.tok-id { color: var(--tok-fn); }
 pre.listing { font-size: 0.78rem; line-height: 1.55; background: var(--panel); border: 0; padding: 1rem 1rem 1rem 0; width: 100%; }
 pre.listing .line { counter-increment: line; }
 pre.listing .line::before { content: counter(line); display: inline-block; width: 2.6rem; padding-right: 1rem; text-align: right; color: var(--faint); user-select: none; }
@@ -378,7 +382,7 @@ a.ref { font-variant-numeric: tabular-nums; }
 :is(.hero-layers, .refinement-tree) .txt { fill: var(--text); }
 :is(.hero-layers, .refinement-tree) .mut { fill: var(--muted); }
 :is(.hero-layers, .refinement-tree) .acc { fill: var(--accent); }
-.refinement-tree .fn { fill: var(--fig-blue); }
+.refinement-tree .fn { fill: var(--tok-fn); }
 .refinement-tree .kw { fill: var(--tok-kw); font-weight: 600; }
 .refinement-tree .op { fill: var(--tok-op); font-weight: 600; }
 .refinement-tree .cap { font: 600 8.5px var(--mono); letter-spacing: 0.14em; text-transform: uppercase; fill: var(--muted); }

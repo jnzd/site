@@ -6,8 +6,9 @@
 @font-face { font-family: "IBM Plex Mono"; font-weight: 400; font-style: normal; font-display: swap; src: url(fonts/ibm-plex-mono-latin-400-normal.woff2) format("woff2"); }
 
 /* ---- Theme: change these to restyle the whole site ----
-   Ink & vermilion: black, white and greys with a single vermilion accent.
-   Code is highlighted mostly by weight; logical operators take the accent. */
+   Ink & vermilion: black, white and greys with a single vermilion accent for
+   the page. Code and figures keep the report's colours (pink keywords, green
+   operators, purple strings, blue names). */
 :root {
   --bg: #0a0a0a;
   --text: #ececec;
@@ -16,13 +17,14 @@
   --faint: #4a4a4a;
   --line: #222222;
   --accent: #ff6a3d;
-  --tok-kw: #ececec;
-  --tok-op: #ff6a3d;
-  --tok-str: #9a9a9a;
-  --tok-com: #6a6a6a;
-  --tok-fn: #ececec;
-  --fig-blue: #ff6a3d;
-  --fig-purple: #9a9a9a;
+  /* code and figure colours as in the report (and the site's first theme) */
+  --tok-kw: #f08fc0;
+  --tok-op: #7fd08a;
+  --tok-str: #c8a2f5;
+  --tok-com: #8a8880;
+  --tok-fn: #7aa7ff;
+  --fig-blue: #7aa7ff;
+  --fig-purple: #d58cf0;
   --panel: #141414;
   --column: 40rem;
   --sans: "IBM Plex Sans", "Helvetica Neue", system-ui, sans-serif;
@@ -38,13 +40,13 @@
     --faint: #b3b3b3;
     --line: #e4e4e4;
     --accent: #d4380d;
-    --tok-kw: #141414;
-    --tok-op: #d4380d;
-    --tok-str: #6b6b6b;
-    --tok-com: #9a9a9a;
-    --tok-fn: #141414;
-    --fig-blue: #d4380d;
-    --fig-purple: #6b6b6b;
+    --tok-kw: #b0206f;
+    --tok-op: #1c7a2e;
+    --tok-str: #7a2bb8;
+    --tok-com: #77746c;
+    --tok-fn: #1f4fd0;
+    --fig-blue: #1f4fd0;
+    --fig-purple: #8a1fb0;
     --panel: #f1f1f1;
     color-scheme: light;
   }
@@ -361,7 +363,16 @@ a.ref { font-variant-numeric: tabular-nums; }
   transition: opacity 0.08s linear;
   pointer-events: none;
 }
-.rail a.near .name, .rail a.hot .name, .rail a:focus-visible .name { background: var(--bg); padding-left: 0.5rem; }
+.rail a.near .name, .rail a.hot .name, .rail a:focus-visible .name {
+  background: color-mix(in srgb, var(--bg) 72%, transparent);
+  -webkit-backdrop-filter: blur(6px);
+  backdrop-filter: blur(6px);
+  padding: 0.3rem 0.3rem 0.3rem 1.2rem;
+  -webkit-mask-image: linear-gradient(to right, transparent, #000 1.2rem), linear-gradient(to bottom, transparent, #000 0.3rem, #000 calc(100% - 0.3rem), transparent);
+  -webkit-mask-composite: source-in;
+  mask-image: linear-gradient(to right, transparent, #000 1.2rem), linear-gradient(to bottom, transparent, #000 0.3rem, #000 calc(100% - 0.3rem), transparent);
+  mask-composite: intersect;
+}
 /* The highlighted name is cut to the free margin like the trail: number
    bright, title grey. */
 .rail a.hot .name { max-width: var(--room, 12rem); overflow: hidden; text-overflow: ellipsis; color: var(--muted); }
@@ -379,9 +390,17 @@ a.ref { font-variant-numeric: tabular-nums; }
   pointer-events: none;
   will-change: transform;
   transition: opacity 0.1s ease;
-  /* small plate so the label stays legible over figures wider than the text */
-  background: var(--bg);
-  padding: 0.1rem 0 0.15rem 0.5rem;
+  /* soft plate so the label stays legible over figures wider than the text:
+     frosted and rounded, fading out on its left edge rather than a hard box */
+  background: color-mix(in srgb, var(--bg) 72%, transparent);
+  -webkit-backdrop-filter: blur(6px);
+  backdrop-filter: blur(6px);
+  padding: 0.4rem 0.3rem 0.45rem 1.6rem;
+  /* fades out on the left, top and bottom edges */
+  -webkit-mask-image: linear-gradient(to right, transparent, #000 1.6rem), linear-gradient(to bottom, transparent, #000 0.4rem, #000 calc(100% - 0.4rem), transparent);
+  -webkit-mask-composite: source-in;
+  mask-image: linear-gradient(to right, transparent, #000 1.6rem), linear-gradient(to bottom, transparent, #000 0.4rem, #000 calc(100% - 0.4rem), transparent);
+  mask-composite: intersect;
 }
 /* Both lines are cut to the free margin (--room, measured by site.js), so the
    label never runs into the text. The section number stays bright and the

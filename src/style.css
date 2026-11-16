@@ -522,6 +522,15 @@ var { font-style: normal; font-family: var(--mono); font-size: 0.88em; color: va
 table.ruled.operators td:nth-child(odd) { color: var(--muted); }
 table.ruled.patterns td:first-child { white-space: nowrap; }
 
+/* A statute with its phrases marked by the kind of rule they become. */
+.post blockquote.statute { color: var(--text); font-size: 0.95rem; }
+.statute mark { color: inherit; padding: 0 0.1em; border-radius: 2px; }
+.statute .m-a { background: color-mix(in srgb, var(--accent) 30%, transparent); }
+.statute .m-b { background: none; text-decoration: underline 2px color-mix(in srgb, var(--accent) 80%, transparent); text-underline-offset: 0.2em; }
+.statute .m-c { background: color-mix(in srgb, var(--muted) 30%, transparent); }
+.mark-key { font-size: 0.85rem; color: var(--muted); }
+.mark-key mark { color: var(--text); }
+
 /* Pipeline: representations (stages) alternate with the steps between them. */
 .post ol.pipeline { list-style: none; padding: 0; margin: 2rem 0; display: grid; grid-template-columns: max-content 1fr; gap: 0 1rem; }
 .post ol.pipeline > li { margin: 0; }
@@ -563,6 +572,8 @@ body.presenting .lexdoc, body.presenting .side-by-side, body.presenting .derivat
 }
 body.presenting figure { margin: 1.25rem 0; }
 body.presenting .notes { display: none; }
+/* No scroll fades on a slide: it is fitted so that nothing needs scrolling. */
+body.presenting .slide.current [data-more] { -webkit-mask-image: none; mask-image: none; }
 /* The pipeline runs in rows: each representation, then the step that follows it. */
 body.presenting .post ol.pipeline { gap: 0.45rem 1rem; align-items: center; }
 body.presenting .pipeline .step { grid-column: 2; margin: 0; padding: 0; border: 0; }

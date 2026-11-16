@@ -49,6 +49,7 @@ function render() {
     config.pdf && `<a class="button primary" href="${esc(config.pdf)}">Read the PDF</a>`,
     pub && `<a class="button" href="${esc(pub.url)}" title="${esc(pub.title)} (${esc(pub.venue)})">${esc(pub.label)} <span aria-hidden="true">↗</span></a>`,
     config.code && `<a class="button" href="${esc(config.code)}">Source</a>`,
+    ...(config.talks || []).filter((t) => t.button).map((t) => `<a class="button" href="${esc(t.slug)}/">${esc(t.button)}</a>`),
   ].filter(Boolean).join('');
   const rail = renderRail(toc);
 
@@ -63,7 +64,10 @@ function render() {
   const refs = {};
   [...html.matchAll(/<li id="ref-([^"]+)">/g)].forEach((m, i) => { refs[m[1]] = i + 1; });
   const ids = new Set([...html.matchAll(/\sid="([^"]+)"/g)].map((m) => m[1]));
-  return { page: fillTemplate(fill), toc, refs, ids, meta };
+  // Figure and table numbers ("Fig 2.3"), for {n} in talks' thesis links.
+  const labels = {};
+  for (const m of html.matchAll(/<figure[^>]*\sid="([^"]+)"[\s\S]*?<span class="label">([^<]+)<\/span>/g)) labels[m[1]] = m[2].trim();
+  return { page: fillTemplate(fill), toc, refs, ids, labels, meta };
 }
 
 function fillTemplate(fill) {
@@ -84,7 +88,7 @@ function renderRail(toc) {
 function renderTalkPage(talk, thesis) {
   const { html, toc, warnings } = renderTalk(fs.readFileSync(at(talk.source), 'utf8'), {
     macros: katexMacros(thesisDir), thesisToc: thesis.toc, thesisRefs: thesis.refs,
-    thesisIds: thesis.ids, figuresDir: at('public/figures'),
+    thesisIds: thesis.ids, thesisLabels: thesis.labels, figuresDir: at('public/figures'),
   });
   for (const w of warnings) console.warn('warning:', w);
   const actions = [

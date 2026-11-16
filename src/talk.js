@@ -25,7 +25,7 @@
   // table or formula) gets a larger stage, i.e. is shrunk, just enough to fit.
   function overflows(el) {
     if (el.scrollHeight > el.clientHeight + 1 || el.scrollWidth > el.clientWidth + 1) return true;
-    return [...el.querySelectorAll('pre, .table-scroll, .katex-display')].some((b) => b.scrollWidth > b.clientWidth + 1);
+    return [...el.querySelectorAll('pre, .table-scroll, .katex-display')].some((b) => b.scrollWidth > b.clientWidth);
   }
   function fit(el) {
     el.style.setProperty('--fit', 1);

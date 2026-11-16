@@ -1,0 +1,626 @@
+<!--
+  Master's thesis talk (2025): "Refinement of Legal Specifications in the Lex
+  Programming Language". One <section class="slide"> per slide of the original
+  deck; data-slide is its number there. The prose follows the speaker notes;
+  the Lex code and compiled output are taken from the thesis listings.
+  See lib/talk.mjs for the markup this file may use.
+  class="notes": commentary for readers, hidden in present mode.
+-->
+
+<section class="slide part" data-slide="2">
+  <h2 id="motivation">Motivation</h2>
+</section>
+
+<section class="slide" id="why-formalize" data-slide="3">
+  <h3>Why formalize the law?</h3>
+  <p>There are three general reasons to formalize laws:</p>
+  <ul>
+    <li><strong>It shows the logical structure.</strong> A formalization captures and
+    highlights how the parts of a law depend on each other.</li>
+    <li><strong>It gives broader access.</strong> A formal version can be presented in
+    other forms, for example as a decision tree.</li>
+    <li><strong>It enables automation.</strong> For tax law this might be a classical
+    algorithm: income and assets go in, the tax amount comes out.</li>
+  </ul>
+</section>
+
+<section class="slide" id="runtime-verification" data-slide="4">
+  <h3>Formalizing the law for runtime verification</h3>
+  <p>Another form of automation is <em>runtime verification</em>, and that is what
+  Lex is designed for. It comes in two related forms:</p>
+  <ul>
+    <li><strong>Monitoring</strong> checks compliance. A monitor watches a system's
+    behaviour and produces a verdict on whether it complies with a property, either in
+    real time or after the system has finished.</li>
+    <li><strong>Enforcement</strong> ensures compliance. An enforcer has the same setup,
+    but instead of only producing a verdict it changes the system's behaviour to keep
+    it compliant. This must happen in real time.</li>
+  </ul>
+  <p>State-of-the-art verification tools require the law to be encoded as logical
+  formulae, which are hard to write, understand and audit. A good formalization keeps
+  much of the readability of a law in natural language while being fully formal and
+  usable for runtime verification.</p>
+  <p class="notes">The thesis describes the enforcement setup in
+  <a data-thesis="fig:system-model">{n}</a>.</p>
+</section>
+
+<section class="slide" id="why-refinement" data-slide="5">
+  <h3>Why is refinement needed?</h3>
+  <ul>
+    <li><strong>Different levels of abstraction.</strong> It should be possible to write
+    specifications at the level that suits them: a law in general terms, a system in
+    concrete ones.</li>
+    <li><strong>Reuse of existing formalizations.</strong> Take data protection as an
+    example: formalize the GDPR once, then adapt it to different services with minimal
+    effort.</li>
+  </ul>
+  <p>With refinement, one trusted formalization of the GDPR is enough. Each system
+  operator writes a refinement for their own system and only has to audit that part,
+  not the whole GDPR formalization again.</p>
+</section>
+
+<section class="slide part" data-slide="7">
+  <h2 id="legal-background">Legal background</h2>
+</section>
+
+<section class="slide" id="vagueness" data-slide="8">
+  <h3>Vagueness and the human element</h3>
+  <p>Some vagueness is inherent to the law. It calls for human interpretation, and the
+  consensus among scholars is that this need cannot be eliminated entirely; vague legal
+  terms have to be interpreted case by case.</p>
+  <p>Lex does not try to solve that. Its goal is to formalize and capture the
+  <em>logical structure</em> of legal texts. Where something is ambiguous, a human
+  decides, and the decision becomes an input to the system.</p>
+</section>
+
+<section class="slide" id="logical-structure" data-slide="9">
+  <h3>The logical structure of the law</h3>
+  <ul>
+    <li><strong>Obligations limit what is allowed.</strong> In a world where everything
+    is allowed unless stated otherwise, obligations state the limits.</li>
+    <li><strong>Exceptions</strong> say when another section of the law does not apply:
+    “under condition A, Article 3 Paragraph 2 does not apply”.</li>
+    <li><strong>Brute and institutional facts.</strong> Brute facts are atomic “facts of
+    nature”, like a person's age or a car's speed. Institutional facts are derived from
+    other facts: having the right to vote in Switzerland follows from being over 18 and
+    a Swiss citizen.</li>
+  </ul>
+  <p>The line between the two is fluid. A person's age can be atomic, or derived from
+  their date of birth and the current date. Which one it is depends on the level of
+  abstraction, much like levels of abstraction in computer science, and that is one
+  motivation for refinement.</p>
+</section>
+
+<section class="slide" id="rules" data-slide="10">
+  <h3>Rules: building access</h3>
+  <ol>
+    <li><strong>Regulative (obligation) rule:</strong> <em>To enter the building, authorization is required.</em></li>
+    <li><strong>Constitutive rule:</strong> <em>Employees are authorized to enter the building.</em></li>
+    <li><strong>Exception:</strong> <em>During time off, rule 2 does not apply.</em></li>
+  </ol>
+  <p>The constitutive rule defines the institutional fact “is authorized” in terms of
+  “is an employee”, and the exception switches it off during holidays. Together these
+  are <em>CRE rules</em> (constitutive, regulative, exception), the basis of Lex.
+  Obligations are one kind of regulative rule, and besides exceptions Lex also has
+  scope rules, which work the same way without the negation.</p>
+  <p class="notes">See <a data-thesis="section:cre-meta-logic"></a>.</p>
+</section>
+
+<section class="slide part" data-slide="11">
+  <h2 id="refinement-of-specifications">Refinement of specifications</h2>
+</section>
+
+<section class="slide" id="refinement" data-slide="12">
+  <h3>Refinement</h3>
+  <p>Refinement is a well-known concept in formal methods:</p>
+  <ul>
+    <li>Take two models of the world and a mapping between them.</li>
+    <li>Specification A is written for model 1, specification B for model 2.</li>
+    <li><strong>A refines B</strong> if every behaviour that complies with A also
+    complies with B once it is mapped to model 2.</li>
+  </ul>
+  <p>Think of one specification for a C++ program and one for the x86 assembly it
+  compiles to.</p>
+  <p class="notes">The thesis defines this in <a data-thesis="section:event-system-refinement"></a>.</p>
+</section>
+
+<section class="slide part" data-slide="13">
+  <h2 id="lex">The Lex programming language</h2>
+</section>
+
+<section class="slide" id="mfotl" data-slide="14">
+  <h3>Metric first-order temporal logic</h3>
+  <p>Lex builds its basic logical statements on MFOTL: first-order predicate logic
+  ($\phi \land \psi$, $\phi \lor \psi$, $\neg\phi$, $P(x)$, …) combined with temporal
+  operators over possibly unbounded intervals, as in “always within interval $I$,
+  $\phi$ must hold”.</p>
+  <div class="table-scroll">
+  <table class="ruled operators">
+    <tr><td>Always</td><td>$\Always_I \phi$</td><td class="rule-left">Historically</td><td>$\Historically_I \phi$</td></tr>
+    <tr><td>Until</td><td>$\phi \UUntil_I \psi$</td><td class="rule-left">Since</td><td>$\phi \Since_I \psi$</td></tr>
+    <tr><td>Next</td><td>$\Next_I \phi$</td><td class="rule-left">Previous</td><td>$\Prev_I \phi$</td></tr>
+    <tr><td>Eventually</td><td>$\Eventually_I \phi$</td><td class="rule-left">Once</td><td>$\Once_I \phi$</td></tr>
+  </table>
+  </div>
+  <p class="notes">See <a data-thesis="section:mfotl"></a>. The <a href="../practical-work/">practical-work talk</a> introduces Lex and its type system in more depth.</p>
+</section>
+
+<section class="slide" id="section-labels" data-slide="15">
+  <h3>Section labels</h3>
+  <p>To make a formalization easy to reason about, Lex captures the hierarchy of the
+  law as section labels, here for
+  <a href="https://www.law.cornell.edu/uscode/text/26/121">26 U.S. Code § 121</a>.</p>
+  <div class="side-by-side">
+    <pre data-lang="lex" data-title="Lex">
+      law "U.S. Code"
+      title "26"
+      title[1] "A"
+      chapter "1"
+      chapter[1] "B"
+      section "III"
+      article "121"
+    </pre>
+    <div>
+      <p>No structure is shared by all laws, so Lex has a fixed sequence of levels:
+      law, title, chapter, section, article, paragraph, point and subpoint.</p>
+      <p>Levels keep their order but may be skipped; only <code>law</code> is required,
+      and anything below an article needs an article above it. The bracket notation
+      inserts any number of intermediate levels: <code>title[1]</code> sits below
+      <code>title</code>, which is <code>title[0]</code>.</p>
+    </div>
+  </div>
+  <p class="notes">See <a data-thesis="subsection:lex-section-labels"></a>.</p>
+</section>
+
+<section class="slide" id="eprivacy" data-slide="16">
+  <h3>Example: the ePrivacy Directive</h3>
+  <p>The rest of the talk uses one example: Article 13 of the EU's
+  <a href="https://eur-lex.europa.eu/eli/dir/2002/58/oj/eng">ePrivacy Directive</a>
+  <cite data-ref="EPD2002"></cite>, which deals with unsolicited marketing communication.</p>
+  <blockquote class="statute">
+    <p><strong>Article 13. Unsolicited communications</strong></p>
+    <p>1. The use of <mark class="m-a">automated calling and communication systems</mark>
+    without human intervention (<mark class="m-b">automatic calling machines</mark>),
+    <mark class="m-b">facsimile machines (fax)</mark> or <mark class="m-b">electronic mail</mark>
+    for the purposes of direct marketing <mark class="m-a">may be allowed only in respect
+    of subscribers or users who have given their prior consent</mark>.</p>
+    <p>2. <mark class="m-c">Notwithstanding paragraph 1</mark>, where a natural or legal person
+    <mark class="m-c">obtains from its customers their electronic contact details</mark> for
+    electronic mail, in the context of the sale of a product or a service, […] the same
+    natural or legal person <mark class="m-c">may use these electronic contact details for
+    direct marketing of its own similar products or services</mark> provided that customers
+    clearly and distinctly are given the <mark class="m-c">opportunity to object</mark> […].</p>
+  </blockquote>
+  <p class="mark-key statute"><mark class="m-a">obligation</mark> · <mark class="m-b">constitutive rules</mark> · <mark class="m-c">exception</mark></p>
+  <p class="notes">The marks match the rules on the next slides. The full
+  text and formalization are in <a data-thesis="subsection:lex-email-marketing-example"></a>.</p>
+</section>
+
+<section class="slide" id="events-and-types" data-slide="17">
+  <h3>Events and types</h3>
+  <p>Lex has integers, floats, strings and booleans as basic types, and lets you define
+  other types, abstract or concrete. Events are declared with one typed argument per
+  line and a capability:</p>
+  <pre data-lang="lex" data-title="epd.lex">
+    type person
+    type purpose is string
+    type productCategory is string
+
+    internal event automatedCommunication
+        """person {s} sends automated communication to person {r} for purpose {p} about category {c}"""
+        s: person
+        r: person
+        p: purpose
+        c: productCategory
+
+    causable suppressable event automatedCall
+        """person {s} calls person {r} for purpose {p} about category {c}"""
+        r: person
+        s: person
+        p: purpose
+        c: productCategory
+  </pre>
+  <p class="notes"><code>internal</code> marks an institutional fact: a placeholder
+  more like a variable or function in a programming language. <code>causable
+  suppressable</code> tells Lex that the system can both cause and suppress automated
+  calls; the other capabilities are <code>observable</code> and <code>internal</code>.</p>
+</section>
+
+<section class="slide" id="obligation-rules" data-slide="18">
+  <h3>Obligation rules</h3>
+  <p>Paragraph 1 of Article 13 is an obligation: automated communication from sender
+  <var>s</var> to receiver <var>r</var> for marketing requires that the receiver has
+  consented.</p>
+  <pre data-lang="lex" data-title="epd.lex">
+    article "13" "Unsolicited communications"
+    paragraph "1"
+
+    rule "marketing consent requirement"
+        whenever
+            automatedCommunication(s, r, "marketing", c)
+        oblige
+            marketingConsent(r, s)
+        enforceable suppressing automatedCommunication
+  </pre>
+</section>
+
+<section class="slide" id="constitutive-rules" data-slide="19">
+  <h3>Constitutive rules</h3>
+  <p>Paragraph 1 also lists forms of automated communication: automated calls, fax and
+  email. Each becomes a constitutive rule for the institutional fact
+  <code>automatedCommunication</code>.</p>
+  <pre data-lang="lex" data-title="epd.lex">
+    rule "automated call communication"
+        whenever
+            automatedCall(s, r, p, c)
+        constitute
+            automatedCommunication(s, r, p, c)
+
+    rule "fax communication"
+        whenever
+            fax(s, r, p, c)
+        constitute
+            automatedCommunication(s, r, p, c)
+
+    rule "email communication"
+        whenever
+            email(s, r, p, c)
+        constitute
+            automatedCommunication(s, r, p, c)
+  </pre>
+</section>
+
+<section class="slide" id="exception-rules" data-slide="20">
+  <h3>Exception rules</h3>
+  <p>Paragraph 2 is an exception to paragraph 1: if the email address was obtained in
+  connection with a product, marketing for similar products is allowed as long as the
+  receiver has not objected.</p>
+  <pre data-lang="lex" data-title="epd.lex">
+    paragraph "2"
+
+    rule "marketing of similar products or services"
+        whenever
+            obtainedEmailForCategory(r, s, c)
+            NOT objectToSimilarEmailMarketing(r, s, c)
+        except
+            article "13" paragraph "1"
+  </pre>
+</section>
+
+<section class="slide" id="compiled-lex" data-slide="21">
+  <h3>Compiled Lex code</h3>
+  <p>The constitutive rules are combined into one let-binding, the exception gets
+  another, and the obligation sits at the bottom under an always operator. A scope
+  rule (paragraph 5, natural persons only) adds a third binding.</p>
+  <div class="side-by-side code-pair">
+  <pre data-lang="mfotl" data-title="MFOTL formula of epd.lex">
+    LET automatedCommunication(_p1 : int, _p2 : int, _p3 : string,
+                               _p4 : string)- =
+        email(_p1, _p2, _p3, _p4) ∨ fax(_p1, _p2, _p3, _p4)
+        ∨ automatedCall(_p1, _p2, _p3, _p4) IN
+    LET Exception4(c : string, r : int, s : int) =
+        obtainedEmailForCategory(r, s, c)
+        ∧ ¬objectToSimilarEmailMarketing(r, s, c) IN
+    LET Scope5(r : int) = isNaturalPerson(r) IN
+    □[0s,∞) (
+        ∀c. ∀r. ∀s. automatedCommunication(s, r, "marketing", c)
+            ∧:L ¬Exception4(c, r, s) ∧ Scope5(r)
+        →:L marketingConsent(r, s))
+  </pre>
+  <pre data-lang="mfotl" data-title="MFOTL signature of epd.lex">
+    automatedCall(r: int, s: int, p: string, c: string)+-
+    email(r: int, s: int, p: string, c: string)+-
+    fax(r: int, s: int, p: string, c: string)+-
+    isNaturalPerson(s: int)
+    marketingConsent(r: int, s: int)
+    objectToSimilarEmailMarketing(r: int, s: int, c: string)
+    obtainedEmailForCategory(r: int, s: int, c: string)
+  </pre>
+  </div>
+  <p class="notes">The signature lists every event that is not internal. Scope rules
+  are the counterpart of exceptions: instead of saying when a rule does not apply, they
+  add conditions that must hold before it applies. Both listings are in
+  <a data-thesis="appendixcompiled-lex-examples"></a>.</p>
+</section>
+
+<section class="slide part" data-slide="22">
+  <h2 id="contributions">Contributions</h2>
+</section>
+
+<section class="slide" id="contributions-list" data-slide="22">
+  <h3>What the thesis contributes</h3>
+  <ul>
+    <li>Refinement rules for Lex.</li>
+    <li>A connection between refinement in Lex and refinement in the literature
+    (<a data-thesis="chapter:refinement-of-cre-enforcement"></a>).</li>
+    <li>An implementation of refinement in the Lex compiler
+    (<a data-thesis="chapter:implementation"></a>).</li>
+    <li>A case study that refines the EU's ePrivacy Directive for a real system
+    (<a data-thesis="chapter:case-study"></a>), shown in the rest of this talk.</li>
+  </ul>
+</section>
+
+<section class="slide" id="pretix" data-slide="23">
+  <h3>Pretix</h3>
+  <p>The system is <a href="https://pretix.eu">Pretix</a> <cite data-ref="PretixReinventingTicket"></cite>,
+  an open-source ticketing platform covering the whole pipeline from sales to ticket
+  control.</p>
+  <ul>
+    <li>Built with Python and Django.</li>
+    <li>Instrumented with <code>instrlib</code> <cite data-ref="instrlib"></cite>, developed
+    for a bachelor's thesis, to enforce Article 13 of the ePrivacy Directive.</li>
+    <li>Article 13 refined for Pretix.</li>
+  </ul>
+</section>
+
+<section class="slide" id="refining-overview" data-slide="24">
+  <h3>Refining the ePrivacy Directive for Pretix</h3>
+  <p>A refinement can do four kinds of things:</p>
+  <ol>
+    <li>Add new types, events, obligations and constitutive rules.</li>
+    <li>Refine abstract types and events into concrete ones.</li>
+    <li>Replace obligations with stronger obligations.</li>
+    <li>Replace constitutive rules with stronger or weaker definitions.</li>
+  </ol>
+  <p class="notes">The thesis describes these in <a data-thesis="section:methodology-refinement-of-lex-specifications"></a>.</p>
+</section>
+
+<section class="slide" id="refine-types" data-slide="25">
+  <h3>Refining data types and adding events</h3>
+  <p>Refinements live in <code>.rex</code> files. The first line names the
+  specification being refined, here <code>epd.lex</code>. The abstract type
+  <code>person</code> becomes a string, and new events let a user give or withdraw
+  consent to marketing from another person or business.</p>
+  <pre data-lang="lex" data-title="epd.rex">
+    refine epd
+
+    refine type person is string
+
+    observable event userGivesConsent
+        """person {s} gives consent to receive automated marketing communication from person {r}"""
+        r: person
+        s: person
+
+    observable event userWithdrawsConsent
+        """person {s} withdraws consent to receive automated marketing communication from person {r}"""
+        r: person
+        s: person
+  </pre>
+</section>
+
+<section class="slide" id="refine-events" data-slide="26">
+  <h3>Refining concrete events</h3>
+  <p>An event that was not internal can be refined, which makes it internal: here
+  <code>marketingConsent</code> is defined in terms of the new events. Assumptions are a
+  special kind of refinement that fix an event to always true or always false. Pretix
+  supports neither phone calls nor fax, so those never happen.</p>
+  <pre data-lang="lex" data-title="epd.rex">
+    rule "refine marketing consent"
+        whenever
+            (NOT userWithdrawsConsent(r, s)) SINCE userGivesConsent(r, s)
+        refine
+            marketingConsent(r, s)
+
+    assume true objectToSimilarEmailMarketing
+    assume true isNaturalPerson
+    assume false fax
+    assume false automatedCall
+  </pre>
+  <p class="notes">See <a data-thesis="subsection:lex-event-refinement"></a>.</p>
+</section>
+
+<section class="slide" id="stronger-obligations" data-slide="27">
+  <h3>Replacing obligations with stronger ones</h3>
+  <p>Obligations can be made stronger. Say Pretix wants to be more careful than the
+  directive requires and never send marketing email to minors: write a new obligation
+  and replace the old one with it.</p>
+  <div class="side-by-side">
+    <pre data-lang="lex" data-title="Old, weaker rule (epd.lex)">
+      article "13" "Unsolicited communications"
+      paragraph "1"
+
+      rule "marketing consent requirement"
+          whenever
+              automatedCommunication(s, r, "marketing", c)
+          oblige
+              marketingConsent(r, s)
+          enforceable suppressing automatedCommunication
+    </pre>
+    <pre data-lang="lex" data-title="New, stronger rule (epd.rex)">
+      observable event over18
+          """person {r} is over 18 years old"""
+          r: person
+
+      rule "stronger_consent"
+          whenever
+              automatedCommunication(s, r, "marketing", c)
+          oblige
+              marketingConsent(r, s)
+              over18(r)
+          enforceable suppressing automatedCommunication
+
+      replace
+          strengthen
+              article "13" paragraph "1"
+          by
+              rule "stronger_consent"
+    </pre>
+  </div>
+  <p>The new rule must imply the old one; the Lex compiler checks this implication
+  with an SMT solver.</p>
+</section>
+
+<section class="slide" id="monotonicity" data-slide="28">
+  <h3>Strengthening or weakening constitutive rules</h3>
+  <p>Obligations can only be strengthened. Constitutive rules can be strengthened or
+  weakened, under conditions:</p>
+  <ul>
+    <li><strong>Strengthening</strong>: the constituted event is emitted <em>less
+    often</em>. Allowed if the event is <em>anti-monotonic</em>: an extra occurrence
+    cannot make a trace more compliant.</li>
+    <li><strong>Weakening</strong>: the constituted event is emitted <em>more often</em>.
+    Allowed if the event is <em>monotonic</em>: an extra occurrence cannot make a trace
+    less compliant.</li>
+  </ul>
+  <p class="notes">Under monotonicity, missing events do not change compliance; under
+  anti-monotonicity, extra events do not. An event that is both does not affect
+  compliance at all (for example, one the formula never uses), and one that is neither
+  matters both ways (a policy requiring it to occur exactly once). The rules are in
+  <a data-thesis="fig:cre-monotonicity-rules">{n} in the thesis</a>.</p>
+</section>
+
+<section class="slide" id="refinement-of-refinement" data-slide="29">
+  <h3>Example: a refinement of a refinement</h3>
+  <p>Refinements can be stacked. A second file, <code>epd-2.rex</code>, refines
+  <code>epd.rex</code> (note the extra <code>rex</code> keyword) and strengthens the
+  definition of consent: it must also have been given within the last 30 days, so
+  <code>marketingConsent</code> holds less often.</p>
+  <div class="side-by-side">
+    <pre data-lang="lex" data-title="Old, weaker rule (epd.rex)">
+      rule "refine marketing consent"
+          whenever
+              (NOT userWithdrawsConsent(r, s)) SINCE userGivesConsent(r, s)
+          refine
+              marketingConsent(r, s)
+    </pre>
+    <pre data-lang="lex" data-title="New, stronger rule (epd-2.rex)">
+      refine rex epd
+
+      rule "consent expiration"
+          whenever
+              ONCE[0, 30d] userGivesConsent(r, s)
+              (NOT userWithdrawsConsent(r, s)) SINCE userGivesConsent(r, s)
+          constitute
+              marketingConsent(r, s)
+
+      replace
+          strengthen
+              rule "refine marketing consent"
+          by
+              rule "consent expiration"
+    </pre>
+  </div>
+  <p>The compiler checks the implication in the right direction (new implies old for
+  strengthening, old implies new for weakening) and checks (anti-)monotonicity following
+  the topological order of the rules.</p>
+  <p class="notes">Exceptions are strengthened and weakened the same way. See
+  <a data-thesis="subsection:lex-rule-strengthening-and-weakening"></a>.</p>
+</section>
+
+<section class="slide" id="compiled-formulae" data-slide="30">
+  <h3>Compiled formulae: before and after refinement</h3>
+  <p>In the refined formula, every assumption becomes a let-binding, as does the refined
+  consent, and the strengthened obligation adds <code>over18(r)</code> at the bottom.</p>
+  <div class="side-by-side">
+  <pre data-lang="mfotl" data-title="epd.lex">
+    LET automatedCommunication(_p1 : int, _p2 : int, _p3 : string,
+                               _p4 : string)- =
+        email(_p1, _p2, _p3, _p4) ∨ fax(_p1, _p2, _p3, _p4)
+        ∨ automatedCall(_p1, _p2, _p3, _p4) IN
+    LET Exception4(c : string, r : int, s : int) =
+        obtainedEmailForCategory(r, s, c)
+        ∧ ¬objectToSimilarEmailMarketing(r, s, c) IN
+    LET Scope5(r : int) = isNaturalPerson(r) IN
+    □[0s,∞) (
+        ∀c. ∀r. ∀s. automatedCommunication(s, r, "marketing", c)
+            ∧:L ¬Exception4(c, r, s) ∧ Scope5(r)
+        →:L marketingConsent(r, s))
+  </pre>
+  <pre data-lang="mfotl" data-title="epd.rex (refined)">
+    LET automatedCall(_p11 : string, _p12 : string, _p13 : string,
+                      _p14 : string) = ⊥ IN
+    LET fax(_p15 : string, _p16 : string, _p17 : string,
+            _p18 : string) = ⊥ IN
+    LET isNaturalPerson(_p19 : string) = ⊤ IN
+    LET marketingConsent(_p9 : string, _p10 : string) =
+        ¬userWithdrawsConsent(_p9, _p10)
+        S[0s,∞) userGivesConsent(_p9, _p10) IN
+    LET objectToSimilarEmailMarketing(_p20 : string, _p21 : string,
+                                      _p22 : string) = ⊤ IN
+    LET Exception4(c : string, r : string, s : string) =
+        obtainedEmailForCategory(r, s, c)
+        ∧ ¬objectToSimilarEmailMarketing(r, s, c) IN
+    LET automatedCommunication(_p5 : string, _p6 : string,
+                               _p7 : string, _p8 : string)- =
+        email(_p5, _p6, _p7, _p8) ∨ fax(_p5, _p6, _p7, _p8)
+        ∨ automatedCall(_p5, _p6, _p7, _p8) IN
+    LET Scope5(r : string) = isNaturalPerson(r) IN
+    □[0s,∞) (
+        ∀c. ∀r. ∀s. automatedCommunication(s, r, "marketing", c)
+            ∧:L ¬Exception4(c, r, s) ∧ Scope5(r)
+        →:L marketingConsent(r, s) ∧ over18(r))
+  </pre>
+  </div>
+  <p class="notes">The refined output shown here is compiled from <code>epd.rex</code>,
+  as in <a data-thesis="fig:rex-article-13-compiled-mfotl">{n} in the thesis's appendix</a>;
+  the slide in the talk showed <code>epd-2.rex</code>, which adds the 30-day window.</p>
+</section>
+
+<section class="slide" id="compiled-signatures" data-slide="31">
+  <h3>Compiled signatures: before and after refinement</h3>
+  <p>Only events that are not internal appear in the signature. The assumed events and
+  the refined <code>marketingConsent</code> are now internal and disappear; the new
+  events are added.</p>
+  <div class="side-by-side">
+  <pre data-lang="mfotl" data-title="epd.lex">
+    automatedCall(r: int, s: int, p: string, c: string)+-
+    email(r: int, s: int, p: string, c: string)+-
+    fax(r: int, s: int, p: string, c: string)+-
+    isNaturalPerson(s: int)
+    marketingConsent(r: int, s: int)
+    objectToSimilarEmailMarketing(r: int, s: int, c: string)
+    obtainedEmailForCategory(r: int, s: int, c: string)
+  </pre>
+  <pre data-lang="mfotl" data-title="epd.rex (refined)">
+    email(r: string, s: string, p: string, c: string)+-
+    obtainedEmailForCategory(r: string, s: string, c: string)
+    over18(r: string)
+    userGivesConsent(r: string, s: string)
+    userWithdrawsConsent(r: string, s: string)
+  </pre>
+  </div>
+</section>
+
+<section class="slide part" data-slide="32">
+  <h2 id="outlook">Outlook</h2>
+</section>
+
+<section class="slide" id="future-work" data-slide="33">
+  <h3>Future work</h3>
+  <ul>
+    <li><strong>A larger case study.</strong> Formalize substantial parts of regulation and
+    refine them for larger systems. Pretix could serve again, for example data
+    minimization in its waitlist feature.</li>
+    <li><strong>Package management for Lex refinement.</strong> A repository of existing
+    formalizations that engineers can pull in and refine for their own systems.</li>
+  </ul>
+</section>
+
+<section class="slide" id="remarks" data-slide="34">
+  <h3>What Lex is, and is not</h3>
+  <ul>
+    <li><strong>Lex does not try to infer the meaning of the law automatically.</strong>
+    LLMs could help with semi-automatic formalization, the topic of a recent bachelor's
+    thesis on generating Lex from natural language, but such output can only be a starting
+    point for people to build on and audit. Some human interpretation will very likely
+    always be needed.</li>
+    <li><strong>Lex aims to make auditing easier.</strong> With refinement, each layer of a
+    formalization can be audited on its own, which keeps the complexity of each layer low.</li>
+  </ul>
+  <p class="notes">Lex itself has since been published as <cite data-ref="lex"></cite>.</p>
+</section>
+
+<section class="slide part" data-slide="36">
+  <h2 id="implementation">Appendix: implementation</h2>
+</section>
+
+<section class="slide" id="pipeline" data-slide="37">
+  <h3>The compilation pipeline</h3>
+  <p>A <code>.rex</code> file goes through its own parse, type and check stages
+  (rule replacements, monotonicity constraints, event refinements), and then joins the
+  <code>.lex</code> pipeline before compilation to MFOTL.</p>
+  <figure>
+    <div class="figure-body">{{figure:compiler-pipeline.svg}}</div>
+    <figcaption>The structure of the Lex compiler, from <a data-thesis="fig:lex-compiler">{n} in the thesis</a>.</figcaption>
+  </figure>
+</section>

@@ -50,7 +50,10 @@
   ],
   "referenceLinks": {
     "semesterproject": [
-      { "label": "Talk", "url": "practical-work/" }
+      {
+        "label": "Talk",
+        "url": "practical-work/"
+      }
     ]
   },
   "talks": [
@@ -61,6 +64,15 @@
       "subtitle": "The talk on the practical work that introduced Lex, which the thesis builds on",
       "kind": "Practical work talk, ETH Zurich",
       "date": "2024"
+    },
+    {
+      "slug": "master-thesis",
+      "source": "talks/master-thesis.html",
+      "title": "Refinement of Legal Specifications in the Lex Programming Language",
+      "subtitle": "The talk on this master's thesis: refining abstract legal specifications in Lex for a concrete system",
+      "kind": "Master's thesis talk, ETH Zurich",
+      "date": "2025",
+      "button": "The talk"
     }
   ]
 }

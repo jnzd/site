@@ -4,7 +4,7 @@
   "institution": "ETH Zurich",
   "pdf": "https://www.research-collection.ethz.ch/server/api/core/bitstreams/c7094a51-2753-4824-b1bc-6ba6cfc578af/content",
   "publication": {
-    "text": "This thesis was written in parallel with the paper presenting Lex,",
+    "text": "Lex is presented in",
     "title": "Lex: Turning Laws into Enforceable Security Policies",
     "venue": "ACM CCS 2026",
     "url": "https://doi.org/10.1145/3830454.3846777"

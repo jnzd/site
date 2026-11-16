@@ -27,6 +27,7 @@ function render() {
   const { html, toc, warnings } = postprocess(raw, {
     state, macros: katexMacros(thesisDir), figuresDir: at('public/figures'), tikzFiles: config.tikzFigures || [],
     bibliographyOrder: config.bibliographyOrder || [],
+    referenceUpdates: config.referenceUpdates || {},
   });
   fs.rmSync(bib, { force: true });
   for (const w of warnings) console.warn('warning:', w);

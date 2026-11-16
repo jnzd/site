@@ -28,5 +28,8 @@
     "igloo",
     "van2020eflint",
     "zingg2022verified"
-  ]
+  ],
+  "referenceUpdates": {
+    "lex": "Hublet, François, Jakob Merane, Jonas Degelo, Wei-En Hsieh, Srđan Krstić, and David Basin. 2026. “Lex: Turning Laws into Enforceable Security Policies.” In <em>ACM Conference on Computer and Communications Security (CCS 2026)</em>."
+  }
 }

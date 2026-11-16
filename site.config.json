@@ -1,0 +1,33 @@
+{
+  "thesisDir": "..",
+  "subtitle": "Extending the Lex language with refinement, so abstract legal specifications can be made concrete for specific use cases",
+  "institution": "ETH Zurich",
+  "pdf": "https://www.research-collection.ethz.ch/server/api/core/bitstreams/c7094a51-2753-4824-b1bc-6ba6cfc578af/content",
+  "code": "https://github.com/jnzd/masters-thesis-report",
+  "tikzFigures": [
+    "system-model.svg",
+    "capability-lattice.svg",
+    "compiler-pipeline.svg"
+  ],
+  "bibliographyOrder": [
+    "EPD2002",
+    "PretixReinventingTicket",
+    "refinement-mappings",
+    "basin2013monitoring",
+    "basin2015monitoring",
+    "brewka2000prioritizing",
+    "chomicki1995efficient",
+    "semesterproject",
+    "whyenf",
+    "whyenf-2",
+    "instrlib",
+    "lex",
+    "lancieri2022narrowing",
+    "edit-automata",
+    "merigoux_catala_2021",
+    "schneider2000enforceable",
+    "igloo",
+    "van2020eflint",
+    "zingg2022verified"
+  ]
+}

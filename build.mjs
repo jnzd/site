@@ -40,14 +40,15 @@ function render() {
     `<span>${esc([meta.thesistype, config.institution].filter(Boolean).join(', '))}</span>`,
     meta.date && `<span>${esc(meta.date)}</span>`,
   ].filter(Boolean).join('');
+  // The thesis PDF is the main action; a related paper gets a quieter
+  // button, with its full title as a short line underneath.
+  const pub = config.publication;
   const actions = [
-    config.pdf && `<a class="button" href="${esc(config.pdf)}">Read the PDF</a>`,
+    config.pdf && `<a class="button primary" href="${esc(config.pdf)}">Read the PDF</a>`,
+    pub && `<a class="button" href="${esc(pub.url)}" title="${esc(pub.title)} (${esc(pub.venue)})">${esc(pub.label)} <span aria-hidden="true">↗</span></a>`,
     config.code && `<a class="button" href="${esc(config.code)}">Source</a>`,
   ].filter(Boolean).join('');
-  const pub = config.publication;
-  const publication = pub
-    ? `${esc(pub.text)} <a href="${esc(pub.url)}"><em>${esc(pub.title)}</em></a> (${esc(pub.venue)}).`
-    : '';
+  const publication = pub ? `<em>${esc(pub.title)}</em>` : '';
   const rail = toc.map((s) =>
     `<a href="#${esc(s.id)}" data-target="${esc(s.id)}"><span class="tick"></span><span class="name">${s.num ? s.num + ' ' : ''}${esc(s.text)}</span></a>`).join('');
 

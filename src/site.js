@@ -73,8 +73,8 @@
   }
 
   // Hovering in the band left of the line: the nearest tick (within 14px) is
-  // highlighted with its full name; other ticks within 70px show their numbers
-  // in grey, fading with distance. In a long stretch with no ticks nearby, the closest tick above
+  // highlighted with its name (cut to the free margin); other ticks within
+  // 70px show their numbers in grey, fading with distance. In a long stretch with no ticks nearby, the closest tick above
   // and below are shown instead. Labels never overlap: closer ones win.
   // Work is done at most once per frame, with the rail measured on entry.
   const zone = rail && rail.querySelector('.rail-zone');
@@ -107,7 +107,13 @@
         if (taken.some((t) => Math.abs(t - x.ty) < GAP)) continue;
         taken.push(x.ty);
         lit.push(x.i);
-        if (x === pick[0] && x.d <= HIT && !x.far) { links[x.i].classList.add('hot'); hot = x.i; continue; }
+        if (x === pick[0] && x.d <= HIT && !x.far) {
+          links[x.i].classList.add('hot');
+          hot = x.i;
+          const n = nums[x.i];
+          if (n) links[x.i].querySelector('.name').innerHTML = `<span class="num">${esc(n)}</span> ${esc(names[x.i].slice(n.length).trim())}`;
+          continue;
+        }
         links[x.i].classList.add('near');
         // Neighbours show only their number; only the nearest is named in full.
         if (nums[x.i]) links[x.i].querySelector('.name').textContent = nums[x.i];

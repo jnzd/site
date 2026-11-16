@@ -359,7 +359,11 @@ a.ref { font-variant-numeric: tabular-nums; }
   transition: opacity 0.08s linear;
   pointer-events: none;
 }
-.rail a.near .name, .rail a.hot .name, .rail a:focus-visible .name { background: var(--bg); padding-left: 0.3rem; }
+.rail a.near .name, .rail a.hot .name, .rail a:focus-visible .name { background: var(--bg); padding-left: 0.5rem; }
+/* The highlighted name is cut to the free margin like the trail: number
+   bright, title grey. */
+.rail a.hot .name { max-width: var(--room, 12rem); overflow: hidden; text-overflow: ellipsis; color: var(--muted); }
+.rail a.hot .name .num { color: var(--text); }
 .rail a.hot .name, .rail a:focus-visible .name { opacity: 1; color: var(--text); }
 /* Hovering anywhere in this band left of the line names the nearest tick. */
 .rail-zone { position: absolute; top: -6px; bottom: -6px; right: 0; width: 9rem; cursor: pointer; }
@@ -373,6 +377,9 @@ a.ref { font-variant-numeric: tabular-nums; }
   pointer-events: none;
   will-change: transform;
   transition: opacity 0.1s ease;
+  /* small plate so the label stays legible over figures wider than the text */
+  background: var(--bg);
+  padding: 0.1rem 0 0.15rem 0.5rem;
 }
 /* Both lines are cut to the free margin (--room, measured by site.js), so the
    label never runs into the text. The section number stays bright and the
@@ -383,20 +390,6 @@ a.ref { font-variant-numeric: tabular-nums; }
 .rail-trail .s .num { color: var(--text); }
 .rail-trail .s:empty { display: none; }
 .rail.hovering .rail-trail { opacity: 0; }
-/* While hovering, a backdrop fades the text behind the labels out, so the
-   (single) full name stays legible even where it reaches over the text. */
-.rail-scrim {
-  position: absolute;
-  top: -12vh;
-  bottom: -12vh;
-  right: 1px; /* stops just left of the line, which stays visible */
-  width: 28rem;
-  background: linear-gradient(to right, transparent, var(--bg) 8rem);
-  opacity: 0;
-  transition: opacity 0.12s ease;
-  pointer-events: none;
-}
-.rail.hovering .rail-scrim { opacity: 0.94; }
 @media (max-width: 68rem) { .rail { display: none; } }
 
 /* Thin progress bar, shown where the rail is hidden. */

@@ -50,7 +50,7 @@ function render() {
   ].filter(Boolean).join('');
   // Every chapter, section and subsection gets a tick (long, medium, short);
   // site.js positions them and adds the hover labels and the current trail.
-  const rail = '<div class="rail-scrim" aria-hidden="true"></div>' + toc.map((s) =>
+  const rail = toc.map((s) =>
     `<a class="l${s.level || 1}" href="#${esc(s.id)}" data-target="${esc(s.id)}" data-num="${esc(s.num || '')}"><span class="tick"></span><span class="name">${s.num ? s.num + ' ' : ''}${esc(s.text)}</span></a>`).join('')
     + '<div class="rail-zone" aria-hidden="true"></div><div class="rail-trail" aria-hidden="true"><span class="c"></span><span class="s"></span></div>';
 

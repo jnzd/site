@@ -4,6 +4,11 @@
   "institution": "ETH Zurich",
   "pdf": "https://www.research-collection.ethz.ch/server/api/core/bitstreams/c7094a51-2753-4824-b1bc-6ba6cfc578af/content",
   "code": "https://github.com/jnzd/masters-thesis-report",
+  "referenceLinks": {
+    "semesterproject": [
+      { "label": "Slides", "url": "https://docs.google.com/presentation/d/1MjPegW905-86KeMHA7fMMUwP-kXshuczzJR4sVQUzVE/edit?usp=sharing" }
+    ]
+  },
   "tikzFigures": [
     "system-model.svg",
     "capability-lattice.svg",

@@ -26,7 +26,7 @@ function render() {
   ], { input: tex, cwd: thesisDir, encoding: 'utf8', maxBuffer: 1 << 28 });
   const { html, toc, warnings } = postprocess(raw, {
     state, macros: katexMacros(thesisDir), figuresDir: at('public/figures'), tikzFiles: config.tikzFigures || [],
-    bibliographyOrder: config.bibliographyOrder || [],
+    bibliographyOrder: config.bibliographyOrder || [], referenceLinks: config.referenceLinks || {},
   });
   fs.rmSync(bib, { force: true });
   for (const w of warnings) console.warn('warning:', w);

@@ -50,7 +50,8 @@ function render() {
     config.pdf && `<a class="button primary" href="${esc(config.pdf)}">Read the PDF</a>`,
     pub && `<a class="button" href="${esc(pub.url)}" title="${esc(pub.title)} (${esc(pub.venue)})">${esc(pub.label)} <span aria-hidden="true">↗</span></a>`,
     config.code && `<a class="button" href="${esc(config.code)}">Source</a>`,
-    ...(config.talks || []).filter((t) => t.button).map((t) => `<a class="button" href="${esc(t.slug)}/">${esc(t.button)}</a>`),
+    // Every talk, by its short name, in the order site.config.json lists them.
+    ...(config.talks || []).map((t) => `<a class="button" href="${esc(t.slug)}/" title="${esc(t.title)}">${esc(t.short || t.title)}</a>`),
   ].filter(Boolean).join('');
   const rail = renderRail(toc);
 

@@ -58,6 +58,15 @@
   },
   "talks": [
     {
+      "slug": "master-thesis",
+      "source": "talks/master-thesis.html",
+      "title": "Refinement of Legal Specifications in the Lex Programming Language",
+      "subtitle": "The talk on this master's thesis: refining abstract legal specifications in Lex for a concrete system",
+      "kind": "Master's thesis talk, ETH Zurich",
+      "date": "2025",
+      "short": "Thesis talk"
+    },
+    {
       "slug": "practical-work",
       "source": "talks/practical-work.html",
       "title": "Lex: A Language for Formalizing Legal Provisions",
@@ -65,16 +74,6 @@
       "kind": "Practical work talk, ETH Zurich",
       "date": "2024",
       "short": "Practical-work talk"
-    },
-    {
-      "slug": "master-thesis",
-      "source": "talks/master-thesis.html",
-      "title": "Refinement of Legal Specifications in the Lex Programming Language",
-      "subtitle": "The talk on this master's thesis: refining abstract legal specifications in Lex for a concrete system",
-      "kind": "Master's thesis talk, ETH Zurich",
-      "date": "2025",
-      "button": "The talk",
-      "short": "Thesis talk"
     }
   ]
 }

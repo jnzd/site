@@ -120,6 +120,26 @@ jobs:
         working-directory: playground
         run: node test/browser.mjs /usr/bin/google-chrome
 
+      # Preview: the built files go to a prerelease, which a Cloudflare Worker
+      # (lex-playground-preview.jonas-degelo.workers.dev) serves with the
+      # COOP/COEP headers Z3 needs. Nothing on degelo.dev changes.
+      - name: Publish preview files
+        if: startsWith(github.ref, 'refs/heads/claude/')
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: lex-playground-preview
+        run: |
+          mkdir -p preview-assets
+          (cd playground/dist && find . -type f) | while read -r f; do
+            n="${f#./}"; cp "playground/dist/$n" "preview-assets/${n//\//__}"
+          done
+          ls preview-assets
+          gh release delete "$TAG" --cleanup-tag -y 2>/dev/null || true
+          gh release create "$TAG" --prerelease --target "$GITHUB_SHA" \
+            --title "Lex playground preview (not a release)" \
+            --notes "Built files for the Lex playground preview from branch ${GITHUB_REF#refs/heads/}, commit $GITHUB_SHA. Replaced on every push; safe to delete." \
+            preview-assets/*
+
       # Review screenshots are committed to the prototype branch (never main).
       - name: Screenshots
         if: startsWith(github.ref, 'refs/heads/claude/')

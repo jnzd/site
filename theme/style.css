@@ -772,8 +772,9 @@ body.home .post { max-width: none; }
 .post .feature h2::before { content: none; }
 .feature h2 a { color: var(--strong); text-decoration: none; }
 .feature h2 a:hover { color: var(--accent); }
-.feature h2 .go .icon { width: 0.8em; height: 0.8em; margin-left: 0.35em; vertical-align: -0.02em; color: var(--accent); transition: transform 0.2s; }
-.feature h2 a:hover .go .icon, .feature:has(.feature-visual:hover) h2 .go .icon { transform: translateX(4px); }
+.talk-card h3 a:hover, .talk-card:has(.talk-thumb:hover) h3 a { color: var(--accent); }
+:is(.feature h2, .talk-card h3) .go .icon { width: 0.8em; height: 0.8em; margin-left: 0.35em; vertical-align: -0.02em; color: var(--accent); transition: transform 0.2s; }
+.feature h2 a:hover .go .icon, .feature:has(.feature-visual:hover) h2 .go .icon, .talk-card h3 a:hover .go .icon, .talk-card:has(.talk-thumb:hover) h3 .go .icon { transform: translateX(4px); }
 .feature:has(.feature-visual:hover) h2 a { color: var(--accent); }
 .feature .summary { color: var(--muted); margin: 0 0 1.4rem; }
 .feature-actions, .talk-actions { display: flex; flex-wrap: wrap; gap: 0.5rem; margin: 0; }

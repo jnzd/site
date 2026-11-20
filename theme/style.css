@@ -872,3 +872,6 @@ body.presenting .hero.current h1 { font-size: 60px; }
 /* Sideways swipes change slides there, so they must not navigate back. */
 html:has(body.presenting), html:has(.pages.slides) { overscroll-behavior-x: none; }
 .pages.slides { overscroll-behavior-x: none; }
+/* Highlights in talk formulas (\acc, \blu). */
+.katex .m-acc { color: var(--accent); }
+.katex .m-blu { color: var(--tok-fn); }

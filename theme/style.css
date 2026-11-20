@@ -751,7 +751,7 @@ html, body { overflow-x: clip; }
 /* ---- Site-wide: header link home, and the home page ---- */
 /* The site header stays at the top of the window: the name links home. Once
    the page scrolls, it gets a background so text passes under it cleanly. */
-.site-nav { position: fixed; top: 0; left: 0; right: 0; z-index: 16; height: 3.25rem; padding: 0 1.5rem; font-size: 0.85rem; display: flex; align-items: center; gap: 1rem; transition: background-color 0.25s, border-color 0.25s; border-bottom: 1px solid transparent; }
+.site-nav { position: fixed; top: 0; left: 0; right: 0; z-index: 16; height: 3.25rem; padding: 0 1.5rem; font-size: 0.85rem; display: flex; align-items: center; gap: 1rem; transition: background-color 0.25s, border-color 0.25s, transform 0.2s ease-out; border-bottom: 1px solid transparent; }
 body.scrolled .site-nav { background: color-mix(in srgb, var(--bg) 86%, transparent); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); border-bottom-color: var(--line); }
 .site-nav .site-name { color: var(--muted); text-decoration: none; font-weight: 600; letter-spacing: 0.01em; }
 .site-nav .site-name:hover { color: var(--accent); }
@@ -859,3 +859,4 @@ body.reader.full .pages.slides { scroll-snap-type: none; }
 body.reader.full .pages.slides .sheet.cur { animation: sheet-in 0.12s ease-out; }
 @keyframes sheet-in { from { opacity: 0.4; } }
 @media (prefers-reduced-motion: reduce) { body.reader.full .pages.slides .sheet.cur { animation: none; } }
+body.nav-hidden .site-nav:not(:focus-within) { transform: translateY(-100%); }

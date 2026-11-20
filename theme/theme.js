@@ -48,7 +48,15 @@
   });
   render();
   // The header gets a background once the page has scrolled.
-  const mark = () => document.body.classList.toggle('scrolled', window.scrollY > 8);
+  // Scrolling down hides it (once past the top of the page); scrolling up brings it back.
+  let lastY = window.scrollY;
+  const mark = () => {
+    const y = window.scrollY, d = y - lastY;
+    document.body.classList.toggle('scrolled', y > 8);
+    if (Math.abs(d) < 6) return;
+    document.body.classList.toggle('nav-hidden', d > 0 && y > 160);
+    lastY = y;
+  };
   window.addEventListener('scroll', mark, { passive: true });
   mark();
   const close = host.querySelector('.reader-close');

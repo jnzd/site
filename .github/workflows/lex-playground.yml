@@ -10,7 +10,7 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: read
+  contents: write  # only to commit review screenshots to the claude/** branch
 
 concurrency:
   group: lex-playground-${{ github.ref }}
@@ -119,6 +119,17 @@ jobs:
       - name: Browser test (headless Chrome)
         working-directory: playground
         run: node test/browser.mjs /usr/bin/google-chrome
+
+      # Review screenshots are committed to the prototype branch (never main).
+      - name: Screenshots
+        if: startsWith(github.ref, 'refs/heads/claude/')
+        working-directory: playground
+        run: |
+          node test/screenshots.mjs /usr/bin/google-chrome screenshots
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add screenshots
+          git diff --cached --quiet || (git commit -m "Lex playground: review screenshots from CI" && git push origin HEAD:${GITHUB_REF#refs/heads/})
 
       - uses: actions/upload-artifact@v4
         if: always()

@@ -2,26 +2,27 @@
 ;; ocaml_intrinsics_kernel use. These libraries (v0.17) ship JavaScript
 ;; versions for js_of_ocaml, but none for wasm_of_ocaml. Each function below
 ;; mirrors the JavaScript version in that library's runtime.js. OCaml ints are
-;; 31 bits wide under wasm_of_ocaml.
+;; 31 bits wide under wasm_of_ocaml. Runtime functions are imported from "env",
+;; the module name wasm_of_ocaml gives its merged runtime.
 (module
-   (import "hash" "caml_hash_mix_int"
+   (import "env" "caml_hash_mix_int"
       (func $caml_hash_mix_int (param i32) (param i32) (result i32)))
-   (import "hash" "caml_hash_mix_int64"
+   (import "env" "caml_hash_mix_int64"
       (func $caml_hash_mix_int64 (param i32) (param i64) (result i32)))
-   (import "hash" "caml_hash_mix_double"
+   (import "env" "caml_hash_mix_double"
       (func $caml_hash_mix_double (param i32) (param f64) (result i32)))
-   (import "hash" "caml_hash_mix_string"
+   (import "env" "caml_hash_mix_string"
       (func $caml_hash_mix_string (param i32) (param (ref $bytes)) (result i32)))
-   (import "hash" "caml_hash_mix_final"
+   (import "env" "caml_hash_mix_final"
       (func $caml_hash_mix_final (param i32) (result i32)))
-   (import "hash" "caml_hash"
+   (import "env" "caml_hash"
       (func $caml_hash
          (param (ref eq)) (param (ref eq)) (param (ref eq)) (param (ref eq))
          (result (ref eq))))
-   (import "int64" "Int64_val" (func $Int64_val (param (ref eq)) (result i64)))
-   (import "int64" "caml_copy_int64"
+   (import "env" "Int64_val" (func $Int64_val (param (ref eq)) (result i64)))
+   (import "env" "caml_copy_int64"
       (func $caml_copy_int64 (param i64) (result (ref eq))))
-   (import "int32" "Int32_val" (func $Int32_val (param (ref eq)) (result i32)))
+   (import "env" "Int32_val" (func $Int32_val (param (ref eq)) (result i32)))
    (import "bindings" "time" (func $time (result f64)))
 
    (type $bytes (array (mut i8)))

@@ -12,6 +12,10 @@ on:
 permissions:
   contents: read
 
+concurrency:
+  group: lex-playground-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   build:
     runs-on: ubuntu-24.04
@@ -58,7 +62,7 @@ jobs:
 
       - name: OCaml package versions
         run: |
-          [ -x "$(command -v opam)" ] || (sudo apt-get update && sudo apt-get install -y opam)
+          [ -x "$(command -v wasm-opt)" ] || (sudo apt-get update && sudo apt-get install -y opam binaryen)
           opam list --switch lexweb --installed --columns=name,version dune menhir core js_of_ocaml-compiler wasm_of_ocaml-compiler binaryen-bin
 
       - name: Assemble the dune project

@@ -1,0 +1,88 @@
+# Prototype: builds Lex for the browser (js_of_ocaml and wasm_of_ocaml),
+# smoke-tests it under Node with Z3 (z3-solver, Wasm) and uploads the
+# assembled playground as an artifact. It does not deploy anything.
+name: Lex playground (prototype)
+
+on:
+  push:
+    branches: ['claude/**']
+    paths: ['playground/**', '.github/workflows/lex-playground.yml']
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-24.04
+    env:
+      LEX_REPO: https://github.com/francois-hublet/lex
+      LEX_COMMIT: 7eb1d8f06b98032d418214f418cab7d38efcf3c2
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Fetch Lex
+        run: |
+          git init -q lex
+          cd lex
+          git remote add origin "$LEX_REPO"
+          git fetch -q --depth 1 origin "$LEX_COMMIT"
+          git checkout -q FETCH_HEAD
+          git submodule update --init
+          git log -1 --format='Lex %h %ad %s'
+
+      - uses: ocaml/setup-ocaml@v3
+        with:
+          ocaml-compiler: '5.2'
+
+      - name: Install OCaml packages
+        run: >
+          opam install -y dune menhir core core_kernel ppx_jane xml-light calendar re
+          zarith zarith_stubs_js js_of_ocaml js_of_ocaml-ppx js_of_ocaml-compiler
+          wasm_of_ocaml-compiler binaryen-bin
+
+      - run: opam list --installed --columns=name,version dune core js_of_ocaml-compiler wasm_of_ocaml-compiler binaryen-bin
+
+      - name: Assemble the dune project
+        run: python3 playground/ocaml/prepare.py lex lexbuild
+
+      - name: Build (js_of_ocaml)
+        working-directory: lexbuild
+        run: opam exec -- dune build --profile release web/lexweb.bc.js
+
+      - name: Build (wasm_of_ocaml)
+        id: wasm
+        continue-on-error: true
+        working-directory: lexbuild
+        run: opam exec -- dune build --profile release web/lexweb.bc.wasm.js
+
+      - name: Sizes
+        run: |
+          cd lexbuild/_build/default/web
+          for f in lexweb.bc.js lexweb.bc.wasm.js lexweb.bc.wasm.assets/*; do
+            [ -f "$f" ] && printf '%-60s %10d bytes  gzip %9d  brotli %9d\n' "$f" \
+              "$(stat -c %s "$f")" "$(gzip -9c "$f" | wc -c)" "$(brotli -c "$f" | wc -c)"
+          done
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - run: npm install
+        working-directory: playground
+
+      - name: Smoke test (JS)
+        run: node playground/test/smoke.mjs js lexbuild/_build/default/web lex
+
+      - name: Smoke test (Wasm)
+        if: steps.wasm.outcome == 'success'
+        continue-on-error: true
+        run: node playground/test/smoke.mjs wasm lexbuild/_build/default/web lex
+
+      - name: Assemble the playground
+        run: node playground/assemble.mjs lexbuild/_build/default/web lex
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: lex-playground
+          path: playground/dist

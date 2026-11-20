@@ -1,0 +1,7 @@
+; A stand-in for the Z3 OCaml bindings, for the browser build of Lex.
+; It covers only the part of the API that Lex's src/smt.ml uses. Instead of
+; calling libz3 it prints SMT-LIB 2 text and hands it to a JavaScript
+; function, globalThis.lexZ3Check, which runs the real Z3 (z3-solver, Wasm).
+(library
+ (name z3)
+ (libraries js_of_ocaml))

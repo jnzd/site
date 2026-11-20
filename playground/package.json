@@ -1,0 +1,14 @@
+{
+  "private": true,
+  "type": "module",
+  "description": "Lex playground prototype: assembles the browser build into dist/",
+  "scripts": {
+    "assemble": "node assemble.mjs",
+    "serve": "node serve.mjs"
+  },
+  "dependencies": {
+    "coi-serviceworker": "0.1.7",
+    "esbuild": "0.25.0",
+    "z3-solver": "5.4.1"
+  }
+}

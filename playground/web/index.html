@@ -1,0 +1,39 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Lex playground (prototype)</title>
+<!-- GitHub Pages cannot send COOP/COEP headers; this service worker adds them
+     (and reloads the page once) so that SharedArrayBuffer is available. -->
+<script src="coi-serviceworker.js"></script>
+<link rel="stylesheet" href="playground.css">
+</head>
+<body>
+<header>
+  <h1>Lex playground <span class="tag">prototype</span></h1>
+  <p>Lex compiles legal rules into metric first-order temporal logic. This page runs the Lex
+  compiler in your browser (OCaml compiled with js_of_ocaml / wasm_of_ocaml). Refinements
+  (<code>.rex</code>) are checked with Z3, which is loaded on first use (about 9&nbsp;MB compressed).</p>
+</header>
+<main>
+  <section class="editor">
+    <div class="bar">
+      <label>Example <select id="example"></select></label>
+      <label>Output <select id="mode"><option value="mfotl">MFOTL</option><option value="doc">Lexdoc</option></select></label>
+      <label>Engine <select id="engine"><option value="wasm">Wasm</option><option value="js">JS</option></select></label>
+      <button id="run" disabled>Run</button>
+    </div>
+    <div class="tabs" id="tabs"></div>
+    <textarea id="source" spellcheck="false"></textarea>
+  </section>
+  <section class="output">
+    <div class="bar"><span id="status">Loading Lex…</span></div>
+    <pre id="output"></pre>
+    <iframe id="doc" title="Lexdoc output" hidden></iframe>
+    <details id="smt" hidden><summary>SMT-LIB queries sent to Z3</summary><div id="smt-list"></div></details>
+  </section>
+</main>
+<script src="playground.js"></script>
+</body>
+</html>

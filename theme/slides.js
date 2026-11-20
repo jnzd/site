@@ -42,6 +42,8 @@
   }
   document.addEventListener('keydown', (e) => {
     if (e.metaKey || e.ctrlKey || e.altKey) return;
+    // Esc closes the reader and goes back to the page it came from.
+    if (e.key === 'Escape' && document.body.dataset.back) { location.href = document.body.dataset.back; return; }
     const keys = wide
       ? { ArrowRight: 1, ArrowLeft: -1, ArrowDown: 1, ArrowUp: -1, PageDown: 1, PageUp: -1, ' ': 1, j: 1, k: -1 }
       : { ArrowRight: 1, ArrowLeft: -1, j: 1, k: -1 };

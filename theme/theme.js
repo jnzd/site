@@ -29,5 +29,6 @@
     render();
   });
   render();
-  host.append(b);
+  const close = host.querySelector('.reader-close');
+  if (close) host.insertBefore(b, close); else host.append(b);
 })();

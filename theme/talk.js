@@ -70,13 +70,17 @@
     count.textContent = `${i + 1} / ${slides.length}`;
   }
 
-  function enter() {
+  function enter(from) {
     if (presenting()) return;
-    // Start at the slide currently on screen.
-    const y = window.innerHeight * 0.3;
+    // Start at the given slide, or at the slide currently on screen.
     let n = 0;
-    slides.forEach((s, k) => { if (s.getBoundingClientRect().top <= y) n = k; });
+    if (typeof from === 'number') n = from;
+    else {
+      const y = window.innerHeight * 0.3;
+      slides.forEach((s, k) => { if (s.getBoundingClientRect().top <= y) n = k; });
+    }
     setScale();
+    document.body.classList.remove('deck');
     document.body.classList.add('presenting');
     show(n);
     document.documentElement.requestFullscreen?.().catch(() => {});
@@ -85,13 +89,39 @@
   function exit() {
     const el = slides[i];
     document.body.classList.remove('presenting');
-    slides.forEach((s) => { s.classList.remove('current'); [...s.children].forEach((c) => { c.style.zoom = ''; }); });
+    slides.forEach((s) => s.classList.remove('current'));
     if (document.fullscreenElement) document.exitFullscreen?.();
+    deck();
     el?.scrollIntoView({ behavior: 'instant', block: 'start' });
   }
 
   const presenting = () => document.body.classList.contains('presenting');
-  start.addEventListener('click', enter);
+  start.addEventListener('click', () => enter());
+  document.querySelectorAll('[data-present-from]').forEach((b) => b.addEventListener('click', () => enter(Number(b.dataset.presentFrom) - 1)));
+
+  // Deck view: on a wide window every slide is shown as a card the width of the
+  // stage, zoomed to fit the page; narrower windows get the slides as plain text.
+  const content = slides.slice(1);
+  function deck() {
+    if (presenting()) return;
+    const z = Math.min(1, (window.innerWidth - 160) / STAGE_W);
+    const on = z >= 0.75;
+    document.body.classList.toggle('deck', on);
+    document.documentElement.style.setProperty('--deck-z', z.toFixed(4));
+    // Cards grow taller rather than shrink their content: no zoom outside present mode.
+    content.forEach((s) => [...s.children].forEach((c) => { c.style.zoom = ''; }));
+  }
+  deck();
+
+  // A Present button that stays in view once the title is scrolled away.
+  const fab = document.createElement('button');
+  fab.type = 'button';
+  fab.className = 'present-fab';
+  fab.innerHTML = 'Present <span aria-hidden="true">▶</span>';
+  fab.title = 'Present from the slide on screen (Esc leaves)';
+  fab.addEventListener('click', () => enter());
+  document.body.append(fab);
+  new IntersectionObserver(([e]) => fab.classList.toggle('show', !e.isIntersecting)).observe(start);
   bar.addEventListener('click', (e) => {
     const b = e.target.closest('button');
     if (!b) return;
@@ -109,6 +139,6 @@
     e.preventDefault();
   });
   document.addEventListener('fullscreenchange', () => { if (!document.fullscreenElement && presenting()) exit(); });
-  window.addEventListener('resize', () => { if (presenting()) setScale(); });
+  window.addEventListener('resize', () => { if (presenting()) setScale(); else deck(); });
   if (new URLSearchParams(location.search).has('present')) enter();
 })();

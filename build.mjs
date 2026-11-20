@@ -17,6 +17,7 @@ import { postprocess } from './lib/postprocess.mjs';
 import { renderTalk } from './lib/talk.mjs';
 import { renderHome } from './lib/home.mjs';
 import { renderSlides } from './lib/slides.mjs';
+import { icon } from './lib/icons.mjs';
 
 const root = path.dirname(fileURLToPath(import.meta.url));
 const at = (...p) => path.join(root, ...p);
@@ -76,11 +77,11 @@ function renderThesis(entry) {
   // (its full title shows on hover).
   const pub = entry.publication;
   const actions = [
-    entry.pdf && `<a class="button primary" href="${esc(entry.pdf)}">Read the PDF</a>`,
-    pub && `<a class="button" href="${esc(pub.url)}" title="${esc(pub.title)} (${esc(pub.venue)})">${esc(pub.label)} <span aria-hidden="true">↗</span></a>`,
-    entry.code && `<a class="button" href="${esc(entry.code)}">Source</a>`,
+    entry.pdf && `<a class="button primary" href="${esc(entry.pdf)}" title="The thesis as submitted (PDF)">${icon('pdf')}Read the PDF</a>`,
+    pub && `<a class="button" href="${esc(pub.url)}" title="${esc(pub.title)} (${esc(pub.venue)}), opens the publisher's page">${icon('external')}${esc(pub.label)}</a>`,
+    entry.code && `<a class="button" href="${esc(entry.code)}" title="Source code">${icon('code')}Source</a>`,
     // Every talk, by its short name, in the order entry.json lists them.
-    ...(entry.talks || []).map((t) => `<a class="button" href="${esc(rel(entry.path, t.path))}" title="${esc(t.title)}">${esc(t.short || t.title)}</a>`),
+    ...(entry.talks || []).map((t) => `<a class="button" href="${esc(rel(entry.path, t.path))}" title="Talk: ${esc(t.title)}">${icon('talk')}${esc(t.short || t.title)}</a>`),
   ].filter(Boolean).join('');
 
   const page = fillTemplate({
@@ -130,11 +131,11 @@ function renderTalkPage(talk, entry, thesis) {
   });
   for (const w of warnings) console.warn(`warning (${talk.path}):`, w);
   const actions = [
-    `<button class="button primary" type="button" data-present>Present <span aria-hidden="true">▸</span></button>`,
-    `<a class="button" href="${esc(rel(talk.path, entry.path))}">${esc(talk.thesisLabel || 'Read the thesis')}</a>`,
-    talk.slides && `<a class="button" href="slides/">Original slides</a>`,
+    `<button class="button primary" type="button" data-present title="Present full screen; arrows move, Esc leaves">${icon('play')}Present</button>`,
+    `<a class="button" href="${esc(rel(talk.path, entry.path))}" title="The thesis this talk is about">${icon('book')}${esc(talk.thesisLabel || 'Read the thesis')}</a>`,
+    talk.slides && `<a class="button" href="slides/" title="The slides as given in the talk">${icon('slides')}Original slides</a>`,
     // The other talks, by their short name ("Thesis talk", "Practical-work talk").
-    ...(entry.talks || []).filter((t) => t.path !== talk.path).map((t) => `<a class="button" href="${esc(rel(talk.path, t.path))}" title="${esc(t.title)}">${esc(t.short || t.title)}</a>`),
+    ...(entry.talks || []).filter((t) => t.path !== talk.path).map((t) => `<a class="button" href="${esc(rel(talk.path, t.path))}" title="Talk: ${esc(t.title)}">${icon('talk')}${esc(t.short || t.title)}</a>`),
   ].filter(Boolean).join('');
   const byline = [
     `<span class="author">${esc(thesis.meta.author)}</span>`,
@@ -195,7 +196,7 @@ async function build() {
       if (talk.slides) await renderSlides({
         pdf: at(talk.slides), out: path.join(dist, talk.path, 'slides'),
         title: `${talk.title} · Original slides`, label: 'Original slides', back: '../', backLabel: 'Talk',
-        links: [{ href: rel(talk.path + '/slides', entry.path), label: 'Thesis' }], root: rootOf(talk.path + '/slides'), stamp,
+        links: [{ href: rel(talk.path + '/slides', entry.path), label: 'Thesis', title: 'Read the thesis' }], root: rootOf(talk.path + '/slides'), stamp,
       });
     }
     if (entry.thesisPdf) await renderSlides({

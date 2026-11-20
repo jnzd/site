@@ -168,7 +168,11 @@ async function build() {
   // browser fetches the new file after every change instead of a cached one.
   const shared = ['style.css', 'theme.js', 'site.js', 'talk.js', 'slides.js', 'favicon.svg', 'apple-touch-icon.png'];
   const stamps = Object.fromEntries(shared.map((f) => [f, crypto.createHash('sha256').update(fs.readFileSync(at('theme', f))).digest('hex').slice(0, 10)]));
-  const stamp = (html) => html.replace(/(href|src)="((?:\.\.\/)*)(style\.css|theme\.js|site\.js|talk\.js|slides\.js|favicon\.svg)"/g, (_, attr, r, f) => `${attr}="${r}${f}?v=${stamps[f]}"`);
+  // Every build gets an id; pages carry it and theme.js compares it with
+  // version.json, so a page the browser kept from an older build reloads itself.
+  const buildId = Date.now().toString(36);
+  fs.writeFileSync(path.join(dist, 'version.json'), JSON.stringify({ build: buildId }) + '\n');
+  const stamp = (html) => html.replace('<head>', `<head>\n<meta name="build" content="${buildId}">`).replace(/(href|src)="((?:\.\.\/)*)(style\.css|theme\.js|site\.js|talk\.js|slides\.js|favicon\.svg)"/g, (_, attr, r, f) => `${attr}="${r}${f}?v=${stamps[f]}"`);
   const write = (p, html) => {
     fs.mkdirSync(path.join(dist, p), { recursive: true });
     fs.writeFileSync(path.join(dist, p, 'index.html'), stamp(html));
@@ -202,7 +206,7 @@ async function build() {
     if (entry.thesisPdf) await renderSlides({
       pdf: path.join(at(entry.source), entry.thesisPdf), out: path.join(out, 'pdf'), kind: 'page',
       title: `${thesis.meta.title} · PDF`, label: 'Thesis (PDF)', back: '../', backLabel: 'Web version',
-      root: rootOf(entry.path + '/pdf'), stamp,
+      root: rootOf(entry.path + '/pdf'), stamp, archive: entry.pdfArchive,
     });
   }
   // A talk card may show a web visual instead of a slide (thumbVisual, under entries/).

@@ -645,6 +645,8 @@ body.presenting .present-bar:hover { opacity: 1; }
 /* ---- PDF reader (pdf/*.html): the PDF's pages as images ---- */
 .reader-bar { position: sticky; top: 0; z-index: 10; display: flex; flex-wrap: wrap; align-items: center; gap: 0.5rem 1.25rem; padding: 0.8rem 1.5rem; background: color-mix(in srgb, var(--bg) 88%, transparent); backdrop-filter: blur(8px); border-bottom: 1px solid var(--line); }
 .reader-bar .title { font-weight: 600; color: var(--strong); margin-right: auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.reader-bar .archive { margin-left: 0.75rem; font: 400 0.72rem var(--mono); color: var(--muted); text-decoration: none; }
+.reader-bar .archive:hover { color: var(--accent); }
 .reader-bar .count { font: 0.75rem var(--mono); color: var(--muted); font-variant-numeric: tabular-nums; }
 .reader-bar .button { padding: 0.3rem 0.9rem; font-size: 0.82rem; }
 .icon-button { display: inline-grid; place-items: center; width: 2rem; height: 2rem; border-radius: 50%; border: 1px solid var(--line); color: var(--text); }

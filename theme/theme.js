@@ -1,6 +1,24 @@
 // Theme toggle: follows the system by default; a click cycles through
 // system, light and dark, and the choice is kept for the next visit.
 // (The saved choice is applied before the page paints by an inline script in <head>.)
+// GitHub Pages lets browsers keep a page for 10 minutes. After a deploy, a
+// kept page notices that version.json names a newer build and reloads once.
+(() => {
+  const meta = document.querySelector('meta[name="build"]');
+  const me = document.currentScript || document.querySelector('script[src*="theme.js"]');
+  if (!meta || !me || location.protocol === 'file:') return;
+  const url = new URL('version.json', me.src);
+  const check = () => fetch(url, { cache: 'no-store' }).then((r) => r.ok && r.json()).then((v) => {
+    if (!v || !v.build || v.build === meta.content) return;
+    const key = 'reloaded-for-' + v.build + location.pathname;
+    if (sessionStorage.getItem(key)) return;
+    sessionStorage.setItem(key, '1');
+    location.reload();
+  }).catch(() => {});
+  check();
+  document.addEventListener('visibilitychange', () => { if (!document.hidden) check(); });
+})();
+
 (() => {
   const root = document.documentElement;
   const host = document.querySelector('.site-nav, .reader-bar');

@@ -5,6 +5,12 @@ const status = (s) => { $('status').textContent = s; };
 
 let examples = {}, files = {}, current = null, main = null;
 let runStart = 0;
+// Apple keyboards run with Cmd+Enter (CodeMirror's Mod), others with Ctrl+Enter.
+const apple = /Mac|iPhone|iPad|iPod/.test(navigator.platform) || (navigator.userAgent.includes('Mac') && navigator.maxTouchPoints > 1);
+if (apple) {
+  document.querySelector('.shortcut .mod').textContent = '⌘';
+  $('run').title = 'Run (⌘+Enter)';
+}
 let vimOn = false;
 try { vimOn = localStorage.getItem('lex-vim') === '1'; } catch {}
 const editor = LexEditor.createEditor($('source'), () => $('run').click(), { vimMode: vimOn });
@@ -168,22 +174,82 @@ $('docstyle').onchange = () => {
 // The site style follows the light/dark toggle.
 new MutationObserver(() => { if ($('docstyle').value === 'site') renderDoc(); })
   .observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
-const syncDocStyle = () => { $('docstyle-field').hidden = $('mode').value !== 'doc'; };
-$('mode').addEventListener('change', syncDocStyle);
-syncDocStyle();
+// ---- Lexdoc full-size, print and download --------------------------------
+// A standalone copy of the Lexdoc page: the style sheets inlined, and for the
+// site style its fonts as data URLs, so the file works anywhere.
+async function standaloneDoc({ print = false } = {}) {
+  const style = $('docstyle').value;
+  const theme = document.documentElement.dataset.theme;
+  let css = '';
+  for (const h of ['lexdoc/base.css', ...DOC_STYLES[style]]) {
+    let text = await (await fetch(h)).text();
+    for (const [m, f] of [...text.matchAll(/url\((fonts\/[^)]+\.woff2)\)/g)]) {
+      const b = new Uint8Array(await (await fetch(f)).arrayBuffer());
+      let bin = ''; for (let i = 0; i < b.length; i += 0x8000) bin += String.fromCharCode(...b.subarray(i, i + 0x8000));
+      text = text.replace(m, `url(data:font/woff2;base64,${btoa(bin)})`);
+    }
+    css += text + '\n';
+  }
+  const page = { lexdoc: '', site: 'body.container{max-width:64rem}', statute: '' }[style];
+  return lastDoc
+    .replace('<html lang="en">', `<html lang="en"${theme ? ` data-theme="${theme}"` : ''}>`)
+    .replace('</head>', `<style>${css}${page}</style>` +
+      (print ? '<script>addEventListener("load", () => setTimeout(print, 400))<\/script>' : '') + '</head>');
+}
+const docName = () => (main || 'lex').split('/').pop().replace(/\.\w+$/, '') + '-lexdoc.html';
+async function openDoc(print) {
+  // Open the tab right away (browsers block pop-ups opened after an await).
+  const w = window.open('', '_blank');
+  const url = URL.createObjectURL(new Blob([await standaloneDoc({ print })], { type: 'text/html' }));
+  if (w) w.location = url; else location.href = url;
+  setTimeout(() => URL.revokeObjectURL(url), 60000);
+}
+$('doc-open').onclick = () => openDoc(false);
+$('doc-print').onclick = () => openDoc(true);
+$('doc-download').onclick = async () => {
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([await standaloneDoc()], { type: 'text/html' }));
+  a.download = docName();
+  a.click();
+  setTimeout(() => URL.revokeObjectURL(a.href), 60000);
+};
 
-function showResult(r) {
+// ---- Output: MFOTL and Lexdoc, both from every run --------------------------
+let view = 'mfotl';
+try { if (localStorage.getItem('lex-view') === 'doc') view = 'doc'; } catch {}
+function setView(v) {
+  view = v;
+  try { localStorage.setItem('lex-view', v); } catch {}
+  for (const [id, on] of [['view-mfotl', v === 'mfotl'], ['view-doc', v === 'doc']]) {
+    $(id).classList.toggle('active', on);
+    $(id).setAttribute('aria-selected', String(on));
+  }
+  const docShown = v === 'doc' && lastDoc !== null;
+  $('doc-tools').hidden = !docShown;
+  $('doc').hidden = !docShown;
+  $('output').hidden = docShown;
+  if (!lastResult) return;
+  if (v === 'doc' && lastDocResult && !lastDocResult.ok) {
+    // Lexdoc can fail where MFOTL works (Lex's Lexdoc does not handle every refinement).
+    $('output').innerHTML = `<span class="note">Lex could not build Lexdoc for this program.</span>\n\n${esc(lastDocResult.output.trim())}`;
+  } else if (!docShown) renderOutput(lastResult);
+}
+$('view-mfotl').onclick = () => setView('mfotl');
+$('view-doc').onclick = () => setView('doc');
+let lastDocResult = null;
+
+function showResult(r, d) {
   lastResult = r;
+  lastDocResult = d;
+  lastDoc = d && d.ok ? d.output : null;
+  if (lastDoc !== null) renderDoc();
   showWarnings(r);
   $('run').disabled = false;
   const n = r.smt.length;
   $('status').className = 'status ' + (r.ok ? 'ok' : 'bad');
   status(`${r.ok ? 'Done' : 'Errors'} in ${Math.round(performance.now() - runStart)} ms` +
          (n ? `, ${n} Z3 ${n === 1 ? 'query' : 'queries'}` : '') + (r.passes > 1 ? `, ${r.passes} passes` : ''));
-  const isDoc = r.ok && $('mode').value === 'doc';
-  $('output').hidden = isDoc;
-  $('doc').hidden = !isDoc;
-  if (isDoc) { lastDoc = r.output; renderDoc(); } else renderOutput(r);
+  setView(view);
   $('smt').hidden = n === 0;
   $('smt-list').replaceChildren(...r.smt.map(([s, a], i) => {
     const p = document.createElement('pre');
@@ -193,9 +259,7 @@ function showResult(r) {
   }));
 }
 
-$('debug').onchange = () => {
-  if (lastResult && !$('output').hidden) renderOutput(lastResult);
-};
+$('debug').onchange = () => { if (lastResult) setView(view); };
 
 $('run').onclick = async () => {
   if (typeof self.lexRun !== 'function') return;
@@ -204,7 +268,12 @@ $('run').onclick = async () => {
   $('status').className = 'status';
   status('Running Lex…');
   runStart = performance.now();
-  try { showResult(await runLex($('mode').value, main, files)); }
+  try {
+    const r = await runLex('mfotl', main, files);
+    // Lexdoc from the same sources; Z3's answers are cached, so this is quick.
+    const d = r.ok ? await runLex('doc', main, files) : null;
+    showResult(r, d);
+  }
   catch (e) { $('run').disabled = false; status(String(e)); }
 };
 $('engine').onchange = () => loadLex($('engine').value);

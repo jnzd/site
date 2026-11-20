@@ -80,6 +80,11 @@ select:hover, select:focus-visible { border-color: var(--accent); outline: none;
 .tabs button.active { color: var(--strong); border-bottom-color: var(--accent); }
 .tabs button .main { color: var(--faint); margin-left: .35em; }
 .source { flex: 1; min-height: 0; }
+.doc-tools { display: flex; align-items: center; gap: .15rem; padding: 0 .4rem; }
+.doc-tools select { font-size: .75rem; padding: .18rem 1.6rem .18rem .65rem; background-color: transparent; margin-right: .25rem; }
+.icon-button { display: inline-grid; place-items: center; width: 1.9rem; height: 1.9rem; border: 0; border-radius: 999px; background: none; color: var(--muted); cursor: pointer; }
+.icon-button:hover, .icon-button:focus-visible { color: var(--accent); background: color-mix(in srgb, var(--accent) 12%, transparent); outline: none; }
+.icon-button svg { width: 1rem; height: 1rem; fill: none; stroke: currentColor; stroke-width: 1.4; stroke-linecap: round; stroke-linejoin: round; }
 
 .warnings {
   list-style: none; margin: 0 0 .6rem; padding: .5rem .8rem .5rem 2rem; flex: none; position: relative;
@@ -89,6 +94,9 @@ select:hover, select:focus-visible { border-color: var(--accent); outline: none;
 }
 .warnings::before { content: "!"; position: absolute; left: .75rem; top: .45rem; font-weight: 600; color: var(--accent); }
 .warnings li + li { margin-top: .25rem; }
+pre#output, details, .tabs { overscroll-behavior: none; }
+/* The keyboard shortcut means nothing without a keyboard. */
+@media (hover: none) and (pointer: coarse) { .shortcut { display: none; } }
 pre#output {
   flex: 1; margin: 0; padding: .75rem 1rem; overflow: auto;
   font: .8rem/1.55 var(--mono); white-space: pre-wrap; overflow-wrap: anywhere; tab-size: 4;

@@ -71,11 +71,12 @@ const style = HighlightStyle.define([
 
 const theme = EditorView.theme({
   '&': { height: '100%', color: 'var(--text)', backgroundColor: 'transparent', fontSize: '.82rem' },
-  '.cm-scroller': { fontFamily: 'var(--mono)', lineHeight: '1.5' },
+  '.cm-scroller': { fontFamily: 'var(--mono)', lineHeight: '1.5', overscrollBehavior: 'none' },
   '.cm-content': { caretColor: 'var(--accent)', padding: '.6rem 0' },
   '&.cm-focused': { outline: 'none' },
   '.cm-cursor': { borderLeftColor: 'var(--accent)' },
-  '.cm-gutters': { backgroundColor: 'transparent', color: 'var(--faint)', border: 'none', paddingLeft: '.25rem' },
+  '.cm-gutters': { backgroundColor: 'var(--panel)', color: 'var(--faint)', border: 'none', borderRight: '1px solid var(--line)', paddingLeft: '.25rem' },
+  '.cm-lineNumbers .cm-gutterElement': { paddingRight: '.6rem' },
   '.cm-activeLine': { backgroundColor: 'color-mix(in srgb, var(--text) 4%, transparent)' },
   '.cm-activeLineGutter': { backgroundColor: 'transparent', color: 'var(--muted)' },
   '&.cm-focused .cm-selectionBackground, .cm-selectionBackground, ::selection':

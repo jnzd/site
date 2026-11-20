@@ -29,9 +29,7 @@ let failed = 0;
     await p.waitForFunction(() => /^(Done|Errors)/.test(document.getElementById('status').textContent));
     let o = await pageOverlaps(); failed += o.length;
     console.log(name, 'mfotl: warnings', await p.$$eval('#warnings li', l => l.length), 'page overlaps', JSON.stringify(o));
-    await p.selectOption('#mode', 'doc');
-    await p.click('#run');
-    await p.waitForFunction(() => /^(Done|Errors)/.test(document.getElementById('status').textContent));
+    await p.click('#view-doc');
     for (const st of ['site', 'statute', 'lexdoc']) {
       await p.selectOption('#docstyle', st);
       await p.waitForTimeout(1200);

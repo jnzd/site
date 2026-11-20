@@ -586,3 +586,103 @@ body.presenting .present-bar {
 body.presenting .present-bar:hover { opacity: 1; }
 .present-bar button { font: inherit; color: inherit; background: none; border: 1px solid var(--line); border-radius: 999px; padding: 0.2rem 0.6rem; cursor: pointer; }
 .present-bar button:hover { color: var(--accent); border-color: var(--accent); }
+
+/* ---- Bachelor's thesis additions ---- */
+/* Result plots are white-background images: show them on a light card. */
+.figure-body img.plot { width: 30rem; background: #fff; border-radius: 6px; padding: 0.5rem; }
+
+/* ---- PDF reader (pdf/*.html): the PDF's pages as images ---- */
+.reader-bar { position: sticky; top: 0; z-index: 10; display: flex; flex-wrap: wrap; align-items: center; gap: 0.5rem 1.25rem; padding: 0.8rem 1.5rem; background: color-mix(in srgb, var(--bg) 88%, transparent); backdrop-filter: blur(8px); border-bottom: 1px solid var(--line); }
+.reader-bar .title { font-weight: 600; color: var(--strong); margin-right: auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.reader-bar .count { font: 0.75rem var(--mono); color: var(--muted); font-variant-numeric: tabular-nums; }
+.reader-bar .button { padding: 0.3rem 0.9rem; font-size: 0.82rem; }
+.pages { display: flex; flex-direction: column; align-items: center; gap: 1.5rem; padding: 2rem 1rem 6rem; }
+.pages img { display: block; width: min(100%, var(--page-w, 52rem)); height: auto; aspect-ratio: var(--ratio); background: #fff; border-radius: 3px; box-shadow: 0 0 0 1px var(--line), 0 8px 30px rgba(0, 0, 0, 0.18); }
+.pages.slides { --page-w: 64rem; }
+.pages .page-no { font: 0.7rem var(--mono); color: var(--faint); margin-top: -1rem; }
+/* Highlights carried over from the slides (red and blue in the Beamer deck). */
+.katex .acc, pre .acc, code .acc { color: var(--accent); }
+.katex .blu { color: var(--tok-fn); }
+.pages img { scroll-margin-top: 4rem; }
+
+/* ---- Web-only illustrations of the bachelor's pages (art.js) ---- */
+.hero-art { display: block; width: 100%; height: auto; overflow: visible; }
+.hero-art .mono, .eri-art .mono { font-family: var(--mono); }
+.hero-art .name { font-size: 11.5px; }
+.hero-art .sub { font-size: 9px; fill: var(--muted); }
+.hero-art .txt { fill: var(--text); }
+.hero-art .acc { fill: var(--accent); }
+.hero-art .lane, .hero-art .tie { stroke: var(--line); }
+.hero-art .now { stroke: var(--faint); stroke-dasharray: 2 3; }
+/* The trace (thesis title) */
+#hero-trace .db { fill: var(--panel); stroke: var(--line); }
+#hero-trace .rowname { font-size: 9px; fill: var(--faint); }
+#hero-trace .ev { fill: var(--muted); transition: fill 0.4s, opacity 0.4s; }
+#hero-trace .ev.keep { fill: var(--accent); }
+#hero-trace .ev.skip { fill: var(--faint); opacity: 0.45; }
+#hero-trace .verdict { stroke: var(--muted); stroke-width: 1.4; }
+#hero-trace .verdict.bad { stroke: var(--accent); stroke-width: 2; }
+#hero-trace .spark { fill: var(--tok-fn); }
+#hero-trace .ring { fill: none; stroke: var(--accent); stroke-width: 1.2; }
+#hero-trace .change { opacity: 0; transition: opacity 0.5s; }
+#hero-trace .change.on { opacity: 1; }
+#hero-trace .window { fill: color-mix(in srgb, var(--tok-fn) 9%, transparent); stroke: color-mix(in srgb, var(--tok-fn) 55%, transparent); }
+#hero-trace .bracket { fill: none; stroke: var(--tok-fn); }
+#hero-trace .ri { font-size: 10px; fill: var(--tok-fn); }
+#hero-trace .change .acc { font-size: 10px; }
+/* The wrapper at work (talk title) */
+#hero-flow .wire { stroke: var(--line); }
+#hero-flow .node { fill: var(--panel); stroke: var(--line); }
+#hero-flow .node.hub { stroke: color-mix(in srgb, var(--accent) 55%, var(--line)); }
+#hero-flow .flash { fill: none; stroke: var(--accent); stroke-width: 1.5; }
+#hero-flow .pkt.event { fill: var(--tok-fn); }
+#hero-flow .pkt.verdict { fill: var(--accent); }
+#hero-flow .pkt.query, #hero-flow .pkt.answer { fill: var(--fig-purple); }
+@media (max-width: 34rem) { .hero-art .name { font-size: 15px; } .hero-art .sub { display: none; } }
+
+/* Which events the extended relative intervals keep (inline figure) */
+.eri-fig .figure-body > svg { max-width: min(100%, 44rem); }
+.eri-art .name { font-size: 11px; fill: var(--text); }
+.eri-art .name.dim { fill: var(--muted); }
+.eri-art .sub { font-size: 9.5px; fill: var(--muted); }
+.eri-art .lane { stroke: var(--line); }
+.eri-art .axis { stroke: var(--faint); fill: none; }
+.eri-art .now { stroke: var(--faint); stroke-dasharray: 2 3; }
+.eri-art .ri path { fill: none; stroke: var(--tok-fn); }
+.eri-art .ri text { font-size: 10px; fill: var(--tok-fn); }
+.eri-art .band { fill: color-mix(in srgb, var(--accent) 13%, transparent); stroke: color-mix(in srgb, var(--accent) 45%, transparent); }
+.eri-art .ev.keep { fill: var(--accent); }
+.eri-art .ev.skip { fill: none; stroke: var(--muted); stroke-width: 1; }
+.eri-art .legend text { font-size: 10px; fill: var(--muted); }
+.eri-art .legend .count { fill: var(--text); }
+.eri-fig figcaption .webonly { font-style: italic; }
+.eri-fig.animate .band { transform: scaleX(0); transform-box: fill-box; transform-origin: right; transition: transform 0.9s ease-out; }
+.eri-fig.animate .ev.keep { opacity: 0; transition: opacity 0.5s ease-out 0.8s; }
+.eri-fig.animate.in-view .band { transform: scaleX(1); }
+.eri-fig.animate.in-view .ev.keep { opacity: 1; }
+
+/* ---- Phones: nothing may widen the page ---- */
+/* Long identifiers in inline code break anywhere rather than run off the screen. */
+:not(pre) > code { overflow-wrap: anywhere; }
+/* An inline formula wider than its line scrolls on its own (art.js marks it). */
+.katex.wide { display: inline-block; max-width: 100%; overflow-x: auto; overflow-y: hidden; vertical-align: bottom; }
+/* Backstop: the page itself never pans sideways. */
+html, body { overflow-x: clip; }
+
+/* ---- Site-wide: header link home, and the home page ---- */
+.site-nav { position: absolute; top: 0; left: 0; right: 0; z-index: 5; padding: 1rem 1.5rem; font-size: 0.85rem; }
+.site-nav .site-name { color: var(--muted); text-decoration: none; font-weight: 600; letter-spacing: 0.01em; }
+.site-nav .site-name:hover { color: var(--accent); }
+.site-footer a { color: inherit; text-decoration: none; }
+.site-footer a:hover { color: var(--accent); }
+body.home .hero { min-height: auto; padding-bottom: 2rem; }
+body.home .scroll-hint, body.home .rail, body.home .hero-visual:empty { display: none; }
+body.home .post .intro { font-size: 1.1rem; color: var(--text); }
+.cards { display: grid; gap: 1.25rem; margin-top: 2rem; }
+.card { border: 1px solid var(--line); border-radius: 8px; padding: 1.25rem 1.5rem; background: var(--panel); }
+.card h2 { margin: 0.2rem 0 0.6rem; font-size: 1.25rem; border: 0; padding: 0; }
+.card h2 a { color: var(--strong); text-decoration: none; }
+.card h2 a:hover { color: var(--accent); }
+.card .meta { font: 0.75rem var(--mono); color: var(--muted); margin: 0; }
+.card .talks { list-style: none; padding: 0; margin: 0.8rem 0 0; display: grid; gap: 0.35rem; }
+.card .talks .meta { display: inline; }

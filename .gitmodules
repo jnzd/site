@@ -1,0 +1,9 @@
+[submodule "content/msc-thesis"]
+	path = content/msc-thesis
+	url = https://github.com/jnzd/masters-thesis-report
+[submodule "content/bsc-thesis"]
+	path = content/bsc-thesis
+	url = https://github.com/jnzd/bachelor-thesis-report
+[submodule "content/bsc-talk"]
+	path = content/bsc-talk
+	url = https://github.com/jnzd/bachelor-thesis-presentation

@@ -1,6 +1,10 @@
-// Builds the LaTeX thesis (see site.config.json) into a single static page in dist/.
+// Builds every entry in entries/ (see entries/*/entry.json) into one static site in dist/.
 //   node build.mjs          one-off build
 //   node build.mjs --serve  build, watch for changes, serve on localhost
+//
+// An entry of type "thesis" is a LaTeX thesis from a submodule in content/, built
+// to dist/<path>/; the talks it lists are built to dist/<talk.path>/ and link
+// back to it.
 import crypto from 'node:crypto';
 import fs from 'node:fs';
 import path from 'node:path';
@@ -11,57 +15,81 @@ import { execFileSync } from 'node:child_process';
 import { preprocess, katexMacros } from './lib/preprocess.mjs';
 import { postprocess } from './lib/postprocess.mjs';
 import { renderTalk } from './lib/talk.mjs';
+import { renderHome } from './lib/home.mjs';
+import { renderSlides } from './lib/slides.mjs';
 
 const root = path.dirname(fileURLToPath(import.meta.url));
 const at = (...p) => path.join(root, ...p);
 const esc = (s) => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
-const config = JSON.parse(fs.readFileSync(at('site.config.json'), 'utf8'));
-const thesisDir = path.resolve(root, process.env.THESIS_DIR || config.thesisDir);
+const site = JSON.parse(fs.readFileSync(at('site.json'), 'utf8'));
 
-function render() {
-  const { tex, meta, state } = preprocess(thesisDir);
+// A relative link from the page at dist/<from>/ to dist/<to>/ (both without slashes at the ends).
+export function rel(from, to) {
+  const up = from ? from.split('/').map(() => '..') : [];
+  const href = [...up, ...(to ? to.split('/') : [])].join('/');
+  return href ? href + '/' : './';
+}
+const rootOf = (p) => (p ? p.split('/').map(() => '../').join('') : '');
+
+function loadEntries() {
+  return fs.readdirSync(at('entries')).sort()
+    .filter((d) => fs.existsSync(at('entries', d, 'entry.json')))
+    .map((d) => ({ dir: at('entries', d), ...JSON.parse(fs.readFileSync(at('entries', d, 'entry.json'), 'utf8')) }));
+}
+
+// Links written from the site root ("/lex/talk/") become relative to the page.
+const siteLink = (from, url) => (url.startsWith('/') ? rel(from, url.replace(/^\/|\/$/g, '')) : url);
+
+function renderThesis(entry) {
+  const src = at(entry.source);
+  const from = (f) => path.join(entry.dir, f);
+  const { tex, meta: texMeta, state } = preprocess(src, entry);
+  const meta = { ...texMeta, ...(entry.meta || {}) };
   // pandoc drops \dj (đ) from author names, so hand it a patched copy of the bibliography.
-  const bib = path.join(os.tmpdir(), `thesis-site-refs-${process.pid}.bib`);
-  fs.writeFileSync(bib, fs.readFileSync(path.join(thesisDir, 'refs.bib'), 'utf8').replace(/\{?\\dj\b\s*(\{\})?\}?/g, 'đ'));
+  const bib = path.join(os.tmpdir(), `thesis-site-refs-${process.pid}-${path.basename(entry.dir)}.bib`);
+  fs.writeFileSync(bib, fs.readFileSync(path.join(src, entry.bibliography), 'utf8').replace(/\{?\\dj\b\s*(\{\})?\}?/g, 'đ'));
   const raw = execFileSync('pandoc', [
     '-f', 'latex', '-t', 'html', '--katex', '--wrap=none', '--citeproc', '--bibliography', bib,
-  ], { input: tex, cwd: thesisDir, encoding: 'utf8', maxBuffer: 1 << 28 });
+  ], { input: tex, cwd: src, encoding: 'utf8', maxBuffer: 1 << 28 });
+  const macros = katexMacros(src, entry.macroFiles || [], entry.katexMacros || {});
+  const referenceLinks = Object.fromEntries(Object.entries(entry.referenceLinks || {})
+    .map(([k, links]) => [k, links.map((l) => ({ ...l, url: siteLink(entry.path, l.url) }))]));
   const { html, toc, warnings } = postprocess(raw, {
-    state, macros: katexMacros(thesisDir), figuresDir: at('public/figures'), tikzFiles: config.tikzFigures || [],
-    bibliographyOrder: config.bibliographyOrder || [],
-    referenceLinks: config.referenceLinks || {},
-    referenceUpdates: config.referenceUpdates || {},
-    linkUpdates: config.linkUpdates || {},
-    inserts: (config.inserts || []).map((x) => ({ after: x.after, html: fs.readFileSync(at(x.file), 'utf8') })),
+    state, macros, figuresDir: from('figures'), tikzFiles: entry.tikzFigures || [],
+    bibliographyOrder: entry.bibliographyOrder || [],
+    referenceLinks,
+    referenceUpdates: entry.referenceUpdates || {},
+    linkUpdates: entry.linkUpdates || {},
+    inserts: (entry.inserts || []).map((x) => ({ after: x.after, html: fs.readFileSync(from(x.file), 'utf8') })),
   });
   fs.rmSync(bib, { force: true });
-  for (const w of warnings) console.warn('warning:', w);
+  for (const w of warnings) console.warn(`warning (${entry.path}):`, w);
 
   const people = [meta.supervisor, meta.advisors].filter(Boolean).map((p) => `<span>${esc(p)}</span>`).join('');
   const byline = [
     meta.author && `<span class="author">${esc(meta.author)}</span>`,
-    `<span>${esc([meta.thesistype, config.institution].filter(Boolean).join(', '))}</span>`,
+    `<span>${esc([meta.thesistype, entry.institution].filter(Boolean).join(', '))}</span>`,
     meta.date && `<span>${esc(meta.date)}</span>`,
   ].filter(Boolean).join('');
   // The thesis PDF is the main action; a related paper gets a quieter button
   // (its full title shows on hover).
-  const pub = config.publication;
+  const pub = entry.publication;
   const actions = [
-    config.pdf && `<a class="button primary" href="${esc(config.pdf)}">Read the PDF</a>`,
+    entry.pdf && `<a class="button primary" href="${esc(entry.pdf)}">Read the PDF</a>`,
     pub && `<a class="button" href="${esc(pub.url)}" title="${esc(pub.title)} (${esc(pub.venue)})">${esc(pub.label)} <span aria-hidden="true">↗</span></a>`,
-    config.code && `<a class="button" href="${esc(config.code)}">Source</a>`,
-    // Every talk, by its short name, in the order site.config.json lists them.
-    ...(config.talks || []).map((t) => `<a class="button" href="${esc(t.slug)}/" title="${esc(t.title)}">${esc(t.short || t.title)}</a>`),
+    entry.code && `<a class="button" href="${esc(entry.code)}">Source</a>`,
+    // Every talk, by its short name, in the order entry.json lists them.
+    ...(entry.talks || []).map((t) => `<a class="button" href="${esc(rel(entry.path, t.path))}" title="${esc(t.title)}">${esc(t.short || t.title)}</a>`),
   ].filter(Boolean).join('');
-  const rail = renderRail(toc);
 
-  const fill = {
-    lang: 'en', title: meta.title, subtitle: config.subtitle || '', description: config.subtitle || meta.title,
-    author: meta.author, institution: [meta.department, config.institution].filter(Boolean).join(', '), date: meta.date,
-    byline, people, actions, rail,
-    heroVisual: config.heroVisual ? fs.readFileSync(at(config.heroVisual), 'utf8') : '', content: html,
-    root: '', scripts: '', bodyClass: 'thesis',
-  };
+  const page = fillTemplate({
+    lang: 'en', title: meta.title, subtitle: entry.subtitle || '', description: entry.subtitle || meta.title,
+    author: meta.author, institution: [meta.department, entry.institution].filter(Boolean).join(', '), date: meta.date,
+    byline, people, actions, rail: renderRail(toc),
+    heroVisual: entry.heroVisual ? fs.readFileSync(from(entry.heroVisual), 'utf8') : '', content: html,
+    root: rootOf(entry.path), scripts: (entry.scripts || []).map((s) => `<script src="${esc(s)}" defer></script>`).join('\n'),
+    bodyClass: 'thesis',
+  });
   // Reference numbers as they appear on the thesis page, for the talks.
   const refs = {};
   [...html.matchAll(/<li id="ref-([^"]+)">/g)].forEach((m, i) => { refs[m[1]] = i + 1; });
@@ -69,11 +97,17 @@ function render() {
   // Figure and table numbers ("Fig 2.3"), for {n} in talks' thesis links.
   const labels = {};
   for (const m of html.matchAll(/<figure[^>]*\sid="([^"]+)"[\s\S]*?<span class="label">([^<]+)<\/span>/g)) labels[m[1]] = m[2].trim();
-  return { page: fillTemplate(fill), toc, refs, ids, labels, meta };
+  return { page, toc, refs, ids, labels, meta, macros };
+}
+
+// The shared header names the site and links home; every page gets it.
+function siteHeader(rootHref) {
+  return `<nav class="site-nav" aria-label="Site"><a class="site-name" href="${esc(rootHref || './')}">${esc(site.name)}</a></nav>`;
 }
 
 function fillTemplate(fill) {
-  return fs.readFileSync(at('src/template.html'), 'utf8')
+  fill = { siteHeader: siteHeader(fill.root), siteName: site.name, ...fill };
+  return fs.readFileSync(at('theme/template.html'), 'utf8')
     .replace(/\{\{\{(\w+)\}\}\}/g, (_, k) => fill[k] ?? '')
     .replace(/\{\{(\w+)\}\}/g, (_, k) => esc(fill[k] ?? ''));
 }
@@ -86,30 +120,32 @@ function renderRail(toc) {
     + '<div class="rail-zone" aria-hidden="true"></div><div class="rail-trail" aria-hidden="true"><span class="c"></span><span class="s"></span></div>';
 }
 
-// A talk (see lib/talk.mjs) becomes dist/<slug>/index.html, linked to the thesis.
-function renderTalkPage(talk, thesis) {
-  const { html, toc, warnings } = renderTalk(fs.readFileSync(at(talk.source), 'utf8'), {
-    macros: katexMacros(thesisDir), thesisToc: thesis.toc, thesisRefs: thesis.refs,
-    thesisIds: thesis.ids, thesisLabels: thesis.labels, figuresDir: at('public/figures'),
+// A talk (see lib/talk.mjs) becomes dist/<talk.path>/index.html, linked to its thesis.
+function renderTalkPage(talk, entry, thesis) {
+  const figuresDir = talk.figures ? at('entries', talk.figures) : path.join(entry.dir, 'figures');
+  const { html, toc, warnings } = renderTalk(fs.readFileSync(at('entries', talk.source), 'utf8'), {
+    macros: thesis.macros, thesisToc: thesis.toc, thesisRefs: thesis.refs,
+    thesisIds: thesis.ids, thesisLabels: thesis.labels, figuresDir, thesisHref: rel(talk.path, entry.path),
   });
-  for (const w of warnings) console.warn('warning:', w);
+  for (const w of warnings) console.warn(`warning (${talk.path}):`, w);
   const actions = [
     `<button class="button primary" type="button" data-present>Present <span aria-hidden="true">▸</span></button>`,
-    `<a class="button" href="../">${esc(talk.thesisLabel || 'Read the thesis')}</a>`,
-    talk.slides && `<a class="button" href="${esc(talk.slides)}">Original slides <span aria-hidden="true">↗</span></a>`,
+    `<a class="button" href="${esc(rel(talk.path, entry.path))}">${esc(talk.thesisLabel || 'Read the thesis')}</a>`,
+    talk.slides && `<a class="button" href="slides/">Original slides</a>`,
     // The other talks, by their short name ("Thesis talk", "Practical-work talk").
-    ...(config.talks || []).filter((t) => t.slug !== talk.slug).map((t) => `<a class="button" href="../${esc(t.slug)}/" title="${esc(t.title)}">${esc(t.short || t.title)}</a>`),
+    ...(entry.talks || []).filter((t) => t.path !== talk.path).map((t) => `<a class="button" href="${esc(rel(talk.path, t.path))}" title="${esc(t.title)}">${esc(t.short || t.title)}</a>`),
   ].filter(Boolean).join('');
   const byline = [
     `<span class="author">${esc(thesis.meta.author)}</span>`,
     talk.kind && `<span>${esc(talk.kind)}</span>`,
     talk.date && `<span>${esc(talk.date)}</span>`,
   ].filter(Boolean).join('');
+  const r = rootOf(talk.path);
   return fillTemplate({
     lang: 'en', title: talk.title, subtitle: talk.subtitle || '', description: talk.subtitle || talk.title,
-    author: thesis.meta.author, institution: config.institution, date: talk.date,
+    author: thesis.meta.author, institution: entry.institution, date: talk.date,
     byline, people: '', actions, rail: renderRail(toc), heroVisual: '', content: html,
-    root: '../', scripts: '<script src="../talk.js" defer></script>', bodyClass: 'talk',
+    root: r, scripts: `<script src="${r}talk.js" defer></script>`, bodyClass: 'talk',
   });
 }
 
@@ -118,28 +154,55 @@ function copyFonts(pkg, files, dest) {
   for (const f of files) fs.copyFileSync(at('node_modules', pkg, f), path.join(dest, path.basename(f)));
 }
 
-function build() {
+async function build() {
   const started = Date.now();
   const dist = at('dist');
   fs.rmSync(dist, { recursive: true, force: true });
   fs.mkdirSync(dist, { recursive: true });
-  if (fs.existsSync(at('public'))) fs.cpSync(at('public'), dist, { recursive: true });
 
-  if (fs.existsSync(path.join(thesisDir, 'assets'))) fs.cpSync(path.join(thesisDir, 'assets'), path.join(dist, 'assets'), { recursive: true, filter: (f) => !f.endsWith('.pdf') });
   // Links to the stylesheet and scripts carry a hash of their content, so a
   // browser fetches the new file after every change instead of a cached one.
-  const version = (f) => crypto.createHash('sha256').update(fs.readFileSync(at(f))).digest('hex').slice(0, 10);
-  const stamps = { 'style.css': version('src/style.css'), 'site.js': version('src/site.js'), 'talk.js': version('src/talk.js') };
-  const stamp = (html) => html.replace(/(href|src)="((?:\.\.\/)?)(style\.css|site\.js|talk\.js)"/g, (_, attr, root, f) => `${attr}="${root}${f}?v=${stamps[f]}"`);
-  const thesis = render();
-  fs.writeFileSync(path.join(dist, 'index.html'), stamp(thesis.page));
-  for (const talk of config.talks || []) {
-    fs.mkdirSync(path.join(dist, talk.slug), { recursive: true });
-    fs.writeFileSync(path.join(dist, talk.slug, 'index.html'), stamp(renderTalkPage(talk, thesis)));
+  const shared = ['style.css', 'site.js', 'talk.js', 'slides.js'];
+  const stamps = Object.fromEntries(shared.map((f) => [f, crypto.createHash('sha256').update(fs.readFileSync(at('theme', f))).digest('hex').slice(0, 10)]));
+  const stamp = (html) => html.replace(/(href|src)="((?:\.\.\/)*)(style\.css|site\.js|talk\.js|slides\.js)"/g, (_, attr, r, f) => `${attr}="${r}${f}?v=${stamps[f]}"`);
+  const write = (p, html) => {
+    fs.mkdirSync(path.join(dist, p), { recursive: true });
+    fs.writeFileSync(path.join(dist, p, 'index.html'), stamp(html));
+  };
+
+  const entries = loadEntries();
+  const cards = [];
+  for (const entry of entries.filter((e) => e.type === 'thesis')) {
+    const out = path.join(dist, entry.path);
+    fs.mkdirSync(out, { recursive: true });
+    // Images the thesis includes (PDFs are replaced by their SVG twins).
+    if (entry.assets) {
+      for (const a of [].concat(entry.assets)) {
+        fs.cpSync(path.join(at(entry.source), a), path.join(out, a), { recursive: true, filter: (f) => !f.endsWith('.pdf') });
+      }
+    }
+    // Hand-made web assets of the entry (figures, scripts) are served next to its page.
+    for (const d of entry.public || []) fs.cpSync(path.join(entry.dir, d), path.join(out, d), { recursive: true });
+    const thesis = renderThesis(entry);
+    write(entry.path, thesis.page);
+    cards.push({ entry, title: thesis.meta.title, date: thesis.meta.date });
+    for (const talk of entry.talks || []) {
+      write(talk.path, renderTalkPage(talk, entry, thesis));
+      if (talk.slides) await renderSlides({
+        pdf: at('entries', talk.slides), out: path.join(dist, talk.path, 'slides'),
+        title: `${talk.title} · Original slides`, label: 'Original slides', back: '../', backLabel: 'Talk',
+        links: [{ href: rel(talk.path + '/slides', entry.path), label: 'Thesis' }], root: rootOf(talk.path + '/slides'), stamp,
+      });
+    }
+    if (entry.thesisPdf) await renderSlides({
+      pdf: path.join(at(entry.source), entry.thesisPdf), out: path.join(out, 'pdf'), kind: 'page',
+      title: `${thesis.meta.title} · PDF`, label: 'Thesis (PDF)', back: '../', backLabel: 'Web version',
+      root: rootOf(entry.path + '/pdf'), stamp,
+    });
   }
-  fs.copyFileSync(at('src/talk.js'), path.join(dist, 'talk.js'));
-  fs.copyFileSync(at('src/style.css'), path.join(dist, 'style.css'));
-  fs.copyFileSync(at('src/site.js'), path.join(dist, 'site.js'));
+  write('', renderHome({ site, cards, fillTemplate, esc, rel }));
+
+  for (const f of shared) fs.copyFileSync(at('theme', f), path.join(dist, f));
 
   // Self-hosted fonts and KaTeX, so the site needs no third-party requests.
   fs.mkdirSync(path.join(dist, 'katex'), { recursive: true });
@@ -152,22 +215,22 @@ function build() {
     'ibm-plex-sans-latin-600-normal.woff2', 'ibm-plex-sans-latin-600-italic.woff2',
   ], path.join(dist, 'fonts'));
   copyFonts('@fontsource/ibm-plex-mono/files', ['ibm-plex-mono-latin-400-normal.woff2'], path.join(dist, 'fonts'));
+  if (site.cname) fs.writeFileSync(path.join(dist, 'CNAME'), site.cname + '\n');
 
   console.log(`built dist/ in ${Date.now() - started} ms`);
 }
 
-build();
+await build();
 
 if (process.argv.includes('--serve')) {
   let timer;
   const rebuild = () => {
     clearTimeout(timer);
-    timer = setTimeout(() => { try { build(); } catch (e) { console.error(e.message); } }, 100);
+    timer = setTimeout(() => build().catch((e) => console.error(e.message)), 100);
   };
-  for (const dir of [at('src'), at('public'), at('talks')]) fs.watch(dir, { recursive: true }, rebuild);
-  // The thesis folder may contain this site: only react to its LaTeX sources.
-  fs.watch(thesisDir, { recursive: true }, (_event, file) => {
-    if (file && /\.(tex|bib)$/.test(file) && !/(^|[\\/])(node_modules|dist|\.git)[\\/]/.test(file)) rebuild();
+  for (const dir of [at('theme'), at('entries'), at('lib')]) fs.watch(dir, { recursive: true }, rebuild);
+  fs.watch(at('content'), { recursive: true }, (_event, file) => {
+    if (file && /\.(tex|bib)$/.test(file)) rebuild();
   });
 
   const types = {

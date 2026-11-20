@@ -1,5 +1,24 @@
 {
-  "thesisDir": "..",
+  "type": "thesis",
+  "path": "lex-refinement",
+  "source": "content/msc-thesis",
+  "main": "thesis.tex",
+  "bibliography": "refs.bib",
+  "macroFiles": [
+    "macrosetup.tex",
+    "symbols.tex"
+  ],
+  "assets": "assets",
+  "textMacros": [
+    "\\newcommand{\\Lex}{Lex}",
+    "\\newcommand{\\Let}{\\textbf{let}}",
+    "\\newcommand{\\IIn}{\\textbf{in}}",
+    "\\newcommand{\\Case}{\\textbf{case}}",
+    "\\newcommand{\\OOf}{\\textbf{of}}",
+    "\\newcommand{\\When}{\\textbf{when}}",
+    "\\newcommand{\\IInput}{\\textbf{Input:}~}",
+    "\\newcommand{\\OOutput}{\\textbf{Output:}~}"
+  ],
   "subtitle": "Extending the Lex language with refinement, so abstract legal specifications can be made concrete for specific use cases",
   "institution": "ETH Zurich",
   "pdf": "https://www.research-collection.ethz.ch/server/api/core/bitstreams/c7094a51-2753-4824-b1bc-6ba6cfc578af/content",
@@ -41,39 +60,48 @@
   "linkUpdates": {
     "https://gitlab.inf.ethz.ch/OU-BASIN/lex/": "https://github.com/francois-hublet/lex"
   },
-  "heroVisual": "src/hero-visual.html",
+  "heroVisual": "hero-visual.html",
   "inserts": [
     {
       "after": "section:lex-pretix-refinement",
-      "file": "src/inserts/refinement-tree.html"
+      "file": "inserts/refinement-tree.html"
     }
   ],
   "referenceLinks": {
     "semesterproject": [
       {
         "label": "Talk",
-        "url": "practical-work/"
+        "url": "/lex/talk/"
       }
     ]
   },
   "talks": [
     {
       "slug": "master-thesis",
-      "source": "talks/master-thesis.html",
+      "source": "lex-refinement/talk.html",
       "title": "Refinement of Legal Specifications in the Lex Programming Language",
       "subtitle": "The talk on this master's thesis: refining abstract legal specifications in Lex for a concrete system",
       "kind": "Master's thesis talk, ETH Zurich",
       "date": "2025",
-      "short": "Thesis talk"
+      "short": "Thesis talk",
+      "path": "lex-refinement/talk",
+      "slides": "lex-refinement/slides.pdf"
     },
     {
       "slug": "practical-work",
-      "source": "talks/practical-work.html",
+      "source": "lex/talk.html",
       "title": "Lex: A Language for Formalizing Legal Provisions",
       "subtitle": "The talk on the practical work that introduced Lex, which the thesis builds on",
       "kind": "Practical work talk, ETH Zurich",
       "date": "2024",
-      "short": "Practical-work talk"
+      "short": "Practical-work talk",
+      "path": "lex/talk",
+      "slides": "lex/slides.pdf"
     }
-  ]
+  ],
+  "home": {
+    "kind": "Master's thesis, ETH Zurich",
+    "year": "2025",
+    "order": 2
+  }
 }

@@ -172,7 +172,9 @@ async function build() {
   // version.json, so a page the browser kept from an older build reloads itself.
   const buildId = Date.now().toString(36);
   fs.writeFileSync(path.join(dist, 'version.json'), JSON.stringify({ build: buildId }) + '\n');
-  const stamp = (html) => html.replace('<head>', `<head>\n<meta name="build" content="${buildId}">`).replace(/(href|src)="((?:\.\.\/)*)(style\.css|theme\.js|site\.js|talk\.js|slides\.js|favicon\.svg)"/g, (_, attr, r, f) => `${attr}="${r}${f}?v=${stamps[f]}"`);
+  // Cloudflare Web Analytics (no cookies), on every page, when site.json names a token.
+  const beacon = site.analyticsToken ? `<script defer src="https://static.cloudflareinsights.com/beacon.min.js" data-cf-beacon='{"token": "${site.analyticsToken}"}'></script>\n` : '';
+  const stamp = (html) => html.replace('</body>', beacon + '</body>').replace('<head>', `<head>\n<meta name="build" content="${buildId}">`).replace(/(href|src)="((?:\.\.\/)*)(style\.css|theme\.js|site\.js|talk\.js|slides\.js|favicon\.svg)"/g, (_, attr, r, f) => `${attr}="${r}${f}?v=${stamps[f]}"`);
   const write = (p, html) => {
     fs.mkdirSync(path.join(dist, p), { recursive: true });
     fs.writeFileSync(path.join(dist, p, 'index.html'), stamp(html));

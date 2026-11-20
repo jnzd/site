@@ -1,7 +1,8 @@
 # Personal site
 
 Theses and talks as web pages, built from their LaTeX sources into one static
-site with no third-party requests.
+site. The only third-party request is Cloudflare Web Analytics (cookieless
+visit counts; token `analyticsToken` in `site.json`, remove it to turn it off).
 
 ```bash
 git clone --recurse-submodules https://github.com/jnzd/site
@@ -24,7 +25,7 @@ Requires Node 20+, `pandoc` and `pdftoppm` (poppler) on the PATH.
 | `lib/talk.mjs`           | Turns a talk (hand-written slide sections) into a page linked to its thesis |
 | `lib/slides.mjs`         | Shows a PDF (original slides, the thesis PDF) as a page of images |
 | `lib/home.mjs`           | The landing page                                                 |
-| `site.json`              | Site name, intro text, custom domain (`cname`)                   |
+| `site.json`              | Site name, intro text, custom domain (`cname`), `analyticsToken` |
 
 ## Pages
 

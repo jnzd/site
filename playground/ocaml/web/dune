@@ -2,7 +2,7 @@
 (executable
  (name lexweb)
  (modes js wasm)
- (libraries lex_lib MFOTL_lib z3 js_of_ocaml core)
+ (libraries lex_lib MFOTL_lib z3 wasm_stubs js_of_ocaml core)
  (js_of_ocaml
   (flags (:standard)))
  (wasm_of_ocaml

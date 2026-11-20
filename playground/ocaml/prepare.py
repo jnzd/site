@@ -6,7 +6,7 @@ Usage: prepare.py LEX_CHECKOUT OUT_DIR
 LEX_CHECKOUT is a clone of github.com/francois-hublet/lex with its enfguard
 submodule. OUT_DIR gets Lex's src/ and MFOTL_lib/ with a few small patches
 (no Unix process or file-system calls, Z3 replaced by the stand-in in z3/),
-plus z3/ and web/ from this folder. Lex itself is not changed.
+plus z3/, web/ and wasm_stubs/ from this folder. Lex itself is not changed.
 """
 import os, re, shutil, sys
 
@@ -21,6 +21,7 @@ shutil.copytree(os.path.realpath(os.path.join(lex, "MFOTL_lib")), os.path.join(o
 shutil.copytree(os.path.join(lex, "assets"), os.path.join(out, "assets"))
 shutil.copytree(os.path.join(here, "z3"), os.path.join(out, "z3"))
 shutil.copytree(os.path.join(here, "web"), os.path.join(out, "web"))
+shutil.copytree(os.path.join(here, "wasm_stubs"), os.path.join(out, "wasm_stubs"))
 
 with open(os.path.join(out, "dune-project"), "w") as f:
     f.write("(lang dune 3.17)\n(using menhir 3.0)\n")

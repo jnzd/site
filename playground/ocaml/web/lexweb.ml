@@ -16,7 +16,9 @@ let out = Buffer.create 4096
 (* Output goes to [out] while Lex runs, and to the console otherwise, so that
    errors outside a run (such as a fatal exception) stay visible. *)
 let capture on =
-  let to_console s = Console.console##log (Js.string s) in
+  let to_console s =
+    ignore (Js.Unsafe.meth_call (Js.Unsafe.get Js.Unsafe.global (Js.string "console")) "log"
+              [| Js.Unsafe.inject (Js.string s) |]) in
   let f = if on then Buffer.add_string out else to_console in
   Sys_js.set_channel_flusher stdout f;
   Sys_js.set_channel_flusher stderr f

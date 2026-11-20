@@ -11,9 +11,11 @@ permissions:
   pages: write
   id-token: write
 
+# A deploy that has started always finishes. Pushes made meanwhile wait, and
+# only the newest of them runs next (GitHub drops the older waiting ones).
 concurrency:
   group: pages
-  cancel-in-progress: true
+  cancel-in-progress: false
 
 jobs:
   build:
@@ -31,6 +33,12 @@ jobs:
       - name: Install pandoc and poppler
         run: sudo apt-get update && sudo apt-get install -y pandoc poppler-utils
       - run: npm ci
+      # Rendered PDF pages, keyed by the PDF's hash: only changed PDFs are rendered again.
+      - uses: actions/cache@v4
+        with:
+          path: .cache
+          key: render-${{ github.sha }}
+          restore-keys: render-
       - run: npm run build
       - uses: actions/upload-pages-artifact@v3
         with:

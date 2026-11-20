@@ -5,21 +5,26 @@ const status = (s) => { $('status').textContent = s; };
 
 let examples = {}, files = {}, current = null, main = null;
 let runStart = 0;
+const editor = LexEditor.createEditor($('source'), () => $('run').click());
 
 function setFiles(ex) {
   files = { ...ex.files };
   main = ex.main;
+  editor.reset();
   showTab(main);
 }
 function showTab(name) {
-  if (current) files[current] = $('source').value;
+  if (current) files[current] = editor.value;
   current = name;
-  $('source').value = files[name];
+  editor.show(name, files[name]);
   // Large legal-text sources (formex / Akoma Ntoso XML) are sent along but not shown.
   $('tabs').replaceChildren(...Object.keys(files).filter((f) => !f.endsWith('.xml')).map((f) => {
     const b = document.createElement('button');
-    b.textContent = f.split('/').pop() + (f === main ? ' (main)' : '');
+    b.textContent = f.split('/').pop();
+    if (f === main) b.append(Object.assign(document.createElement('span'), { className: 'main', textContent: 'main' }));
     b.className = f === name ? 'active' : '';
+    b.setAttribute('role', 'tab');
+    b.setAttribute('aria-selected', String(f === name));
     b.onclick = () => showTab(f);
     return b;
   }));
@@ -119,16 +124,25 @@ function outputText(r) {
   return (shown.length ? shown.join('\n') + '\n\n' : '') + r.output;
 }
 
+// MFOTL output is highlighted; error lines are marked.
+const esc = (s) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;');
+function renderOutput(r) {
+  const text = outputText(r);
+  $('output').innerHTML = r.ok ? LexEditor.highlightMfotl(text)
+    : text.split('\n').map((l) => (/error|exception|cannot/i.test(l) ? `<span class="err">${esc(l)}</span>` : esc(l))).join('\n');
+}
+
 function showResult(r) {
   lastResult = r;
   $('run').disabled = false;
   const n = r.smt.length;
+  $('status').className = 'status ' + (r.ok ? 'ok' : 'bad');
   status(`${r.ok ? 'Done' : 'Errors'} in ${Math.round(performance.now() - runStart)} ms` +
          (n ? `, ${n} Z3 ${n === 1 ? 'query' : 'queries'}` : '') + (r.passes > 1 ? `, ${r.passes} passes` : ''));
   const isDoc = r.ok && $('mode').value === 'doc';
   $('output').hidden = isDoc;
   $('doc').hidden = !isDoc;
-  if (isDoc) $('doc').srcdoc = r.output; else $('output').textContent = outputText(r);
+  if (isDoc) $('doc').srcdoc = r.output; else renderOutput(r);
   $('smt').hidden = n === 0;
   $('smt-list').replaceChildren(...r.smt.map(([s, a], i) => {
     const p = document.createElement('pre');
@@ -139,13 +153,14 @@ function showResult(r) {
 }
 
 $('debug').onchange = () => {
-  if (lastResult && !$('output').hidden) $('output').textContent = outputText(lastResult);
+  if (lastResult && !$('output').hidden) renderOutput(lastResult);
 };
 
 $('run').onclick = async () => {
   if (typeof self.lexRun !== 'function') return;
-  files[current] = $('source').value;
+  files[current] = editor.value;
   $('run').disabled = true;
+  $('status').className = 'status';
   status('Running Lex…');
   runStart = performance.now();
   try { showResult(await runLex($('mode').value, main, files)); }
@@ -153,15 +168,12 @@ $('run').onclick = async () => {
 };
 $('engine').onchange = () => loadLex($('engine').value);
 $('example').onchange = () => { current = null; setFiles(examples[$('example').value]); };
-$('source').addEventListener('keydown', (e) => {
-  if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) { e.preventDefault(); $('run').click(); }
-});
 
 (async () => {
   examples = await (await fetch('examples.json')).json();
   $('example').replaceChildren(...Object.keys(examples).map((k) => new Option(k, k)));
   setFiles(examples[Object.keys(examples)[0]]);
-  // JS by default: the Wasm build still lacks a few Jane Street runtime stubs.
+  // JS by default for now; WebAssembly is faster but needs WebAssembly GC.
   $('engine').value = 'js';
   loadLex('js');
 })();

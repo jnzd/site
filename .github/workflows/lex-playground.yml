@@ -126,7 +126,7 @@ jobs:
         run: node test/browser.mjs /usr/bin/google-chrome wasm
 
       # Preview: the built files go to a prerelease, which a Cloudflare Worker
-      # (lex-playground-preview.jonas-degelo.workers.dev) serves with the
+      # (lex-playground-preview.jnzd.workers.dev) serves with the
       # COOP/COEP headers Z3 needs. Nothing on degelo.dev changes.
       - name: Publish preview files
         if: startsWith(github.ref, 'refs/heads/claude/')
@@ -150,8 +150,8 @@ jobs:
         continue-on-error: true
         working-directory: playground
         run: |
-          curl -sSI https://lex-playground-preview.jonas-degelo.workers.dev/ | grep -iE '^(HTTP|cross-origin|content-type)'
-          node test/browser.mjs /usr/bin/google-chrome js https://lex-playground-preview.jonas-degelo.workers.dev/
+          curl -sSI https://lex-playground-preview.jnzd.workers.dev/ | grep -iE '^(HTTP|cross-origin|content-type)'
+          node test/browser.mjs /usr/bin/google-chrome js https://lex-playground-preview.jnzd.workers.dev/
 
       # Review screenshots are committed to the prototype branch (never main).
       - name: Screenshots

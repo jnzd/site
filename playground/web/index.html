@@ -3,39 +3,61 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Lex playground (prototype)</title>
+<title>Lex playground</title>
+<meta name="description" content="Write Lex, a language for legal rules, and compile it to temporal logic in your browser.">
 <!-- z3-solver uses threads, so it needs SharedArrayBuffer and thus COOP/COEP
      headers. GitHub Pages cannot send them; this service worker adds them
      (and reloads the page once). Lex itself does not need them. -->
 <script src="coi-serviceworker.js"></script>
+<script>try{var t=localStorage.getItem("theme");if(t)document.documentElement.dataset.theme=t}catch(e){}</script>
+<!-- theme.css is the site's fonts and colours (theme/style.css), copied by assemble.mjs. -->
+<link rel="stylesheet" href="theme.css">
 <link rel="stylesheet" href="playground.css">
+<script src="theme.js" defer></script>
 </head>
 <body>
-<header>
-  <h1>Lex playground <span class="tag">prototype</span></h1>
-  <p>Lex compiles legal rules into metric first-order temporal logic. This page runs the Lex
-  compiler in your browser (OCaml compiled with js_of_ocaml / wasm_of_ocaml). Refinements
-  (<code>.rex</code>) are checked with Z3, which is loaded on first use (about 9&nbsp;MB compressed).</p>
+<nav class="site-nav" aria-label="Site"><a class="site-name" href="https://degelo.dev/">degelo.dev</a><span class="crumb">Lex playground</span></nav>
+
+<header class="intro">
+  <h1>Lex playground</h1>
+  <p>Lex turns legal provisions into rules a computer can enforce. Write Lex on the left and compile it to
+  metric first-order temporal logic (MFOTL) or browse it as Lexdoc. Everything runs in your browser:
+  the Lex compiler, and Z3 for checking refinements (<code>.rex</code> files), which loads the first time
+  one needs it (about 9&nbsp;MB).</p>
 </header>
-<main>
-  <section class="editor">
+
+<main class="workbench">
+  <section class="pane editor">
     <div class="bar">
-      <label>Example <select id="example"></select></label>
-      <label>Output <select id="mode"><option value="mfotl">MFOTL</option><option value="doc">Lexdoc</option></select></label>
-      <label>Engine <select id="engine"><option value="js">JS</option><option value="wasm">Wasm (experimental)</option></select></label>
-      <button id="run" disabled>Run</button>
+      <label class="field"><span>Example</span><select id="example"></select></label>
+      <label class="field"><span>Output</span><select id="mode"><option value="mfotl">MFOTL</option><option value="doc">Lexdoc</option></select></label>
+      <label class="field"><span>Engine</span><select id="engine"><option value="js">JavaScript</option><option value="wasm">WebAssembly</option></select></label>
+      <button id="run" class="button primary" disabled title="Run (Ctrl+Enter)">
+        <svg class="icon" viewBox="0 0 16 16" aria-hidden="true"><path d="M5 3.5v9l7-4.5z" fill="currentColor"/></svg>Run</button>
     </div>
-    <div class="tabs" id="tabs"></div>
-    <textarea id="source" spellcheck="false"></textarea>
+    <div class="frame">
+      <div class="tabs" id="tabs" role="tablist"></div>
+      <div id="source" class="source"></div>
+    </div>
   </section>
-  <section class="output">
-    <div class="bar"><span id="status">Loading Lex…</span>
-      <label class="debug"><input type="checkbox" id="debug"> Show debug output</label></div>
-    <pre id="output"></pre>
-    <iframe id="doc" title="Lexdoc output" hidden></iframe>
+  <section class="pane output">
+    <div class="bar">
+      <span id="status" class="status" role="status">Loading Lex…</span>
+      <label class="debug"><input type="checkbox" id="debug"> Debug output</label>
+    </div>
+    <div class="frame">
+      <pre id="output"></pre>
+      <iframe id="doc" title="Lexdoc output" hidden></iframe>
+    </div>
     <details id="smt" hidden><summary>SMT-LIB queries sent to Z3</summary><div id="smt-list"></div></details>
   </section>
 </main>
+
+<footer class="site-footer">
+  <span><a href="https://github.com/francois-hublet/lex">Lex source</a>, compiled for the browser with js_of_ocaml and wasm_of_ocaml</span>
+  <span><kbd>Ctrl</kbd>&thinsp;+&thinsp;<kbd>Enter</kbd> runs</span>
+</footer>
+<script src="editor.js"></script>
 <script src="playground.js"></script>
 </body>
 </html>

@@ -19,6 +19,19 @@ for (const f of ['z3-built.js', 'z3-built.wasm'])
   cpSync(path.join(nm, 'z3-solver/build', f), path.join(dist, 'z3', f));
 cpSync(path.join(nm, 'coi-serviceworker/coi-serviceworker.min.js'), path.join(dist, 'coi-serviceworker.js'));
 await build({
+  entryPoints: [path.join(here, 'web/editor.src.js')], bundle: true, minify: true, format: 'iife',
+  globalName: 'LexEditor', outfile: path.join(dist, 'editor.js'), logLevel: 'warning',
+});
+// The site's theme: its fonts and colour variables (the top of theme/style.css,
+// up to the first rule) and the light/dark toggle.
+const theme = path.join(here, '..', 'theme');
+const style = readFileSync(path.join(theme, 'style.css'), 'utf8');
+writeFileSync(path.join(dist, 'theme.css'), style.slice(0, style.indexOf('\n* {')) + '\n');
+cpSync(path.join(theme, 'theme.js'), path.join(dist, 'theme.js'));
+mkdirSync(path.join(dist, 'fonts'));
+for (const [pkg, files] of [['ibm-plex-sans', ['400-normal', '400-italic', '600-normal', '600-italic']], ['ibm-plex-mono', ['400-normal']]])
+  for (const f of files) cpSync(path.join(nm, '@fontsource', pkg, 'files', `${pkg}-latin-${f}.woff2`), path.join(dist, 'fonts', `${pkg}-latin-${f}.woff2`));
+await build({
   entryPoints: [path.join(here, 'web/z3-glue.src.js')], bundle: true, minify: true,
   define: { global: 'window' }, outfile: path.join(dist, 'z3-glue.js'), logLevel: 'warning',
 });

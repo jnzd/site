@@ -49,4 +49,16 @@ writeFileSync(path.join(dist, 'examples.json'), JSON.stringify({
     'gdpr/GDPR.xml': read('evaluation/01_formalization/GDPR.xml'),
   } },
 }));
+// Versioned links (?v=<content hash>) in index.html, so a browser that kept an
+// older copy of a script or style sheet fetches the new one.
+{
+  const { createHash } = await import('node:crypto');
+  const page = path.join(dist, 'index.html');
+  const html = readFileSync(page, 'utf8').replace(/(src|href)="([\w./-]+\.(?:js|css))"/g, (m, attr, f) => {
+    if (!existsSync(path.join(dist, f)) || f.startsWith('coi-')) return m; // the service worker keeps its URL
+    const v = createHash('sha256').update(readFileSync(path.join(dist, f))).digest('hex').slice(0, 10);
+    return `${attr}="${f}?v=${v}"`;
+  });
+  writeFileSync(page, html);
+}
 console.log('assembled', dist);

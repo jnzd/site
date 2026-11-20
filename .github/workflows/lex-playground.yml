@@ -120,6 +120,11 @@ jobs:
         working-directory: playground
         run: node test/browser.mjs /usr/bin/google-chrome
 
+      - name: Browser test (headless Chrome, Wasm engine)
+        continue-on-error: true
+        working-directory: playground
+        run: node test/browser.mjs /usr/bin/google-chrome wasm
+
       # Preview: the built files go to a prerelease, which a Cloudflare Worker
       # (lex-playground-preview.jonas-degelo.workers.dev) serves with the
       # COOP/COEP headers Z3 needs. Nothing on degelo.dev changes.
@@ -139,6 +144,14 @@ jobs:
             --title "Lex playground preview (not a release)" \
             --notes "Built files for the Lex playground preview from branch ${GITHUB_REF#refs/heads/}, commit $GITHUB_SHA. Replaced on every push; safe to delete." \
             preview-assets/*
+
+      - name: Browser test of the preview link
+        if: startsWith(github.ref, 'refs/heads/claude/')
+        continue-on-error: true
+        working-directory: playground
+        run: |
+          curl -sSI https://lex-playground-preview.jonas-degelo.workers.dev/ | grep -iE '^(HTTP|cross-origin|content-type)'
+          node test/browser.mjs /usr/bin/google-chrome js https://lex-playground-preview.jonas-degelo.workers.dev/
 
       # Review screenshots are committed to the prototype branch (never main).
       - name: Screenshots

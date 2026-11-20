@@ -1,11 +1,15 @@
 // Opens the assembled playground in headless Chrome (with COOP/COEP served by
 // serve.mjs), runs the examples and prints what the page shows.
-// Usage: node browser.mjs [chrome executable]
+// Usage: node browser.mjs [chrome executable] [engine js|wasm] [url]
+// Without a url it serves dist/ locally on port 8123.
 import { chromium } from 'playwright-core';
 import { spawn } from 'node:child_process';
 
-const server = spawn(process.execPath, [new URL('../serve.mjs', import.meta.url).pathname, '8123'], { stdio: 'inherit' });
-await new Promise((r) => setTimeout(r, 500));
+const engine = process.argv[3] || 'js';
+const url = process.argv[4];
+const server = url ? null
+  : spawn(process.execPath, [new URL('../serve.mjs', import.meta.url).pathname, '8123'], { stdio: 'inherit' });
+if (server) await new Promise((r) => setTimeout(r, 500));
 const browser = await chromium.launch({ executablePath: process.argv[2] || '/usr/bin/google-chrome', args: ['--no-sandbox'] });
 let failed = 0;
 try {
@@ -13,8 +17,13 @@ try {
   page.on('console', (m) => console.log('  console:', m.text()));
   page.on('pageerror', (e) => { console.log('  pageerror:', e.message); failed++; });
   const t0 = Date.now();
-  await page.goto('http://localhost:8123/');
+  await page.goto(url || 'http://localhost:8123/');
   await page.waitForFunction(() => !document.getElementById('run').disabled, null, { timeout: 60000 });
+  if (engine !== 'js') {
+    await page.selectOption('#engine', engine);
+    await page.waitForFunction((e) => document.getElementById('status').textContent.includes(`(${e})`) &&
+      !document.getElementById('run').disabled, engine, { timeout: 60000 });
+  }
   console.log(`page ready in ${Date.now() - t0} ms: ${await page.textContent('#status')}`);
   const examples = await page.$$eval('#example option', (os) => os.map((o) => o.value));
   for (const ex of examples) {
@@ -35,6 +44,6 @@ try {
   }
 } finally {
   await browser.close();
-  server.kill();
+  server?.kill();
 }
 process.exit(failed ? 1 : 0);

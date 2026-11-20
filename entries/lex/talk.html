@@ -417,19 +417,14 @@
   <h3>The compilation pipeline</h3>
   <p>The compiler passes a Lex file through four intermediate representations before
   writing the files WhyEnf reads.</p>
-  <ol class="pipeline">
-    <li class="stage">.lex file</li>
-    <li class="step">Parse Lex code</li>
-    <li class="stage"><code>lex</code></li>
-    <li class="step">Type terms, compute labels, collect exceptions</li>
-    <li class="stage"><code>tlex</code></li>
-    <li class="step">Sort rules topologically, check enforceability</li>
-    <li class="stage"><code>elex</code></li>
-    <li class="step">Prepare signature and MFOTL formula</li>
-    <li class="stage"><code>clex</code></li>
-    <li class="step">Compile and linearize as strings</li>
-    <li class="stage">WhyEnf files</li>
-  </ol>
+  <figure>
+    <div class="figure-body"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 175" width="900" height="175" role="img" aria-label="The Lex compiler pipeline: a .lex file is parsed into lex; terms are typed, labels computed and exceptions collected to give tlex; rules are sorted topologically and checked for enforceability to give elex; signature and MFOTL formula are prepared to give clex, which is compiled and linearized into the files WhyEnf reads." class="diagram pipeline-diagram">
+<defs><marker id="ah-pl" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 1L9 5L0 9" fill="none" stroke="context-stroke" stroke-width="1.5"></path></marker></defs>
+<g fill="var(--panel)" stroke="currentColor" stroke-width="1.2"><rect x="0.6" y="20" width="98.8" height="44" rx="22" class="end"></rect><rect x="160.6" y="20" width="98.8" height="44" rx="4"></rect><rect x="320.6" y="20" width="98.8" height="44" rx="4"></rect><rect x="480.6" y="20" width="98.8" height="44" rx="4"></rect><rect x="640.6" y="20" width="98.8" height="44" rx="4"></rect><rect x="800.6" y="20" width="98.8" height="44" rx="22" class="end"></rect></g>
+<g fill="none" stroke-width="1.3"><path d="M104.0 42.0H156.0" marker-end="url(#ah-pl)" stroke="var(--accent)"></path><path d="M130.0 48.0V90" stroke="var(--line)" stroke-dasharray="2 3"></path><path d="M264.0 42.0H316.0" marker-end="url(#ah-pl)" stroke="var(--accent)"></path><path d="M290.0 48.0V90" stroke="var(--line)" stroke-dasharray="2 3"></path><path d="M424.0 42.0H476.0" marker-end="url(#ah-pl)" stroke="var(--accent)"></path><path d="M450.0 48.0V90" stroke="var(--line)" stroke-dasharray="2 3"></path><path d="M584.0 42.0H636.0" marker-end="url(#ah-pl)" stroke="var(--accent)"></path><path d="M610.0 48.0V90" stroke="var(--line)" stroke-dasharray="2 3"></path><path d="M744.0 42.0H796.0" marker-end="url(#ah-pl)" stroke="var(--accent)"></path><path d="M770.0 48.0V90" stroke="var(--line)" stroke-dasharray="2 3"></path></g>
+<g stroke="none"><text x="50.0" y="46.5" text-anchor="middle" font-size="13" font-weight="600" fill="currentColor">.lex file</text><text x="210.0" y="46.5" text-anchor="middle" class="mono" font-size="14" fill="currentColor">lex</text><text x="370.0" y="46.5" text-anchor="middle" class="mono" font-size="14" fill="currentColor">tlex</text><text x="530.0" y="46.5" text-anchor="middle" class="mono" font-size="14" fill="currentColor">elex</text><text x="690.0" y="46.5" text-anchor="middle" class="mono" font-size="14" fill="currentColor">clex</text><text x="850.0" y="46.5" text-anchor="middle" font-size="13" font-weight="600" fill="currentColor">WhyEnf files</text><text x="130.0" y="108" text-anchor="middle" class="mono" font-size="10.5" fill="var(--accent)">1</text><text text-anchor="middle" font-size="12" fill="var(--muted)"><tspan x="130.0" y="126">Parse Lex code</tspan></text><text x="290.0" y="108" text-anchor="middle" class="mono" font-size="10.5" fill="var(--accent)">2</text><text text-anchor="middle" font-size="12" fill="var(--muted)"><tspan x="290.0" y="126">Type terms,</tspan><tspan x="290.0" y="142">compute labels,</tspan><tspan x="290.0" y="158">collect exceptions</tspan></text><text x="450.0" y="108" text-anchor="middle" class="mono" font-size="10.5" fill="var(--accent)">3</text><text text-anchor="middle" font-size="12" fill="var(--muted)"><tspan x="450.0" y="126">Sort rules</tspan><tspan x="450.0" y="142">topologically, check</tspan><tspan x="450.0" y="158">enforceability</tspan></text><text x="610.0" y="108" text-anchor="middle" class="mono" font-size="10.5" fill="var(--accent)">4</text><text text-anchor="middle" font-size="12" fill="var(--muted)"><tspan x="610.0" y="126">Prepare signature</tspan><tspan x="610.0" y="142">and MFOTL formula</tspan></text><text x="770.0" y="108" text-anchor="middle" class="mono" font-size="10.5" fill="var(--accent)">5</text><text text-anchor="middle" font-size="12" fill="var(--muted)"><tspan x="770.0" y="126">Compile and</tspan><tspan x="770.0" y="142">linearize as strings</tspan></text></g>
+</svg></div>
+  </figure>
   <p class="notes">The thesis extends this pipeline with refinement; see
   <a data-thesis="section:implementation-in-the-lex-compiler"></a>.</p>
 </section>

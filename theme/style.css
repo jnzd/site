@@ -31,8 +31,9 @@
   --mono: "IBM Plex Mono", ui-monospace, Menlo, monospace;
   color-scheme: dark;
 }
+/* Light theme: follows the system unless the toggle (site.js) picked one. */
 @media (prefers-color-scheme: light) {
-  :root {
+  :root:not([data-theme="dark"]) {
     --bg: #fafafa;
     --text: #141414;
     --strong: #000000;
@@ -50,6 +51,24 @@
     --panel: #f1f1f1;
     color-scheme: light;
   }
+}
+:root[data-theme="light"] {
+  --bg: #fafafa;
+  --text: #141414;
+  --strong: #000000;
+  --muted: #6b6b6b;
+  --faint: #b3b3b3;
+  --line: #e4e4e4;
+  --accent: #d4380d;
+  --tok-kw: #b0206f;
+  --tok-op: #1c7a2e;
+  --tok-str: #7a2bb8;
+  --tok-com: #77746c;
+  --tok-fn: #1f4fd0;
+  --fig-blue: #1f4fd0;
+  --fig-purple: #8a1fb0;
+  --panel: #f1f1f1;
+  color-scheme: light;
 }
 
 * { box-sizing: border-box; }
@@ -227,7 +246,8 @@ figure { margin: 3rem 0; }
    their lightness but keep their hue: black marks turn white, and DeepL's navy
    mark turns light blue with a dark glyph. */
 .figure-body td img { filter: invert(1) hue-rotate(180deg); }
-@media (prefers-color-scheme: light) { .figure-body td img { filter: none; } }
+@media (prefers-color-scheme: light) { :root:not([data-theme="dark"]) .figure-body td img { filter: none; } }
+:root[data-theme="light"] .figure-body td img { filter: none; }
 /* A column holding only a logo keeps the logo's width. */
 .figure-body td:has(> img:only-child) { width: 2.2rem; }
 .figure-body ol.algorithm-lines { background: var(--panel); border-radius: 6px; padding: 1rem 1.2rem 1rem 3rem; margin-inline: auto; }
@@ -487,8 +507,12 @@ var { font-style: normal; font-family: var(--mono); font-size: 0.88em; color: va
 .code-title { font: 0.68rem var(--mono); letter-spacing: 0.12em; text-transform: uppercase; color: var(--muted); margin-bottom: 0.4rem; }
 .code-block pre.listing { margin: 0; }
 .side-by-side { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.4fr); gap: 1.25rem; margin: 1.5rem 0; }
+/* Code shown side by side, or a lone code block, grows to fit its longest line
+   (up to the window edges); only code that still does not fit scrolls. */
+.side-by-side:has(> .code-block) { width: max-content; min-width: min(56rem, calc(100vw - 3rem)); max-width: calc(100vw - 3rem); grid-template-columns: repeat(2, minmax(0, auto)); }
+.post section > .code-block, .post > .code-block { width: max-content; min-width: 100%; max-width: calc(100vw - 3rem); position: relative; left: 50%; transform: translateX(-50%); }
 .side-by-side > pre.listing, .side-by-side > .code-block { margin: 0; }
-.side-by-side.code-pair { grid-template-columns: minmax(0, 1.35fr) minmax(0, 1fr); }
+.side-by-side.code-pair:not(:has(> .code-block)) { grid-template-columns: minmax(0, 1.35fr) minmax(0, 1fr); }
 .label-path { list-style: none; margin: 0; padding: 0.6rem 0; border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); font-size: 0.9rem; }
 .post .label-path > li { margin: 0; padding: 0.15rem 0 0.15rem calc(var(--d, 0) * 1.1rem); }
 .post .label-path > li::before { display: none; }
@@ -511,7 +535,8 @@ var { font-style: normal; font-family: var(--mono); font-size: 0.88em; color: va
 .post .reading ul > li { margin-bottom: 0.25rem; }
 .reading .source { margin: 1rem 0 0; padding-top: 0.8rem; border-top: 1px solid var(--line); color: var(--muted); font-size: 0.85rem; }
 @media (max-width: 44rem) {
-  .lexdoc-body, .side-by-side, .side-by-side.code-pair { grid-template-columns: minmax(0, 1fr); }
+  .lexdoc-body, .side-by-side, .side-by-side.code-pair, .side-by-side:has(> .code-block) { grid-template-columns: minmax(0, 1fr); }
+  .side-by-side:has(> .code-block) { width: calc(100vw - 3rem); min-width: 0; }
   .lexdoc-body > pre.listing { border-radius: 0; }
   .reading { border-left: 0; border-top: 1px solid var(--line); }
 }
@@ -567,8 +592,9 @@ body.presenting .post .slide.current h3 { font-size: 1.75rem; margin: 0 0 1.4rem
 body.presenting .post .slide.part.current h2 { font-size: 3rem; margin: 0; }
 body.presenting .post .slide.part.current h2::before { position: static; display: block; margin-bottom: 0.6rem; font-size: 0.9rem; }
 /* Blocks that break out of the article column fill the stage instead. */
-body.presenting .lexdoc, body.presenting .side-by-side, body.presenting .derivations {
-  width: 100%; left: auto; transform: none;
+body.presenting .lexdoc, body.presenting .side-by-side, body.presenting .derivations,
+body.presenting .post section > .code-block {
+  width: 100%; min-width: 0; max-width: 100%; left: auto; transform: none;
 }
 body.presenting figure, body.presenting .slide figure:not(.algorithm):not(.table) { margin: 1.25rem 0; }
 body.presenting .notes { display: none; }
@@ -689,7 +715,7 @@ body.reader:has(.pages.slides) { height: 100vh; height: 100dvh; display: flex; f
 html, body { overflow-x: clip; }
 
 /* ---- Site-wide: header link home, and the home page ---- */
-.site-nav { position: absolute; top: 0; left: 0; right: 0; z-index: 5; padding: 1rem 1.5rem; font-size: 0.85rem; }
+.site-nav { position: absolute; top: 0; left: 0; right: 0; z-index: 5; padding: 1rem 1.5rem; font-size: 0.85rem; display: flex; align-items: center; }
 .site-nav .site-name { color: var(--muted); text-decoration: none; font-weight: 600; letter-spacing: 0.01em; }
 .site-nav .site-name:hover { color: var(--accent); }
 .site-footer a { color: inherit; text-decoration: none; }
@@ -754,3 +780,11 @@ body.home .post { max-width: none; }
 #hero-lex .link.on { stroke-dashoffset: 0; opacity: 1; }
 #hero-lex.still .link { stroke-dashoffset: 0; opacity: 0.45; }
 #hero-lex.still .hl { opacity: 1; }
+.pipeline-diagram rect.end { stroke: var(--accent); }
+
+/* Theme toggle (site.js): system, light, dark. */
+.theme-toggle { margin-left: auto; display: inline-flex; align-items: center; gap: 0.4rem; font: 0.72rem var(--mono); color: var(--muted); background: none; border: 1px solid var(--line); border-radius: 999px; padding: 0.25rem 0.7rem; cursor: pointer; }
+.theme-toggle:hover { color: var(--accent); border-color: var(--accent); }
+.theme-toggle svg { width: 0.9rem; height: 0.9rem; }
+.reader-bar .theme-toggle { margin-left: 0; }
+body.presenting .site-nav { display: none; }

@@ -165,9 +165,9 @@ async function build() {
 
   // Links to the stylesheet and scripts carry a hash of their content, so a
   // browser fetches the new file after every change instead of a cached one.
-  const shared = ['style.css', 'site.js', 'talk.js', 'slides.js', 'favicon.svg', 'apple-touch-icon.png'];
+  const shared = ['style.css', 'theme.js', 'site.js', 'talk.js', 'slides.js', 'favicon.svg', 'apple-touch-icon.png'];
   const stamps = Object.fromEntries(shared.map((f) => [f, crypto.createHash('sha256').update(fs.readFileSync(at('theme', f))).digest('hex').slice(0, 10)]));
-  const stamp = (html) => html.replace(/(href|src)="((?:\.\.\/)*)(style\.css|site\.js|talk\.js|slides\.js)"/g, (_, attr, r, f) => `${attr}="${r}${f}?v=${stamps[f]}"`);
+  const stamp = (html) => html.replace(/(href|src)="((?:\.\.\/)*)(style\.css|theme\.js|site\.js|talk\.js|slides\.js|favicon\.svg)"/g, (_, attr, r, f) => `${attr}="${r}${f}?v=${stamps[f]}"`);
   const write = (p, html) => {
     fs.mkdirSync(path.join(dist, p), { recursive: true });
     fs.writeFileSync(path.join(dist, p, 'index.html'), stamp(html));

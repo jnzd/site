@@ -4,8 +4,9 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Lex playground (prototype)</title>
-<!-- GitHub Pages cannot send COOP/COEP headers; this service worker adds them
-     (and reloads the page once) so that SharedArrayBuffer is available. -->
+<!-- z3-solver uses threads, so it needs SharedArrayBuffer and thus COOP/COEP
+     headers. GitHub Pages cannot send them; this service worker adds them
+     (and reloads the page once). Lex itself does not need them. -->
 <script src="coi-serviceworker.js"></script>
 <link rel="stylesheet" href="playground.css">
 </head>

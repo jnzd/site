@@ -48,6 +48,8 @@
 
   function go(i, behavior = 'smooth') {
     i = Math.max(0, Math.min(sheets.length - 1, i));
+    // Full screen: no sliding, the next slide just appears (with a short fade).
+    if (document.body.classList.contains('full')) behavior = 'instant';
     sheets[i].scrollIntoView({ behavior, block: wide ? 'nearest' : 'start', inline: 'center' });
   }
   document.addEventListener('keydown', (e) => {

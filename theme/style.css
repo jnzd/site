@@ -855,3 +855,7 @@ body.reader.full .pages.slides .page-no { display: none; }
   body.presenting .present-bar button { padding: 0.45rem 0.9rem; }
 }
 body.presenting { touch-action: pan-y pinch-zoom; }
+body.reader.full .pages.slides { scroll-snap-type: none; }
+body.reader.full .pages.slides .sheet.cur { animation: sheet-in 0.12s ease-out; }
+@keyframes sheet-in { from { opacity: 0.4; } }
+@media (prefers-reduced-motion: reduce) { body.reader.full .pages.slides .sheet.cur { animation: none; } }

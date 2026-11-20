@@ -92,7 +92,8 @@
       "path": "lex-refinement/talk",
       "slides": "entries/lex-refinement/slides.pdf",
       "heroVisual": "lex-refinement/hero-visual.html",
-      "thumbSlide": 27
+      "thumbSlide": 27,
+      "thumbVisual": "lex-refinement/talk-thumb.html"
     },
     {
       "slug": "practical-work",
@@ -105,7 +106,8 @@
       "path": "lex/talk",
       "slides": "entries/lex/slides.pdf",
       "heroVisual": "lex/hero-visual.html",
-      "thumbSlide": 24
+      "thumbSlide": 24,
+      "thumbVisual": "lex/hero-visual.html"
     }
   ],
   "home": {

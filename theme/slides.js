@@ -53,7 +53,9 @@
   document.addEventListener('keydown', (e) => {
     if (e.metaKey || e.ctrlKey || e.altKey) return;
     // Esc closes the reader and goes back to the page it came from.
-    if (e.key === 'Escape') { close(); e.preventDefault(); return; }
+    // (In full screen the browser takes Esc to leave full screen first.)
+    if (e.key === 'Escape') { if (!document.fullscreenElement) close(); e.preventDefault(); return; }
+    if (wide && (e.key === 'f' || e.key === 'F')) { full(); e.preventDefault(); return; }
     const keys = wide
       ? { ArrowRight: 1, ArrowLeft: -1, ArrowDown: 1, ArrowUp: -1, PageDown: 1, PageUp: -1, ' ': 1, j: 1, k: -1 }
       : { ArrowRight: 1, ArrowLeft: -1, j: 1, k: -1 };
@@ -62,6 +64,20 @@
     if (!step) return;
     go(current() + (e.shiftKey && e.key === ' ' ? -1 : step), wide ? 'smooth' : 'instant');
     e.preventDefault();
+  });
+
+  // F (or the button) shows the slides full screen, one at a time, like a presentation.
+  function full() {
+    if (document.fullscreenElement) document.exitFullscreen();
+    else document.documentElement.requestFullscreen?.().catch(() => {});
+  }
+  document.querySelector('.full-toggle')?.addEventListener('click', full);
+  document.addEventListener('fullscreenchange', () => {
+    const on = !!document.fullscreenElement;
+    document.body.classList.toggle('full', on);
+    const b = document.querySelector('.full-toggle');
+    if (b) b.title = on ? 'Leave full screen (F or Esc)' : 'Full screen (F)';
+    requestAnimationFrame(() => go(cur, 'instant'));
   });
 
   if (wide) {

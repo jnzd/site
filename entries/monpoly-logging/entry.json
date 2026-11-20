@@ -100,7 +100,8 @@
         "monpoly-logging/per-time-point-monpoly-vs-wrapper.png",
         "monpoly-logging/policy-change-log-log.png"
       ],
-      "thumbSlide": 10
+      "thumbSlide": 10,
+      "thumbVisual": "monpoly-logging/talk-hero-visual.html"
     }
   ]
 }

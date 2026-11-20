@@ -205,6 +205,8 @@ async function build() {
       root: rootOf(entry.path + '/pdf'), stamp,
     });
   }
+  // A talk card may show a web visual instead of a slide (thumbVisual, under entries/).
+  for (const { entry } of cards) for (const t of entry.talks || []) if (t.thumbVisual) t.thumbHtml = fs.readFileSync(at('entries', t.thumbVisual), 'utf8');
   write('', renderHome({ site, cards, fillTemplate, esc, rel }));
 
   for (const f of shared) fs.copyFileSync(at('theme', f), path.join(dist, f));

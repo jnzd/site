@@ -6,7 +6,7 @@
    output is the result or the errors, and log is what Lex printed on the
    way (warnings and debug lines).
    smt is the list of [script, answer] pairs that went to Z3. Files live in
-   js_of_ocaml's in-memory file system, under the working directory. *)
+   the in-memory file system (see [root] below). *)
 
 open Js_of_ocaml
 open Lex_lib
@@ -23,11 +23,20 @@ let capture on =
   Sys_js.set_channel_flusher stdout f;
   Sys_js.set_channel_flusher stderr f
 
+(* wasm_of_ocaml's browser file system only knows files registered with
+   [Sys_js.create_file], looked up by the exact path string, and it cannot
+   create directories or write files. So under Wasm every path is absolute
+   under [root], and files are only ever registered, never written. *)
+let wasm = match Sys.backend_type with Other "js_of_ocaml" -> false | _ -> true
+let root = if wasm then "/static" else "."
+let path name = if wasm then root ^ "/" ^ name else name
+
 let () =
   capture false;
-  (try Sys.chdir "/static" with _ -> ())
+  if not wasm then (try Sys.chdir "/static" with _ -> ())
 
 let write_file name content =
+  if wasm then Sys_js.create_file ~name:(path name) ~content else
   let rec mkdirs d =
     if d <> "." && d <> "/" && d <> "" && not (Sys.file_exists d) then begin
       mkdirs (Filename.dirname d);
@@ -43,23 +52,28 @@ let run mode main names contents timeout =
   let log = ref "" in
   let take_log () = log := !log ^ Buffer.contents out; Buffer.clear out in
   Z3.shim_log := [];
-  let filepath = Filename.dirname main and basename = Filename.basename main in
+  let filepath =
+    match Filename.dirname main with "." -> root | d -> path d
+  and basename = Filename.basename main in
   let ok =
     try
       Util.z3_to := timeout;
       List.iter2 write_file names contents;
       let open Errors.OrErrors in
-      match Modules.do_type ["."] MFOTL_lib.Time.Span.zero filepath basename with
+      match Modules.do_type [root] MFOTL_lib.Time.Span.zero filepath basename with
       | Errors errs ->
          take_log ();
          Buffer.add_string out (Errors.to_string_multiple errs); false
       | Ok (_, eprog) ->
          (match mode with
           | "doc" ->
-             let outname = main ^ "_doc.html" in
-             Doc.to_file basename outname eprog;
+             (* Doc.to_file, without writing a file. *)
+             let asset f = In_channel.with_open_bin (path ("assets/" ^ f)) In_channel.input_all in
+             let html =
+               Doc.html_of_eprog ("Lexdoc: " ^ basename)
+                 (asset "lexdoc.css") (asset "lexdoc.js") eprog in
              take_log ();
-             Buffer.add_string out (In_channel.with_open_bin outname In_channel.input_all)
+             Buffer.add_string out html
           | _ ->
              let cprog = Compiler.compile eprog false false in
              Format.pp_print_flush Format.std_formatter ();
@@ -76,14 +90,24 @@ let run mode main names contents timeout =
   Format.pp_print_flush Format.std_formatter ();
   flush stdout; flush stderr;
   capture false;
+  (* Show paths as the page names them, without [root]. *)
+  let unroot s =
+    if not wasm then s else
+    let r = root ^ "/" and b = Buffer.create (String.length s) in
+    let n = String.length r and i = ref 0 in
+    while !i < String.length s do
+      if !i + n <= String.length s && String.sub s !i n = r then i := !i + n
+      else (Buffer.add_char b s.[!i]; incr i)
+    done;
+    Buffer.contents b in
   let smt =
     List.rev_map (fun (s, a) ->
         Js.array [| Js.Unsafe.inject (Js.string s); Js.Unsafe.inject (Js.string a) |])
       !Z3.shim_log in
   Js.Unsafe.obj [|
       "ok", Js.Unsafe.inject (Js.bool ok);
-      "output", Js.Unsafe.inject (Js.string (Buffer.contents out));
-      "log", Js.Unsafe.inject (Js.string !log);
+      "output", Js.Unsafe.inject (Js.string (unroot (Buffer.contents out)));
+      "log", Js.Unsafe.inject (Js.string (unroot !log));
       "smt", Js.Unsafe.inject (Js.array (Array.of_list smt));
     |]
 

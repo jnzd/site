@@ -570,7 +570,7 @@ body.presenting .post .slide.part.current h2::before { position: static; display
 body.presenting .lexdoc, body.presenting .side-by-side, body.presenting .derivations {
   width: 100%; left: auto; transform: none;
 }
-body.presenting figure { margin: 1.25rem 0; }
+body.presenting figure, body.presenting .slide figure:not(.algorithm):not(.table) { margin: 1.25rem 0; }
 body.presenting .notes { display: none; }
 /* No scroll fades on a slide: it is fitted so that nothing needs scrolling. */
 body.presenting .slide.current [data-more] { -webkit-mask-image: none; mask-image: none; }

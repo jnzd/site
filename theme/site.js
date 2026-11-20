@@ -273,3 +273,90 @@ const reduceMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
   }), { threshold: 0.4 });
   figs.forEach((f) => { f.classList.add('animate'); io.observe(f); });
 })();
+
+// Practical-work talk title visual: a sentence of the GDPR next to the Lex rule
+// that formalizes it. One phrase after the other lights up and is linked to
+// the part of the rule it became.
+(() => {
+  const svg = document.getElementById('hero-lex');
+  if (!svg) return;
+  const NS = 'http://www.w3.org/2000/svg';
+  const el = (tag, attrs, parent = svg) => {
+    const e = document.createElementNS(NS, tag);
+    for (const k in attrs) e.setAttribute(k, attrs[k]);
+    parent.appendChild(e);
+    return e;
+  };
+  const back = el('g', {}), links = el('g', {}), front = el('g', {});
+  // Law text, with the phrases that map to the rule marked by their pair number.
+  const law = [
+    [['Personal data shall be']],
+    [['processed', 0], [' lawfully', 1], [',']],
+    [['fairly', 2], [' and in a']],
+    [['transparent', 3], [' manner in']],
+    [['relation to the data subject.']],
+  ];
+  const lex = [
+    [['rule', 'kw']],
+    [['  whenever', 'kw']],
+    [['    '], ['PersonalDataProcessing', 'fn', 0], ['(ep, x, z)']],
+    [['  oblige', 'kw']],
+    [['    '], ['lawfulness', 'fn', 1], ['(ep)']],
+    [['    '], ['fairness', 'fn', 2], ['(ep)']],
+    [['    '], ['transparency', 'fn', 3], ['(ep)']],
+  ];
+  el('rect', { x: 0.5, y: 18.5, width: 214, height: 196, rx: 8, class: 'lex-box' }, back);
+  el('rect', { x: 268.5, y: 18.5, width: 311, height: 196, rx: 8, class: 'lex-box' }, back);
+  el('text', { x: 14, y: 40, class: 'mono sub' }, front).textContent = 'GDPR · Art. 5(1)(a)';
+  el('text', { x: 282, y: 40, class: 'mono sub' }, front).textContent = 'Lex';
+  const marks = [[], [], [], []];
+  law.forEach((line, i) => {
+    const t = el('text', { x: 14, y: 72 + i * 26, class: 'law' }, front);
+    for (const [s, k] of line) {
+      const sp = el('tspan', {}, t);
+      sp.textContent = s.replace(/^ /, ' ');
+      if (k !== undefined) { sp.classList.add('phrase'); marks[k].push(sp); }
+    }
+  });
+  lex.forEach((line, i) => {
+    const t = el('text', { x: 282, y: 66 + i * 21, class: 'mono code' }, front);
+    t.setAttribute('xml:space', 'preserve');
+    for (const [s, c, k] of line) {
+      const sp = el('tspan', { class: c || 'plain' }, t);
+      sp.textContent = s.replace(/ /g, ' ');
+      if (k !== undefined) marks[k].push(sp);
+    }
+  });
+  // Highlights and links, laid out once the text can be measured.
+  const pairs = [];
+  function layout() {
+    back.querySelectorAll('.hl').forEach((e) => e.remove());
+    links.replaceChildren();
+    pairs.length = 0;
+    marks.forEach(([a, b], k) => {
+      const A = a.getBBox(), B = b.getBBox();
+      const ha = el('rect', { x: A.x - 3, y: A.y - 1, width: A.width + 6, height: A.height + 2, rx: 3, class: 'hl' }, back);
+      const hb = el('rect', { x: B.x - 3, y: B.y - 1, width: B.width + 6, height: B.height + 2, rx: 3, class: 'hl' }, back);
+      const x1 = A.x + A.width + 4, y1 = A.y + A.height / 2, x2 = B.x - 4, y2 = B.y + B.height / 2;
+      const m = (x1 + x2) / 2;
+      const p = el('path', { d: `M${x1} ${y1}C${m} ${y1} ${m} ${y2} ${x2} ${y2}`, class: 'link' }, links);
+      const len = p.getTotalLength();
+      p.style.strokeDasharray = len;
+      p.style.setProperty('--len', len);
+      pairs.push([ha, hb, p, a, b]);
+    });
+  }
+  layout();
+  if (document.fonts) document.fonts.ready.then(() => { layout(); show(cur); });
+  let cur = 0;
+  function show(k) {
+    pairs.forEach((p, j) => p.forEach((e) => e.classList.toggle('on', j === k)));
+  }
+  if (reduceMotion) { svg.classList.add('still'); return; }
+  show(0);
+  let timer = null;
+  new IntersectionObserver(([e]) => {
+    if (e.isIntersecting && !timer) timer = setInterval(() => { cur = (cur + 1) % pairs.length; show(cur); }, 2200);
+    else if (!e.isIntersecting && timer) { clearInterval(timer); timer = null; }
+  }).observe(svg);
+})();

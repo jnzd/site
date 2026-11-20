@@ -86,6 +86,7 @@
       "short": "Thesis talk",
       "path": "lex-refinement/talk",
       "slides": "entries/lex-refinement/slides.pdf",
+      "heroVisual": "lex-refinement/hero-visual.html",
       "thumbSlide": 27
     },
     {
@@ -98,6 +99,7 @@
       "short": "Practical-work talk",
       "path": "lex/talk",
       "slides": "entries/lex/slides.pdf",
+      "heroVisual": "lex/hero-visual.html",
       "thumbSlide": 24
     }
   ],

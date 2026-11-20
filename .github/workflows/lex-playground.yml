@@ -66,7 +66,10 @@ jobs:
           opam list --switch lexweb --installed --columns=name,version dune menhir core js_of_ocaml-compiler wasm_of_ocaml-compiler binaryen-bin
 
       - name: Assemble the dune project
-        run: python3 playground/ocaml/prepare.py lex lexbuild
+        run: |
+          python3 playground/ocaml/prepare.py lex lexbuild
+          # The site's package.json says "type": "module"; the build output is CommonJS.
+          echo '{"type": "commonjs"}' > lexbuild/package.json
 
       - name: Build (js_of_ocaml)
         working-directory: lexbuild

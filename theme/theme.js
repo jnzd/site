@@ -47,6 +47,10 @@
     render();
   });
   render();
+  // The header gets a background once the page has scrolled.
+  const mark = () => document.body.classList.toggle('scrolled', window.scrollY > 8);
+  window.addEventListener('scroll', mark, { passive: true });
+  mark();
   const close = host.querySelector('.reader-close');
   if (close) host.insertBefore(b, close); else host.append(b);
 })();

@@ -72,7 +72,7 @@
 }
 
 * { box-sizing: border-box; }
-html { scroll-behavior: smooth; scroll-padding-top: 2rem; }
+html { scroll-behavior: smooth; scroll-padding-top: 4.5rem; }
 body {
   margin: 0;
   background: var(--bg);
@@ -435,7 +435,7 @@ a.ref { font-variant-numeric: tabular-nums; }
 @media (max-width: 68rem) { .rail { display: none; } }
 
 /* Thin progress bar, shown where the rail is hidden. */
-.progress { position: fixed; inset: 0 0 auto 0; height: 2px; z-index: 10; display: none; }
+.progress { position: fixed; inset: 0 0 auto 0; height: 2px; z-index: 17; display: none; }
 .progress span { display: block; height: 100%; width: 100%; transform: scaleX(var(--p, 0)); transform-origin: left; background: var(--accent); will-change: transform; }
 @media (max-width: 68rem) { .progress { display: block; } }
 
@@ -626,9 +626,11 @@ body.deck .slide-frame { width: calc(960px * var(--deck-z, 1)); position: relati
 body.deck .slide-frame:has(.part) { margin-top: 5rem; }
 body.deck .slide { height: auto; min-height: 540px; zoom: var(--deck-z, 1); border: 1px solid var(--line); border-radius: calc(12px / var(--deck-z, 1)); box-shadow: 0 10px 40px rgba(0, 0, 0, 0.12); }
 body.deck .talk-intro { text-align: center; }
-/* A Present button that stays in view once the title is scrolled away. */
-.present-fab { position: fixed; right: 1.25rem; bottom: 1.25rem; z-index: 15; display: inline-flex; align-items: center; gap: 0.45rem; font: 600 0.85rem var(--sans); color: var(--bg); background: var(--strong); border: 0; border-radius: 999px; padding: 0.6rem 1.1rem; cursor: pointer; box-shadow: 0 6px 24px rgba(0, 0, 0, 0.25); opacity: 0; transform: translateY(0.5rem); pointer-events: none; transition: opacity 0.25s, transform 0.25s; }
-.present-fab.show { opacity: 1; transform: none; pointer-events: auto; }
+/* A Present button that stays in view once the title is scrolled away: it
+   glides from the title's Present button into the top-left corner (talk.js). */
+.present-fab { position: relative; z-index: 1; display: inline-flex; align-items: center; gap: 0.45rem; font: 600 0.85rem var(--sans); color: var(--bg); background: var(--strong); border: 0; border-radius: 999px; padding: 0.38rem 0.95rem; cursor: pointer; opacity: 0; pointer-events: none; }
+.present-fab .icon { width: 0.95em; height: 0.95em; }
+.present-fab.show { opacity: 1; pointer-events: auto; }
 .present-fab:hover { background: var(--accent); }
 body.presenting .present-bar {
   display: flex; align-items: center; gap: 0.75rem; position: fixed; right: 1rem; bottom: 1rem; z-index: 20;
@@ -747,7 +749,10 @@ body.reader:has(.pages.slides) { height: 100vh; height: 100dvh; display: flex; f
 html, body { overflow-x: clip; }
 
 /* ---- Site-wide: header link home, and the home page ---- */
-.site-nav { position: absolute; top: 0; left: 0; right: 0; z-index: 5; padding: 1rem 1.5rem; font-size: 0.85rem; display: flex; align-items: center; }
+/* The site header stays at the top of the window: the name links home. Once
+   the page scrolls, it gets a background so text passes under it cleanly. */
+.site-nav { position: fixed; top: 0; left: 0; right: 0; z-index: 16; height: 3.25rem; padding: 0 1.5rem; font-size: 0.85rem; display: flex; align-items: center; gap: 1rem; transition: background-color 0.25s, border-color 0.25s; border-bottom: 1px solid transparent; }
+body.scrolled .site-nav { background: color-mix(in srgb, var(--bg) 86%, transparent); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); border-bottom-color: var(--line); }
 .site-nav .site-name { color: var(--muted); text-decoration: none; font-weight: 600; letter-spacing: 0.01em; }
 .site-nav .site-name:hover { color: var(--accent); }
 .site-footer a { color: inherit; text-decoration: none; }
@@ -827,3 +832,10 @@ body.home .post { max-width: none; }
 .theme-toggle svg { width: 0.9rem; height: 0.9rem; }
 .reader-bar .theme-toggle { margin-left: 0; }
 body.presenting .site-nav { display: none; }
+
+/* Wide screens: thesis and home pages grow with the window, so the text
+   column is not lost in the middle (talk pages size their slide cards). */
+@media (min-width: 1500px) { body:is(.thesis, .home) main { zoom: 1.08; } }
+@media (min-width: 1750px) { body:is(.thesis, .home) main { zoom: 1.16; } }
+@media (min-width: 2000px) { body:is(.thesis, .home) main { zoom: 1.24; } }
+@media (min-width: 2400px) { body:is(.thesis, .home) main { zoom: 1.34; } }

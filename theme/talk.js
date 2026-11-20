@@ -104,8 +104,9 @@
   const content = slides.slice(1);
   function deck() {
     if (presenting()) return;
-    const z = Math.min(1, (window.innerWidth - 160) / STAGE_W);
-    const on = z >= 0.75;
+    // Wider than the stage on big windows, but always a whole card in view.
+    const z = Math.min(1.4, (window.innerWidth - 200) / STAGE_W, (window.innerHeight - 150) / STAGE_H);
+    const on = (window.innerWidth - 200) / STAGE_W >= 0.75 && z >= 0.6;
     document.body.classList.toggle('deck', on);
     document.documentElement.style.setProperty('--deck-z', z.toFixed(4));
     // Cards grow taller rather than shrink their content: no zoom outside present mode.
@@ -113,15 +114,29 @@
   }
   deck();
 
-  // A Present button that stays in view once the title is scrolled away.
+  // A Present button that stays in view once the title is scrolled away: it
+  // glides from the title's Present button into the top-left corner, and back.
   const fab = document.createElement('button');
   fab.type = 'button';
   fab.className = 'present-fab';
-  fab.innerHTML = 'Present <span aria-hidden="true">▶</span>';
+  fab.innerHTML = start.innerHTML;
   fab.title = 'Present from the slide on screen (Esc leaves)';
   fab.addEventListener('click', () => enter());
-  document.body.append(fab);
-  new IntersectionObserver(([e]) => fab.classList.toggle('show', !e.isIntersecting)).observe(start);
+  const nav = document.querySelector('.site-nav');
+  if (nav) nav.querySelector('.site-name').after(fab); else document.body.append(fab);
+  const still = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  new IntersectionObserver(([e]) => {
+    const show = !e.isIntersecting && e.boundingClientRect.top < 0;
+    if (show === fab.classList.contains('show')) return;
+    fab.classList.toggle('show', show);
+    if (still) return;
+    const r = start.getBoundingClientRect(), f = fab.getBoundingClientRect();
+    const from = `translate(${r.left - f.left}px, ${r.top - f.top}px)`;
+    fab.animate(show
+      ? [{ transform: from, opacity: 1 }, { transform: 'none', opacity: 1 }]
+      : [{ transform: 'none', opacity: 1 }, { transform: from, opacity: 0 }],
+    { duration: 500, easing: 'cubic-bezier(0.2, 0.7, 0.2, 1)' });
+  }).observe(start);
   bar.addEventListener('click', (e) => {
     const b = e.target.closest('button');
     if (!b) return;

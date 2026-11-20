@@ -107,6 +107,15 @@ jobs:
       - name: Assemble the playground
         run: node playground/assemble.mjs lexbuild/_build/default/web lex
 
+      - name: Stack probe (diagnostic)
+        working-directory: playground
+        run: |
+          node test/stack-probe.mjs /usr/bin/google-chrome
+          for s in 300 500 700 984; do
+            echo "node --stack-size=$s:"
+            node --stack-size=$s test/smoke.mjs js ../lexbuild/_build/default/web ../lex 2>&1 | grep -E 'minitwit_gdpr|Stack overflow|RangeError' | head -3 || true
+          done
+
       - name: Browser test (headless Chrome)
         working-directory: playground
         run: node test/browser.mjs /usr/bin/google-chrome

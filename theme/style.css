@@ -849,3 +849,9 @@ body.reader.full .pages.slides { --slide-w: min(100vw, calc(100dvh * var(--ratio
 body.reader.full .pages.slides .sheet { transform: none; opacity: 0; transition: none; }
 body.reader.full .pages.slides .sheet.cur { opacity: 1; }
 body.reader.full .pages.slides .page-no { display: none; }
+/* Present mode on touch screens: the controls stay visible and are big enough to tap. */
+@media (hover: none) {
+  body.presenting .present-bar { opacity: 0.8; bottom: max(0.75rem, env(safe-area-inset-bottom)); font-size: 0.85rem; }
+  body.presenting .present-bar button { padding: 0.45rem 0.9rem; }
+}
+body.presenting { touch-action: pan-y pinch-zoom; }

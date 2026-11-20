@@ -1,5 +1,5 @@
 // Present mode for talk pages: shows the title and then one slide at a time,
-// on a fixed 16:9 stage scaled to the window. Arrow keys, space and page keys move; Esc leaves
+// on a fixed 16:9 stage scaled to the window. Arrow keys, space and page keys move (on touch screens: swipe, or tap the right or left side); Esc leaves
 // and returns to the slide in the article. ?present opens a page in it.
 (() => {
   const slides = [document.querySelector('.hero'), ...document.querySelectorAll('.slide')];
@@ -14,6 +14,8 @@
     + '<button type="button" data-exit aria-label="Leave present mode">Esc</button>';
   document.body.append(bar);
   const count = bar.querySelector('.count');
+  // No Esc key on a touch screen: the button shows a cross there.
+  if (matchMedia('(hover: none)').matches) bar.querySelector('[data-exit]').textContent = '✕';
   let i = -1;
 
   // The stage is 960x540; one scale for the window, the same for every slide.
@@ -152,6 +154,24 @@
     else if (k === 'Escape') exit();
     else return;
     e.preventDefault();
+  });
+  // Touch: swipe left or right, or tap the right or left part of the screen.
+  let t0 = null;
+  document.addEventListener('touchstart', (e) => {
+    if (!presenting() || e.touches.length !== 1) { t0 = null; return; }
+    const t = e.touches[0];
+    t0 = { x: t.clientX, y: t.clientY, at: e.timeStamp };
+  }, { passive: true });
+  document.addEventListener('touchend', (e) => {
+    if (!presenting() || !t0) return;
+    const t = e.changedTouches[0], dx = t.clientX - t0.x, dy = t.clientY - t0.y;
+    const from = t0; t0 = null;
+    if (Math.abs(dx) > 40 && Math.abs(dx) > 1.5 * Math.abs(dy)) { show(i + (dx < 0 ? 1 : -1)); return; }
+    if (Math.abs(dx) < 10 && Math.abs(dy) < 10 && e.timeStamp - from.at < 400) {
+      if (e.target.closest('a, button, input, summary, [data-more], .present-bar')) return;
+      show(i + (t.clientX < window.innerWidth / 3 ? -1 : 1));
+      e.preventDefault();
+    }
   });
   document.addEventListener('fullscreenchange', () => { if (!document.fullscreenElement && presenting()) exit(); });
   window.addEventListener('resize', () => { if (presenting()) setScale(); else deck(); });

@@ -89,10 +89,26 @@
     });
     // Clicking a neighbour brings it to the centre.
     sheets.forEach((s, i) => s.addEventListener('click', () => { if (i !== cur) go(i); }));
+    // A sideways two-finger swipe on a touchpad (or a sideways wheel) moves one
+    // slide per swipe: the swipe's momentum does not carry on to further slides.
+    // Taking the event also keeps the browser from going back a page.
+    function onSwipe(step, active) {
+      let acc = 0, last = -1e9, fired = false;
+      window.addEventListener('wheel', (e) => {
+        if (!active() || e.ctrlKey || Math.abs(e.deltaX) <= Math.abs(e.deltaY)) return;
+        e.preventDefault();
+        if (e.timeStamp - last > 220) { acc = 0; fired = false; }
+        last = e.timeStamp;
+        if (fired) return;
+        acc += e.deltaX * (e.deltaMode === 1 ? 16 : e.deltaMode === 2 ? 400 : 1);
+        if (Math.abs(acc) > 40) { fired = true; step(Math.sign(acc)); }
+      }, { passive: false });
+    }
+    onSwipe((d) => go(cur + d), () => true);
     // A mouse wheel (up and down) moves one slide at a time.
     let lock = 0;
     box.addEventListener('wheel', (e) => {
-      if (Math.abs(e.deltaX) > Math.abs(e.deltaY)) return; // trackpad swipes scroll natively
+      if (Math.abs(e.deltaX) >= Math.abs(e.deltaY)) return; // sideways: onSwipe
       e.preventDefault();
       if (Math.abs(e.deltaY) < 4 || e.timeStamp < lock) return;
       lock = e.timeStamp + 350;

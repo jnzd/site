@@ -188,6 +188,23 @@
     else return;
     e.preventDefault();
   });
+  // A sideways two-finger swipe on a touchpad (or a sideways wheel) moves one
+  // slide per swipe: the swipe's momentum does not carry on to further slides.
+  // Taking the event also keeps the browser from going back a page.
+  function onSwipe(step, active) {
+    let acc = 0, last = -1e9, fired = false;
+    window.addEventListener('wheel', (e) => {
+      if (!active() || e.ctrlKey || Math.abs(e.deltaX) <= Math.abs(e.deltaY)) return;
+      e.preventDefault();
+      if (e.timeStamp - last > 220) { acc = 0; fired = false; }
+      last = e.timeStamp;
+      if (fired) return;
+      acc += e.deltaX * (e.deltaMode === 1 ? 16 : e.deltaMode === 2 ? 400 : 1);
+      if (Math.abs(acc) > 40) { fired = true; step(Math.sign(acc)); }
+    }, { passive: false });
+  }
+  onSwipe((d) => show(i + d), presenting);
+
   // Touch: swipe left or right, or tap the right or left part of the screen.
   let t0 = null;
   document.addEventListener('touchstart', (e) => {

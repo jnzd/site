@@ -869,3 +869,6 @@ body.presenting .slide.current, body.presenting .hero.current {
 body.presenting .slide.current > *, body.presenting .hero.current > * { flex-shrink: 0; }
 /* Sizes tied to the window would grow twice on the scaled stage. */
 body.presenting .hero.current h1 { font-size: 60px; }
+/* Sideways swipes change slides there, so they must not navigate back. */
+html:has(body.presenting), html:has(.pages.slides) { overscroll-behavior-x: none; }
+.pages.slides { overscroll-behavior-x: none; }

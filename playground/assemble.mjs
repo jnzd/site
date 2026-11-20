@@ -11,8 +11,8 @@ const nm = path.join(here, 'node_modules');
 rmSync(dist, { recursive: true, force: true });
 mkdirSync(path.join(dist, 'z3'), { recursive: true });
 
-for (const f of ['index.html', 'playground.css', 'playground.js'])
-  cpSync(path.join(here, 'web', f), path.join(dist, f));
+for (const f of ['index.html', 'playground.css', 'playground.js', 'lexdoc'])
+  cpSync(path.join(here, 'web', f), path.join(dist, f), { recursive: true });
 for (const f of ['lexweb.bc.js', 'lexweb.bc.wasm.js', 'lexweb.bc.wasm.assets'])
   if (existsSync(path.join(lexweb, f))) cpSync(path.join(lexweb, f), path.join(dist, f), { recursive: true });
 for (const f of ['z3-built.js', 'z3-built.wasm'])

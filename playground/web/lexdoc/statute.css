@@ -1,0 +1,36 @@
+/* Lexdoc as a printed statute: a serif text column on paper, the law's
+   structure set like an official journal, readings as notes in the margin.
+   Always light. Loaded after Lex's own lexdoc.css and Bootstrap. */
+:root { color-scheme: light; }
+html, body { background: #fbfaf6; color: #1b1a17; }
+body.container { font: 400 1rem/1.6 Charter, "Bitstream Charter", "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, serif; max-width: 58rem; padding: 2rem 2rem 4rem; }
+.lex-program { padding: 0; }
+
+.title-row { background: none; text-align: center; margin: 2rem 0 .75rem; }
+.lex-stmt-section-law { font-size: 1.9rem; font-variant: small-caps; letter-spacing: .06em; margin: .5rem 0 1rem; border-top: 3px double #1b1a17; border-bottom: 3px double #1b1a17; padding: .6rem 0; }
+.lex-stmt-section-title, .lex-stmt-section-chapter { font-size: 1.3rem; font-variant: small-caps; letter-spacing: .05em; }
+.lex-stmt-section-section { font-size: 1.15rem; font-style: italic; }
+.lex-stmt-section-article { font-size: 1.05rem; font-weight: 700; }
+.lex-section-kind { color: inherit; text-transform: capitalize; }
+.lex-section-title { font-weight: 400; font-style: italic; color: #55524a; }
+.lex-section-links { float: none; display: block; font-size: .75rem; color: #8a867c; }
+.lex-section-links a, .lex-section-link { color: #8a867c; }
+
+/* Declarations and rules: keywords in small capitals, names in italics */
+.lex-keyword { color: #1b1a17; font-weight: 400; font-variant: small-caps; letter-spacing: .04em; padding-left: .25em; padding-right: .25em; }
+.lex-ident, .lex-formula-term, .lex-event-link { color: #7a1f12; font-style: italic; }
+.lex-typ { color: #2c4a6b; }
+.lex-const { color: #2c4a6b; }
+.lex-string { color: #55524a; }
+.lex-interval { color: #55524a; font-size: .9em; }
+.lex-stmt { padding: .35rem 0; }
+
+/* Readings: margin notes */
+.lex-reading.card { background: none; border: 0; border-left: 2px solid #c9c3b4; border-radius: 0; font-size: .88rem; color: #3d3a33; margin: .2rem 0 .5rem; }
+.lex-reading .card-header { background: none; border: 0; font-size: .68rem; font-variant: small-caps; letter-spacing: .12em; text-transform: lowercase; color: #8a867c; padding: 0 .8rem; }
+.lex-reading .card-body { padding: .1rem .8rem .3rem; }
+.lex-reading .list-group-item { background: none; border: 0; padding: .1rem .8rem .3rem; color: inherit; }
+.lex-docstring-body { color: #6b675d; }
+
+.lex-subformula-active, .lex-subformula-reading-active { background: #f3e7b9; border-color: transparent; }
+.badge { background: none; border: 1px solid #c9c3b4; color: #55524a; font-weight: 400; }

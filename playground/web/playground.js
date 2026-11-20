@@ -132,6 +132,33 @@ function renderOutput(r) {
     : text.split('\n').map((l) => (/error|exception|cannot/i.test(l) ? `<span class="err">${esc(l)}</span>` : esc(l))).join('\n');
 }
 
+// Lexdoc styles: extra style sheets laid over Lex's own (see web/lexdoc/).
+// The page's base URL also applies inside the srcdoc frame, so relative links work.
+const DOC_STYLES = { lexdoc: [], site: ['theme.css', 'lexdoc/site.css'], statute: ['lexdoc/statute.css'] };
+const DOC_BACKGROUND = { lexdoc: 'white', site: 'var(--panel)', statute: '#fbfaf6' };
+let lastDoc = null;
+try { const s = localStorage.getItem('lexdoc-style'); if (s in DOC_STYLES) $('docstyle').value = s; } catch {}
+function renderDoc() {
+  if (lastDoc === null) return;
+  const style = $('docstyle').value;
+  const theme = document.documentElement.dataset.theme;
+  const links = DOC_STYLES[style].map((h) => `<link rel="stylesheet" href="${h}">`).join('');
+  $('doc').style.background = DOC_BACKGROUND[style];
+  $('doc').srcdoc = lastDoc
+    .replace('<html lang="en">', `<html lang="en"${theme ? ` data-theme="${theme}"` : ''}>`)
+    .replace('</head>', links + '</head>');
+}
+$('docstyle').onchange = () => {
+  try { localStorage.setItem('lexdoc-style', $('docstyle').value); } catch {}
+  renderDoc();
+};
+// The site style follows the light/dark toggle.
+new MutationObserver(() => { if ($('docstyle').value === 'site') renderDoc(); })
+  .observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
+const syncDocStyle = () => { $('docstyle-field').hidden = $('mode').value !== 'doc'; };
+$('mode').addEventListener('change', syncDocStyle);
+syncDocStyle();
+
 function showResult(r) {
   lastResult = r;
   $('run').disabled = false;
@@ -142,7 +169,7 @@ function showResult(r) {
   const isDoc = r.ok && $('mode').value === 'doc';
   $('output').hidden = isDoc;
   $('doc').hidden = !isDoc;
-  if (isDoc) $('doc').srcdoc = r.output; else renderOutput(r);
+  if (isDoc) { lastDoc = r.output; renderDoc(); } else renderOutput(r);
   $('smt').hidden = n === 0;
   $('smt-list').replaceChildren(...r.smt.map(([s, a], i) => {
     const p = document.createElement('pre');

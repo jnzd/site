@@ -31,6 +31,12 @@ await page.screenshot({ path: `${out}/1-tutorial-mfotl.png` });
 await run(page, 'Tutorial (GDPR excerpt)', 'doc');
 await page.waitForTimeout(1500); // Lexdoc loads Bootstrap from a CDN
 await page.screenshot({ path: `${out}/2-tutorial-lexdoc.png` });
+for (const style of ['statute', 'lexdoc']) {
+  await page.selectOption('#docstyle', style);
+  await page.waitForTimeout(1500);
+  await page.screenshot({ path: `${out}/2-tutorial-lexdoc-${style}.png` });
+}
+await page.selectOption('#docstyle', 'site');
 await run(page, 'MiniTwit refines the GDPR (uses Z3)');
 await page.evaluate(() => { document.getElementById('smt').open = true; });
 await page.screenshot({ path: `${out}/3-minitwit-refinement-z3.png` });

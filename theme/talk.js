@@ -192,19 +192,22 @@
   // slide per swipe: the swipe's momentum does not carry on to further slides.
   // Taking the event also keeps the browser from going back a page.
   function onSwipe(step, active) {
-    let acc = 0, last = -1e9, fired = false, prev = 0;
+    let acc = 0, last = -1e9, fired = false, firedAt = 0, peak = 0, trough = 0;
     window.addEventListener('wheel', (e) => {
       if (!active() || e.ctrlKey || Math.abs(e.deltaX) <= Math.abs(e.deltaY)) return;
       e.preventDefault();
       const d = e.deltaX * (e.deltaMode === 1 ? 16 : e.deltaMode === 2 ? 400 : 1);
-      // A pause ends a swipe. So does a new push during the old swipe's momentum
-      // (Windows keeps sending it for seconds): momentum only ever slows down.
-      const push = Math.abs(d) >= 10 && Math.abs(d) > 1.6 * prev;
-      if (e.timeStamp - last > 220 || (fired && push)) { acc = 0; fired = false; }
-      last = e.timeStamp; prev = Math.abs(d);
+      // A pause ends a swipe. So does a new push while the old swipe's momentum
+      // is still coming in (Windows sends it for seconds): once the momentum has
+      // clearly slowed down, a sharp rise can only be the fingers again.
+      const a = Math.abs(d);
+      const again = fired && e.timeStamp - firedAt > 280 && trough < 0.45 * peak && a >= 12 && a > 2.5 * trough;
+      if (e.timeStamp - last > 220 || again) { acc = 0; fired = false; peak = 0; }
+      last = e.timeStamp;
+      if (a > peak) { peak = a; trough = a; } else trough = Math.min(trough, a);
       if (fired) return;
       acc += d;
-      if (Math.abs(acc) > 40) { fired = true; step(Math.sign(acc)); }
+      if (Math.abs(acc) > 40) { fired = true; firedAt = e.timeStamp; step(Math.sign(acc)); }
     }, { passive: false });
   }
   onSwipe((d) => show(i + d), presenting);

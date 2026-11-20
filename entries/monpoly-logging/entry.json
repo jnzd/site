@@ -1,0 +1,102 @@
+{
+  "type": "thesis",
+  "path": "monpoly-logging",
+  "source": "content/bsc-thesis",
+  "main": "main.tex",
+  "bibliography": "bibliography/references.bib",
+  "macroFiles": [
+    "operators.tex"
+  ],
+  "documentClass": "report",
+  "katexMacros": {
+    "\\Next": "\\Circle_{#1}",
+    "\\Previous": "\\CIRCLE_{#1}"
+  },
+  "theorems": [
+    "\\newtheorem{theorem}{Theorem}[chapter]",
+    "\\newtheorem{definition}{Definition}[chapter]",
+    "\\newtheorem{lemma}{Lemma}[chapter]"
+  ],
+  "sortCitations": true,
+  "listingMathescape": true,
+  "assets": "diagrams",
+  "public": [
+    "art.js"
+  ],
+  "meta": {
+    "thesistype": "Bachelor's Thesis",
+    "supervisor": "Professor: Prof. Dr. David Basin",
+    "advisors": "Supervisor: François Hublet"
+  },
+  "subtitle": "A REST-based wrapper that combines the MonPoly runtime monitor with the time series database QuestDB, for logging and monitoring events over the network and changing the monitored policy",
+  "institution": "ETH Zurich",
+  "pdf": "pdf/",
+  "thesisPdf": "main.pdf",
+  "heroVisual": "hero-visual.html",
+  "scripts": [
+    "art.js"
+  ],
+  "imageReplacements": {
+    "diagrams/wrapper.png": "system-structure.svg",
+    "diagrams/flowchart-2.png": "control-flow.svg"
+  },
+  "imageClasses": {
+    "diagrams/": "plot"
+  },
+  "inserts": [
+    {
+      "before": "correctness-1",
+      "file": "inserts/eri-timeline.html"
+    }
+  ],
+  "bibliographyOrder": [
+    "Bartocci2018",
+    "Basin2017",
+    "Basin2016",
+    "Basin2020",
+    "Basin2015aggregations",
+    "Basin2008",
+    "Basin2015",
+    "git-monpoly-branch",
+    "Chomicki1995",
+    "curl",
+    "Fielding2000",
+    "Flask",
+    "git-wrapper",
+    "influx-line",
+    "postgres",
+    "questdb",
+    "questdb-influx-db-line-protocol",
+    "questdb-postgres-wire",
+    "questdb-rest",
+    "questdb-storage-model",
+    "questdb-time-stamps",
+    "Schneider2019"
+  ],
+  "home": {
+    "kind": "Bachelor's thesis, ETH Zurich",
+    "year": "2023",
+    "order": 1
+  },
+  "talks": [
+    {
+      "path": "monpoly-logging/talk",
+      "source": "monpoly-logging/talk.html",
+      "slides": "content/bsc-talk/main.pdf",
+      "title": "A Real-Time, Flexible Logging Infrastructure for MonPoly",
+      "subtitle": "The talk on the bachelor's thesis: a wrapper that combines the MonPoly monitor with the time series database QuestDB",
+      "kind": "Bachelor's thesis talk, ETH Zurich",
+      "date": "February 24, 2023",
+      "short": "Talk",
+      "thesisLabel": "Read the thesis",
+      "heroVisual": "monpoly-logging/talk-hero-visual.html",
+      "scripts": [
+        "../art.js"
+      ],
+      "public": [
+        "monpoly-logging/per-time-point-monpoly-vs-wrapper.png",
+        "monpoly-logging/policy-change-log-log.png"
+      ]
+    }
+  ]
+}

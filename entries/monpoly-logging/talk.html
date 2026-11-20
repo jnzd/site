@@ -1,0 +1,498 @@
+<!--
+  Bachelor's thesis talk (February 24, 2023): "A Real-Time, Flexible Logging and
+  Monitoring Infrastructure for MonPoly". One <section class="slide"> per slide of
+  the original Beamer deck (content/bsc-talk); data-slide is its number there.
+  See lib/talk.mjs for the markup this file may use.
+-->
+<section class="slide part">
+  <h2 id="background">Background and motivation</h2>
+</section>
+
+<section class="slide" id="monitoring-problem" data-slide="2">
+  <h3>The monitoring problem</h3>
+
+  <ul>
+    <li><strong>Runtime monitoring</strong> checks a system's actual behaviour against a formal specification.</li>
+    <li><strong>Online monitoring</strong> is done while the system is running.</li>
+    <li><strong>Offline monitoring</strong> is done on a log after the system has completed.</li>
+  </ul>
+  <p>We focus on the online monitoring problem.</p>
+</section>
+
+<section class="slide" id="monpoly" data-slide="3">
+  <h3>MonPoly</h3>
+
+  <p>MonPoly is a runtime monitor. Its policies are written in metric first-order
+  temporal logic (MFOTL), which adds temporal operators to first-order logic. Each
+  operator carries an interval $I$ that restricts the time points relevant to it.</p>
+  <div class="table-scroll">
+  <table class="ruled operators">
+    <tbody><tr><td>Next</td><td>$\Next{I}\, \varphi$</td><td class="rule-left">Always</td><td>$\Always{I}\, \varphi$</td></tr>
+    <tr><td>Previous</td><td>$\Previous{I}\, \varphi$</td><td class="rule-left">Historically</td><td>$\Historically{I}\, \varphi$</td></tr>
+    <tr><td>Until</td><td>$\varphi \Until{I} \psi$</td><td class="rule-left">Eventually</td><td>$\Eventually{I}\, \varphi$</td></tr>
+    <tr><td>Since</td><td>$\varphi \Since{I} \psi$</td><td class="rule-left">Once</td><td>$\Once{I}\, \varphi$</td></tr>
+  </tbody></table>
+  </div>
+  <p>The temporal operators are on the left, the syntactic sugar built from them on the right.</p>
+  <ul>
+    <li><strong>Time point:</strong> a time-stamped collection of events (predicates), often referred to by an integer index.</li>
+    <li><strong>Time stamp:</strong> a moment in time, e.g. seconds since the Unix epoch.</li>
+  </ul>
+  <p class="notes">The thesis defines the logic in <a data-thesis="metric-first-order-temporal-and-dynamic-logic">§2.1 Metric First-Order Temporal and Dynamic Logic</a>
+  and introduces the tool in <a data-thesis="monpoly">§2.2 MonPoly</a>.</p>
+</section>
+
+<section class="slide" id="time-series-databases" data-slide="4">
+  <h3>Time-series databases</h3>
+
+  <p>A time-series database is optimized for inserting and retrieving temporal data.
+  We use <strong>QuestDB</strong>:</p>
+  <ul>
+    <li>It is largely compatible with PostgreSQL.</li>
+    <li>It adds a <code><span class="tok-fn">TIMESTAMP</span></code> data type to the usual types <code>INT</code>, <code>STRING</code>, etc.</li>
+    <li>Each table has a dedicated time stamp column, analogous to an index column.</li>
+  </ul>
+  <p class="notes">More in <a data-thesis="questdb">§2.3.1 QuestDB</a>.</p>
+</section>
+
+<section class="slide" id="monitor-vs-database" data-slide="5">
+  <h3>Monitor vs. database</h3>
+
+  <div class="table-scroll">
+  <table class="ruled compare">
+    <thead><tr><th></th><th>Monitor (MonPoly)</th><th>Time-series database (QuestDB)</th></tr></thead>
+    <tbody>
+      <tr><td>Good when</td><td>data changes often<br>the policy changes rarely</td><td>data stays almost constant<br>queries vary and are frequent</td></tr>
+      <tr class="rule-before"><td>Bad when</td><td>the policy changes frequently</td><td>data changes rapidly</td></tr>
+    </tbody>
+  </table>
+  </div>
+</section>
+
+<section class="slide" id="combining" data-slide="6">
+  <h3>Combining monitoring and a time-series database</h3>
+
+  <p>We build a wrapper that logs and monitors the same data. It:</p>
+  <ul>
+    <li>provides the functionality of both a monitor and a time-series database,</li>
+    <li>allows us to offer a <strong>policy change</strong> method,</li>
+    <li>gives MonPoly a more accessible interface, for web services and distributed systems,</li>
+    <li>increases fault tolerance.</li>
+  </ul>
+</section>
+
+<section class="slide" id="signature-to-schema" data-slide="7">
+  <h3>From signature to database schema</h3>
+
+  <p>Each predicate of a MonPoly signature becomes a table, with one column per
+  attribute plus the time point <code>tp</code> and the time stamp <code>ts</code>. One
+  more table records every time point, including those without events.</p>
+  <div class="side-by-side code-pair">
+    <div class="code-block"><div class="code-title">schema.sql</div><pre class="listing" style="counter-reset: line 0"><code><span class="line"><span class="tok-kw">CREATE TABLE</span> <span class="tok-fn">P</span>(x1 INT, x2 STRING,</span>
+<span class="line">               tp INT,</span>
+<span class="line">               ts <span class="tok-fn">TIMESTAMP</span>)</span>
+<span class="line">               <span class="acc">timestamp(ts)</span>;</span>
+<span class="line"><span class="tok-kw">CREATE TABLE</span> <span class="tok-fn">Q</span>(x1 INT, x2 INT,</span>
+<span class="line">               tp INT,</span>
+<span class="line">               ts <span class="tok-fn">TIMESTAMP</span>)</span>
+<span class="line">               <span class="acc">timestamp(ts)</span>;</span>
+<span class="line"><span class="tok-kw">CREATE TABLE</span> <span class="tok-fn">R</span>(x1 INT, x2 STRING,</span>
+<span class="line">               x3 STRING,</span>
+<span class="line">               tp INT,</span>
+<span class="line">               ts <span class="tok-fn">TIMESTAMP</span>)</span>
+<span class="line">               <span class="acc">timestamp(ts)</span>;</span>
+<span class="line"><span class="tok-kw">CREATE TABLE</span> <span class="tok-fn">time_points</span></span>
+<span class="line">               (tp INT,</span>
+<span class="line">               ts <span class="tok-fn">TIMESTAMP</span>)</span>
+<span class="line">               <span class="acc">timestamp(ts)</span>;</span></code></pre></div>
+    <div class="code-block"><div class="code-title">signature.sig</div><pre class="listing" style="counter-reset: line 0"><code><span class="line"><span class="tok-fn">P</span>(<span class="tok-op">id</span>:int, <span class="tok-op">act</span>:string)</span>
+<span class="line"><span class="tok-fn">Q</span>(<span class="tok-op">id1</span>:int, <span class="tok-op">id2</span>:int)</span>
+<span class="line"><span class="tok-fn">R</span>(int, string, string)</span></code></pre></div>
+  </div>
+  <p class="notes">The thesis explains the mapping in <a data-thesis="time-series-databases-for-runtime-monitoring">§2.3.2 Time Series Databases for Runtime Monitoring</a>.</p>
+</section>
+
+<section class="slide" id="agenda" data-slide="8">
+  <h3>Agenda</h3>
+
+  <ol>
+    <li><a href="#wrapper">The wrapper</a>: its REST API, architecture and data flow.</li>
+    <li><a href="#policy-change">Algorithm and policy change</a>: relative intervals and their extension.</li>
+    <li><a href="#partial-policy-change">Partial policy change</a>: work in progress inside MonPoly.</li>
+    <li><a href="#evaluation">Evaluation</a> and <a href="#outlook">outlook</a>.</li>
+  </ol>
+</section>
+
+<section class="slide part">
+  <h2 id="wrapper">The wrapper</h2>
+</section>
+
+<section class="slide" id="rest-api" data-slide="9">
+  <h3>The REST API</h3>
+
+  <div class="table-scroll">
+  <table class="ruled endpoints">
+    <thead><tr><th>Monitor and log</th><th class="rule-left">QuestDB connection</th></tr></thead>
+    <tbody>
+<tr><td><code>/ (info page)</code></td><td class="rule-left"><code>/db-set-user</code></td></tr>
+<tr><td><code>/set-policy</code></td><td class="rule-left"><code>/db-set-password</code></td></tr>
+<tr><td><code>/set-signature</code></td><td class="rule-left"><code>/db-set-host</code></td></tr>
+<tr><td><code>/start-monitor</code></td><td class="rule-left"><code>/db-set-pgsql-port</code></td></tr>
+<tr><td><code>/stop-monitor</code></td><td class="rule-left"><code>/db-set-influxdb-port</code></td></tr>
+<tr><td><code>/change-policy</code></td><td class="rule-left"><code>/db-set-database</code></td></tr>
+<tr><td><code>/get-policy</code></td><td class="rule-left"><code>/db-get-user</code></td></tr>
+<tr><td><code>/get-signature</code></td><td class="rule-left"><code>/db-get-password</code></td></tr>
+<tr><td><code>/reset-everything</code></td><td class="rule-left"><code>/db-get-host</code></td></tr>
+<tr><td><code>/log-events</code></td><td class="rule-left"><code>/db-get-pgsql-port</code></td></tr>
+<tr><td><code>/get-events</code></td><td class="rule-left"><code>/db-get-influxdb-port</code></td></tr>
+<tr><td><code>/get-most-recent</code></td><td class="rule-left"><code>/db-get-database</code></td></tr>
+    </tbody>
+  </table>
+  </div>
+  <p class="notes">Every endpoint is described, with example calls, in <a data-thesis="the-rest-api">§3.2 The REST API</a>.</p>
+</section>
+
+<section class="slide" id="architecture" data-slide="10">
+  <h3>Architecture</h3>
+
+  <figure>
+    <div class="figure-body"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 380" width="600" height="380" role="img" aria-label="Project structure: the user sends events, signature and policy to the wrapper, which talks to MonPoly and QuestDB" class="diagram">
+<defs><marker id="ah-ws" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 1L9 5L0 9" fill="none" stroke="context-stroke" stroke-width="1.5"></path></marker></defs>
+<g fill="none" stroke="currentColor" stroke-width="1.2">
+<rect x="10" y="44" width="96" height="46" rx="12"></rect>
+<rect x="200" y="10" width="210" height="120"></rect><path d="M200 36H410"></path>
+<rect x="30" y="250" width="240" height="120"></rect><path d="M30 276H270"></path>
+<rect x="340" y="250" width="240" height="120"></rect><path d="M340 276H580"></path>
+<path d="M106 67H196" marker-end="url(#ah-ws)" stroke="var(--fig-blue)"></path>
+<path d="M226 130V246" marker-end="url(#ah-ws)" stroke="var(--fig-blue)"></path>
+<path d="M256 250V134" marker-end="url(#ah-ws)" stroke="var(--fig-purple)"></path>
+<path d="M392 130V246" marker-end="url(#ah-ws)" stroke="var(--fig-blue)"></path>
+<path d="M560 250V70H414" marker-end="url(#ah-ws)" stroke="var(--fig-purple)"></path>
+</g>
+<g fill="currentColor" stroke="none" font-size="13" text-anchor="middle">
+<text x="58" y="72">User</text>
+<text x="305" y="28" font-weight="600">Wrapper</text>
+<text x="305" y="72">Check JSON formatting</text>
+<text x="305" y="96">Convert JSON to MonPoly log</text>
+<text x="150" y="268" font-weight="600">MonPoly</text>
+<text x="150" y="310">Check monitorability of policies</text>
+<text x="150" y="334">Compute relative intervals</text>
+<text x="150" y="352" font-size="11.5" fill="var(--muted)">(for policy change)</text>
+<text x="460" y="268" font-weight="600">QuestDB</text>
+<text x="460" y="314">Keeps a copy of the trace</text>
+<text x="460" y="334">already processed by MonPoly</text>
+</g>
+<g stroke="none" font-size="11">
+<text x="151" y="34" text-anchor="middle" fill="var(--fig-blue)"><tspan x="151">events /</tspan><tspan x="151" dy="13">signature / policy</tspan></text>
+<text x="218" y="176" text-anchor="end" fill="var(--fig-blue)"><tspan x="218">events /</tspan><tspan x="218" dy="13">signature /</tspan><tspan x="218" dy="13">policy</tspan></text>
+<text x="263" y="170" fill="var(--fig-purple)"><tspan x="263">monitor verdict /</tspan><tspan x="263" dy="13">monitorability /</tspan><tspan x="263" dy="13">relative intervals</tspan></text>
+<text x="400" y="176" fill="var(--fig-blue)"><tspan x="400">monitored</tspan><tspan x="400" dy="13">events</tspan></text>
+<text x="552" y="226" text-anchor="end" fill="var(--fig-purple)">query response</text>
+</g>
+</svg>
+</div>
+  </figure>
+  <p class="notes"><a data-thesis="architecture">§3 Architecture</a></p>
+</section>
+
+<section class="slide" id="data-flow" data-slide="11">
+  <h3>Data flow</h3>
+
+  <p>The wrapper checks incoming events before they reach MonPoly, and faulty input is
+  reported instead of stopping the monitor: fault tolerance increases compared to
+  MonPoly alone.</p>
+  <figure>
+    <div class="figure-body"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 250" width="900" height="250" role="img" aria-label="Control flow for an incoming event: the wrapper checks JSON keys, forwards the event to MonPoly, which checks order and signature compliance; valid events are reported and forwarded to QuestDB, invalid ones are reported as faulty" class="diagram">
+<defs><marker id="ah-fc" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 1L9 5L0 9" fill="none" stroke="context-stroke" stroke-width="1.5"></path></marker></defs>
+<g fill="none" stroke="currentColor" stroke-width="1.2"><rect x="4" y="46" width="112" height="68" rx="0"></rect><path d="M134 80L206 24L278 80L206 136Z"></path><rect x="302" y="46" width="112" height="68" rx="0"></rect><path d="M432 80L504 24L576 80L504 136Z"></path><path d="M594 80L666 24L738 80L666 136Z"></path><rect x="760" y="36" width="136" height="88" rx="0"></rect><rect x="140" y="192" width="132" height="52" rx="24"></rect><rect x="438" y="192" width="132" height="52" rx="24"></rect><rect x="600" y="192" width="132" height="52" rx="24"></rect><path d="M116 80H130" marker-end="url(#ah-fc)" stroke="currentColor"></path><path d="M278 80H298" marker-end="url(#ah-fc)" stroke="var(--accent)"></path><path d="M414 80H428" marker-end="url(#ah-fc)" stroke="currentColor"></path><path d="M576 80H590" marker-end="url(#ah-fc)" stroke="var(--accent)"></path><path d="M738 80H756" marker-end="url(#ah-fc)" stroke="var(--accent)"></path><path d="M206 136V188" marker-end="url(#ah-fc)" stroke="var(--muted)"></path><path d="M504 136V188" marker-end="url(#ah-fc)" stroke="var(--muted)"></path><path d="M666 136V188" marker-end="url(#ah-fc)" stroke="var(--muted)"></path></g>
+<g stroke="none" font-size="12.5"><text text-anchor="middle" fill="currentColor"><tspan x="60.0" y="76.5">Wrapper parses</tspan><tspan x="60.0" y="92.5">JSON</tspan></text><text text-anchor="middle" fill="currentColor"><tspan x="206" y="76.5">Required keys</tspan><tspan x="206" y="92.5">present?</tspan></text><text text-anchor="middle" fill="currentColor"><tspan x="358.0" y="76.5">Send event to</tspan><tspan x="358.0" y="92.5">MonPoly</tspan></text><text text-anchor="middle" fill="currentColor"><tspan x="504" y="84.5">In order?</tspan></text><text text-anchor="middle" fill="currentColor"><tspan x="666" y="76.5">Signature</tspan><tspan x="666" y="92.5">compliant?</tspan></text><text text-anchor="middle" fill="currentColor"><tspan x="828.0" y="60.5">Report monitor</tspan><tspan x="828.0" y="76.5">verdict to user;</tspan><tspan x="828.0" y="92.5">forward event</tspan><tspan x="828.0" y="108.5">to QuestDB</tspan></text><text text-anchor="middle" fill="currentColor"><tspan x="206.0" y="214.5">Report faulty</tspan><tspan x="206.0" y="230.5">JSON formatting</tspan></text><text text-anchor="middle" fill="currentColor"><tspan x="504.0" y="214.5">Report out-of-order</tspan><tspan x="504.0" y="230.5">time stamp</tspan></text><text text-anchor="middle" fill="currentColor"><tspan x="666.0" y="214.5">Report faulty</tspan><tspan x="666.0" y="230.5">predicate</tspan></text></g>
+<g stroke="none" font-size="11.5" class="mono"><text x="288" y="72" text-anchor="middle" fill="var(--accent)">yes</text><text x="583" y="72" text-anchor="middle" fill="var(--accent)">yes</text><text x="747" y="72" text-anchor="middle" fill="var(--accent)">yes</text><text x="214" y="168" fill="var(--muted)">no</text><text x="512" y="168" fill="var(--muted)">no</text><text x="674" y="168" fill="var(--muted)">no</text></g>
+</svg></div>
+  </figure>
+  <p class="notes"><a data-thesis="wrapping-monpoly">§5.1 Wrapping MonPoly</a></p>
+</section>
+
+<section class="slide part">
+  <h2 id="policy-change">Algorithm and policy change</h2>
+</section>
+
+<section class="slide" id="policy-change-idea" data-slide="12">
+  <h3>Policy change</h3>
+
+  <ul>
+    <li>A policy change starts a new monitor with the new policy.</li>
+    <li><strong>Goal:</strong> the new monitor evaluates the new policy at the current
+    time point just as if it had seen the same trace as the old monitor.</li>
+    <li><strong>Naive approach:</strong> read the entire trace again.</li>
+    <li><strong>Idea:</strong> reduce the trace by removing events that do not influence
+    how the new policy is evaluated.</li>
+  </ul>
+  <p class="notes"><a data-thesis="policy-change">§4.1 Policy Change</a></p>
+</section>
+
+<section class="slide" id="optimization-example" data-slide="13">
+  <h3>Optimization example</h3>
+
+  $$\phi = (P(x, \text{“a”}) \Since{[0,30)} Q(x, 2)) \land (\neg R(y, \text{“c”}, z) \Since{[20,60)} P(y, z))$$
+  <ul>
+    <li><strong>Relative interval:</strong> $\RI(\phi) = (-60, 0]$</li>
+    <li><strong>Extended relative intervals:</strong>
+    $$\ERI(\phi) = \begin{alignedat}{2}
+      &amp;P(*,*) &amp;&amp;\to (-60,-20] \\
+      &amp;P(*,\text{“a”}) &amp;&amp;\to (-30,0] \\
+      &amp;Q(*,2) &amp;&amp;\to (-30,0] \\
+      &amp;R(*,\text{“c”},*) &amp;&amp;\to (-60,0]
+    \end{alignedat}$$</li>
+  </ul>
+  <p>Time points whose time stamps lie outside $\{\text{current time stamp}\} \oplus \RI(\phi)$
+  do not change the evaluation of $\phi$ at the current time point.</p>
+</section>
+
+<section class="slide" id="interval-operators" data-slide="14">
+  <h3>Interval operators</h3>
+
+  <p>Let $I$ and $J$ be two intervals. Then</p>
+  <ul>
+    <li>$I \oplus J = \{i + j \mid i \in I, j \in J\}$, for example $[0,3] \oplus [-2,4] = [-2,7]$;</li>
+    <li>$I \Cup J$ is the smallest interval that contains every element of $I$ or $J$,
+    for example $[-4,1] \Cup [4,5] = [-4,5]$.</li>
+  </ul>
+</section>
+
+<section class="slide" id="relative-intervals" data-slide="15">
+  <h3>Relative intervals</h3>
+
+  <p>The relative interval of a formula $\phi$, $\RI(\phi) \subseteq \mathbb{Z}$, is defined
+  inductively over the formula structure <cite data-ref="Basin2016"></cite>:</p>
+  <figure><div class="figure-body">$$\RI(\phi) = \begin{cases}
+    \{0\} &amp; \text{atomic formulas} \\
+    \RI(\psi) &amp; \neg \psi,\ \exists x.\psi,\ \forall x.\psi \\
+    \RI(\psi) \Cup \RI(\chi) &amp; \psi \lor \chi,\ \psi \land \chi \\
+    (-b,0] \Cup ((-b,-a] \oplus \RI(\psi)) &amp; \Previous{[a,b)} \psi \\
+    [0,b) \Cup ([a,b) \oplus \RI(\psi)) &amp; \Next{[a,b)} \psi \\
+    (-b,0] \Cup ((-b,0] \oplus \RI(\psi)) \Cup ((-b,-a] \oplus \RI(\chi)) &amp; \psi \Since{[a,b)} \chi \\
+    [0,b) \Cup ([0,b) \oplus \RI(\psi)) \Cup ([a,b) \oplus \RI(\chi)) &amp; \psi \Until{[a,b)} \chi
+  \end{cases}$$</div></figure>
+  <p class="notes"><a data-thesis="def:rel-int">Definition 4.1</a> in the thesis also covers the MFODL operators.</p>
+</section>
+
+<section class="slide" id="eri-operators" data-slide="16">
+  <h3>Extended relative intervals: operators</h3>
+
+  <p>A map from masked predicates to intervals replaces the single interval, so new
+  operators are needed. Let $M$ and $N$ be two masked predicate maps and $T$ an interval:</p>
+  $$\begin{aligned}
+    M \Cupmerge N = {} &amp; \{ p(l) \to (I \Cup J) \mid p(l) \to I \in M \text{ and } p(l) \to J \in N \} \\
+      &amp; \cup \{ p(l) \to I \mid p(l) \to I \in M \text{ and } p(l) \in \keys(M) \setminus \keys(N) \} \\
+      &amp; \cup \{ p(l) \to I \mid p(l) \to I \in N \text{ and } p(l) \in \keys(N) \setminus \keys(M) \} \\
+    T \Cupext M = {} &amp; \{ p(l) \to (T \Cup I) \mid p(l) \to I \in M \} \\
+    T \oplusext M = {} &amp; \{ p(l) \to (T \oplus I) \mid p(l) \to I \in M \}
+  \end{aligned}$$
+  <p class="notes"><a data-thesis="def:e-rel-int-ops">Definition 4.9</a></p>
+</section>
+
+<section class="slide" id="eri-definition" data-slide="17">
+  <h3>Extended relative intervals</h3>
+
+  <p>The definition follows that of relative intervals; what changes is marked.</p>
+  <figure><div class="figure-body">$$\ERI(\phi) = \begin{cases}
+    \acc{\{\}} &amp; \text{other atomic formulas} \\
+    \acc{\{p(m) \to [0,0]\}} &amp; \text{predicate $p$, mask $m$} \\
+    \ERI(\psi) &amp; \neg \psi,\ \exists x.\psi,\ \forall x.\psi \\
+    \ERI(\psi) \acc{\Cupmerge} \ERI(\chi) &amp; \psi \lor \chi,\ \psi \land \chi \\
+    (-b,0] \acc{\Cupext} ((-b,-a] \acc{\oplusext} \ERI(\psi)) &amp; \Previous{[a,b)} \psi \\
+    [0,b) \acc{\Cupext} ([a,b) \acc{\oplusext} \ERI(\psi)) &amp; \Next{[a,b)} \psi \\
+    (-b,0] \acc{\Cupext} ((-b,0] \acc{\oplusext} \ERI(\psi)) \acc{\Cupmerge} ((-b,-a] \acc{\oplusext} \ERI(\chi)) &amp; \psi \Since{[a,b)} \chi \\
+    [0,b) \acc{\Cupext} ([0,b) \acc{\oplusext} \ERI(\psi)) \acc{\Cupmerge} ([a,b) \acc{\oplusext} \ERI(\chi)) &amp; \psi \Until{[a,b)} \chi
+  \end{cases}$$</div></figure>
+  <p>We proved that this definition is a correct approximation: it extracts all time
+  points from a trace that are needed, and $\phi$ evaluates the same on the original
+  trace and on the extraction.</p>
+  <p class="notes"><a data-thesis="def:e-rel-int">Definition 4.11</a>; the proof is in <a data-thesis="correctness-1">§4.3.1 Correctness</a>.</p>
+</section>
+
+<section class="slide" id="eri-example" data-slide="18">
+  <h3>Extended relative intervals in the example</h3>
+
+  $$\phi = (P(x, \text{“a”}) \Since{[0,30)} Q(x, 2)) \land (\neg R(y, \text{“c”}, z) \Since{[20,60)} P(y, z))$$
+  <ul>
+    <li><strong>Relative interval:</strong> $\RI(\phi) = \blu{(-60,0]}$</li>
+    <li><strong>Extended relative intervals:</strong>
+    $$\ERI(\phi) = \begin{alignedat}{2}
+      &amp;P(*,*) &amp;&amp;\to \acc{(-60,-20]} \\
+      &amp;P(*,\acc{\text{“a”}}) &amp;&amp;\to \acc{(-30,0]} \\
+      &amp;Q(*,\acc{2}) &amp;&amp;\to \acc{(-30,0]} \\
+      &amp;R(*,\acc{\text{“c”}},*) &amp;&amp;\to \acc{(-60,0]}
+    \end{alignedat}$$</li>
+  </ul>
+</section>
+
+<section class="slide" id="eri-picture" data-slide="19">
+  <h3>What the query keeps</h3>
+
+  <p>On a random trace, each masked predicate keeps only the events in its own
+  interval. Everything else in $(-60, 0]$ is skipped, although the plain relative
+  interval would read it. An event appears in every row whose mask it matches.</p>
+  <figure class="eri-fig"><div class="figure-body"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 620 354" width="620" height="354" class="eri-art" role="img" aria-label="Timeline of a random trace for the example policy. Each masked predicate of the extended relative intervals has a row with its interval marked; events inside their row's interval are needed, the rest are not. The query reads 8 of the 19 events in (−60, 0]. The plain relative interval would read all of them."><g class="ri"><path d="M223.6 44V36H591.6V44"></path><text x="407.6" y="28" text-anchor="middle" class="mono">RI(φ) = (−60, 0]: the plain relative interval keeps all of this</text></g><path class="now" d="M591.6 50V272"></path><text x="12" y="76" class="mono name">P(*,*)</text><text x="12" y="90" class="mono sub">→ (−60, −20]</text><path class="lane" d="M150 78H610"></path><rect class="band" x="223.6" y="66.0" width="245.3" height="24" rx="3"></rect><circle class="ev skip" cx="156.1" cy="78" r="2.8"></circle><circle class="ev skip" cx="184.3" cy="78" r="2.8"></circle><circle class="ev keep" cx="230.3" cy="78" r="3.4"></circle><circle class="ev keep" cx="259.8" cy="78" r="3.4"></circle><circle class="ev keep" cx="335.8" cy="78" r="3.4"></circle><circle class="ev keep" cx="423.5" cy="78" r="3.4"></circle><circle class="ev skip" cx="479.4" cy="78" r="2.8"></circle><circle class="ev skip" cx="538.2" cy="78" r="2.8"></circle><text x="12" y="120" class="mono name">P(*,“a”)</text><text x="12" y="134" class="mono sub">→ (−30, 0]</text><path class="lane" d="M150 122H610"></path><rect class="band" x="407.6" y="110.0" width="184.0" height="24" rx="3"></rect><circle class="ev skip" cx="156.1" cy="122" r="2.8"></circle><circle class="ev skip" cx="335.8" cy="122" r="2.8"></circle><circle class="ev keep" cx="479.4" cy="122" r="3.4"></circle><circle class="ev keep" cx="538.2" cy="122" r="3.4"></circle><text x="12" y="164" class="mono name">Q(*,2)</text><text x="12" y="178" class="mono sub">→ (−30, 0]</text><path class="lane" d="M150 166H610"></path><rect class="band" x="407.6" y="154.0" width="184.0" height="24" rx="3"></rect><circle class="ev skip" cx="184.3" cy="166" r="2.8"></circle><circle class="ev skip" cx="259.8" cy="166" r="2.8"></circle><circle class="ev skip" cx="369.0" cy="166" r="2.8"></circle><text x="12" y="208" class="mono name">R(*,“c”,*)</text><text x="12" y="222" class="mono sub">→ (−60, 0]</text><path class="lane" d="M150 210H610"></path><rect class="band" x="223.6" y="198.0" width="368.0" height="24" rx="3"></rect><circle class="ev keep" cx="317.4" cy="210" r="3.4"></circle><circle class="ev keep" cx="567.1" cy="210" r="3.4"></circle><text x="12" y="252" class="mono name dim">other events</text><text x="12" y="266" class="mono sub">Q(*,5), R(*,“d”,*)</text><path class="lane" d="M150 254H610"></path><circle class="ev skip" cx="156.1" cy="254" r="2.8"></circle><circle class="ev skip" cx="205.2" cy="254" r="2.8"></circle><circle class="ev skip" cx="278.2" cy="254" r="2.8"></circle><circle class="ev skip" cx="297.2" cy="254" r="2.8"></circle><circle class="ev skip" cx="335.8" cy="254" r="2.8"></circle><circle class="ev skip" cx="369.0" cy="254" r="2.8"></circle><circle class="ev skip" cx="399.0" cy="254" r="2.8"></circle><circle class="ev skip" cx="423.5" cy="254" r="2.8"></circle><circle class="ev skip" cx="451.8" cy="254" r="2.8"></circle><circle class="ev skip" cx="451.8" cy="254" r="2.8"></circle><circle class="ev skip" cx="513.1" cy="254" r="2.8"></circle><path class="axis" d="M150 280H610"></path><path class="axis" d="M223.6 280v4"></path><text x="223.6" y="296" text-anchor="middle" class="mono sub">−60</text><path class="axis" d="M284.9 280v4"></path><text x="284.9" y="296" text-anchor="middle" class="mono sub">−50</text><path class="axis" d="M346.3 280v4"></path><text x="346.3" y="296" text-anchor="middle" class="mono sub">−40</text><path class="axis" d="M407.6 280v4"></path><text x="407.6" y="296" text-anchor="middle" class="mono sub">−30</text><path class="axis" d="M468.9 280v4"></path><text x="468.9" y="296" text-anchor="middle" class="mono sub">−20</text><path class="axis" d="M530.3 280v4"></path><text x="530.3" y="296" text-anchor="middle" class="mono sub">−10</text><path class="axis" d="M591.6 280v4"></path><text x="591.6" y="296" text-anchor="middle" class="mono sub">now</text><g class="legend mono"><circle class="ev keep" cx="156" cy="318" r="3.4"></circle><text x="166" y="322">needed by φ</text><circle class="ev skip" cx="266" cy="318" r="2.8"></circle><text x="276" y="322">not needed</text><text x="152.6" y="344" class="count">The query reads 8 of the 19 events in (−60, 0].</text></g></svg></div></figure>
+  <p class="notes">The thesis shows the same picture next to <a data-thesis="relative-interval-extension">§4.3 Relative Interval Extension</a>.</p>
+</section>
+
+<section class="slide" id="sql-query" data-slide="20">
+  <h3>From extended relative intervals to SQL</h3>
+
+  <p>Each masked predicate becomes a condition on its table; the time points table is
+  queried with the relative interval of the whole formula.</p>
+  <div class="code-block"><pre class="listing" style="counter-reset: line 0"><code><span class="line"><span class="tok-kw">SELECT</span> * <span class="tok-kw">FROM</span> <span class="tok-fn">P</span> <span class="tok-kw">WHERE</span></span>
+<span class="line">    <span class="acc">(time_stamp &gt; &lt;NOW&gt;-60 AND time_stamp &lt;= &lt;NOW&gt;-20)</span></span>
+<span class="line">    <span class="tok-kw">OR</span></span>
+<span class="line">    <span class="acc">(x2 = "a" AND</span></span>
+<span class="line">    <span class="acc">time_stamp &gt; &lt;NOW&gt;-30 AND time_stamp &lt;= &lt;NOW&gt;-0)</span>;</span>
+<span class="line"><span class="tok-kw">SELECT</span> * <span class="tok-kw">FROM</span> <span class="tok-fn">Q</span> <span class="tok-kw">WHERE</span></span>
+<span class="line">    <span class="acc">(x2 = 2 AND</span></span>
+<span class="line">    <span class="acc">time_stamp &gt; &lt;NOW&gt;-30 AND time_stamp &lt;= &lt;NOW&gt;-0)</span>;</span>
+<span class="line"><span class="tok-kw">SELECT</span> * <span class="tok-kw">FROM</span> <span class="tok-fn">R</span> <span class="tok-kw">WHERE</span></span>
+<span class="line">    <span class="acc">(x2 = "c" AND</span></span>
+<span class="line">    <span class="acc">time_stamp &gt; &lt;NOW&gt;-60 AND time_stamp &lt;= &lt;NOW&gt;-0)</span>;</span>
+<span class="line"><span class="tok-kw">SELECT</span> * <span class="tok-kw">FROM</span> <span class="tok-fn">time_points</span> <span class="tok-kw">WHERE</span></span>
+<span class="line">    <span class="tok-fn">(time_stamp &gt; &lt;NOW&gt;-60 AND time_stamp &lt;= &lt;NOW&gt;-0)</span>;</span></code></pre></div>
+  <p class="notes"><a data-thesis="conversion-to-sql-query">§4.4 Conversion to SQL-Query</a></p>
+</section>
+
+<section class="slide" id="result-conversion" data-slide="21">
+  <h3>Converting the database result</h3>
+
+  <p>QuestDB's answer is turned into the wrapper's JSON log format, and from there into
+  a MonPoly log that the new monitor reads before it switches to standard input.</p>
+  <div class="code-block"><div class="code-title">QuestDB response</div><pre class="listing" style="counter-reset: line 0"><code><span class="line">[{<span class="tok-str">"R"</span>:[]},</span>
+<span class="line"> {<span class="tok-str">"Q"</span>:[[0,8,65536,<span class="tok-str">"Thu, 01 Jan 1970 00:00:01 GMT"</span>]]},</span>
+<span class="line"> {<span class="tok-str">"P"</span>:[]},</span>
+<span class="line"> {<span class="tok-str">"time_points"</span>:[[65536,<span class="tok-str">"Thu, 01 Jan 1970 00:00:01 GMT"</span>],</span>
+<span class="line">                 [65537,<span class="tok-str">"Thu, 01 Jan 1970 00:00:02 GMT"</span>]]}]</span></code></pre></div>
+  <div class="code-block"><div class="code-title">wrapper.json</div><pre class="listing" style="counter-reset: line 0"><code><span class="line">[{<span class="tok-str">"predicates"</span>:[{<span class="tok-str">"name"</span>:<span class="tok-str">"Q"</span>,<span class="tok-str">"occurrences"</span>:[[0,8]]}],</span>
+<span class="line">  <span class="tok-str">"timepoint"</span>:65536,<span class="tok-str">"timestamp"</span>:<span class="tok-str">"1970-01-01 00:00:01"</span>},</span>
+<span class="line"> {<span class="tok-str">"predicates"</span>:[],</span>
+<span class="line">  <span class="tok-str">"timepoint"</span>:65537,<span class="tok-str">"timestamp"</span>:<span class="tok-str">"1970-01-01 00:00:02"</span>}]</span></code></pre></div>
+  <div class="code-block"><div class="code-title">monpoly.log</div><pre class="listing" style="counter-reset: line 0"><code><span class="line"><span class="tok-op">@1</span> <span class="tok-fn">Q</span>(0,8);</span>
+<span class="line"><span class="tok-op">@2</span> ;</span></code></pre></div>
+</section>
+
+<section class="slide part">
+  <h2 id="partial-policy-change">Partial policy change (work in progress)</h2>
+</section>
+
+<section class="slide" id="named-formulas" data-slide="22">
+  <h3>Partial policy change in MonPoly</h3>
+
+  <ul>
+    <li>Only for <strong>first-order logic</strong> operators above temporal operators.</li>
+    <li><strong>Named formulas:</strong> <code><span class="tok-fn">NAME</span>[f1, <span class="acc">name1</span>] OR <span class="tok-fn">NAME</span>[f2 AND f3, <span class="acc">name2</span>]</code></li>
+    <li>We added <em>data types</em> for <code>NAME</code> to MonPoly and updated the <em>formula parser</em> for <code>NAME</code> constructs.</li>
+    <li>We started work on <strong>commands</strong> that add or remove conjuncts and disjuncts:</li>
+  </ul>
+  <div class="code-block"><pre class="listing" style="counter-reset: line 0"><code><span class="line"><span class="tok-com">&gt;</span><span class="tok-kw">remove_part</span> &lt;name&gt;<span class="tok-com">&lt;</span></span>
+<span class="line"><span class="tok-com">&gt;</span><span class="tok-kw">add_conjunct</span> &lt;name1&gt; &lt;name2&gt; &lt;formula&gt;<span class="tok-com">&lt;</span></span>
+<span class="line"><span class="tok-com">&gt;</span><span class="tok-kw">add_disjunct</span> &lt;name1&gt; &lt;name2&gt; &lt;formula&gt;<span class="tok-com">&lt;</span></span></code></pre></div>
+  <p class="notes"><a data-thesis="partial-policy-change">§5.5 Partial Policy Change</a></p>
+</section>
+
+<section class="slide" id="partial-example" data-slide="23">
+  <h3>Partial policy change: example</h3>
+
+  $$\phi = (P(x, \text{“a”}) \Since{[0,30)} Q(x, 2)) \land (\neg R(y, \text{“c”}, z) \Since{[20,60)} P(y, z))$$
+  <p>With names for its parts, the policy becomes</p>
+  <div class="code-block"><pre class="listing" style="counter-reset: line 0"><code><span class="line"><span class="tok-fn">NAME</span>[(P(x,<span class="tok-str">"a"</span>) SINCE[0,30) Q(x,2)), <span class="acc">part1</span>] AND</span>
+<span class="line"><span class="tok-fn">NAME</span>[(NOT (R(y,<span class="tok-str">"c"</span>,z)) SINCE[20,60) P(y,z)), <span class="acc">part2</span>]</span></code></pre></div>
+  <div class="code-block"><div class="code-title">command</div><pre class="listing" style="counter-reset: line 0"><code><span class="line"><span class="tok-com">&gt;</span><span class="tok-kw">add_disjunct</span> part1 part3 <span class="tok-str">'NOT P(2,"b")'</span><span class="tok-com">&lt;</span></span></code></pre></div>
+  <div class="code-block"><div class="code-title">result</div><pre class="listing" style="counter-reset: line 0"><code><span class="line">(<span class="tok-fn">NAME</span>[P(x,<span class="tok-str">"a"</span>) SINCE[0,30) Q(x,2), <span class="acc">part1</span>] OR</span>
+<span class="line"> <span class="tok-fn">NAME</span>[NOT P(2,<span class="tok-str">"b"</span>), <span class="acc">part3</span>]) AND</span>
+<span class="line"><span class="tok-fn">NAME</span>[NOT (R(y,<span class="tok-str">"c"</span>,z)) SINCE[20,60) P(y,z), <span class="acc">part2</span>]</span></code></pre></div>
+  $$\phi' = ((P(x, \text{“a”}) \Since{[0,30)} Q(x, 2)) \lor \neg P(2, \text{“b”})) \land (\neg R(y, \text{“c”}, z) \Since{[20,60)} P(y, z))$$
+</section>
+
+<section class="slide" id="partial-next" data-slide="24">
+  <h3>Partial policy change: next steps</h3>
+
+  <ul>
+    <li>Compute the internal state for formula parts that are added.</li>
+    <li>Combine the existing state with the state of the new formula.</li>
+    <li>Update the state when a formula part is removed.</li>
+  </ul>
+</section>
+
+<section class="slide part">
+  <h2 id="evaluation">Evaluation</h2>
+</section>
+
+<section class="slide" id="overhead-setup" data-slide="25">
+  <h3>Overhead of the wrapper</h3>
+
+  <ul>
+    <li>A random policy with intervals bounded by $[0,20)$.</li>
+    <li>A random trace with $4^i$ time points, for $i = 0, \dots, 8$.</li>
+    <li>We measure the time MonPoly takes to monitor these traces;</li>
+    <li>the time MonPoly takes when the time points are sent individually instead of in
+    one file, which better simulates online monitoring;</li>
+    <li>and the time the wrapper takes to monitor the traces.</li>
+    <li>This was done <strong>100 times</strong>, with 100 different policies.</li>
+  </ul>
+  <p class="notes">The thesis reports this experiment in <a data-thesis="wrapper-vs.-monpoly">§5.4.1 Wrapper vs. MonPoly</a>.</p>
+</section>
+
+<section class="slide" id="overhead-result" data-slide="26">
+  <h3>Overhead of the wrapper: results</h3>
+
+  <figure>
+    <div class="figure-body"><img class="plot" src="per-time-point-monpoly-vs-wrapper.png" alt="Average time per time point against the number of time points in the trace, log-log: MonPoly reading a file falls from about 3 ms to under 10 µs; MonPoly with time points sent individually stays near 50 to 100 µs; the wrapper falls from about 4 ms to about 130 µs." width="586" height="455" loading="lazy"></div>
+    <figcaption>Average time per time point</figcaption>
+  </figure>
+</section>
+
+<section class="slide" id="overhead-conclusion" data-slide="27">
+  <h3>Overhead of the wrapper: conclusion</h3>
+
+  <p>More detailed profiling is required. Possible sources of the overhead:</p>
+  <ul>
+    <li>converting our JSON log format to the MonPoly format;</li>
+    <li>the wrapper sends time points to MonPoly synchronously;</li>
+    <li>the wrapper goes over the events once to send them to MonPoly and again later to send them to QuestDB.</li>
+  </ul>
+</section>
+
+<section class="slide" id="policy-change-setup" data-slide="28">
+  <h3>Policy change optimization</h3>
+
+  <ul>
+    <li>A policy change between 2 randomly generated formulas.</li>
+    <li>Intervals in the policies are bounded by $[0,20)$.</li>
+    <li>Random traces with $4^i$ time points, for $i = 0, \dots, 8$.</li>
+    <li>Load the trace into the wrapper, then start the policy change.</li>
+    <li>This was done 100 times, for 100 different policy pairs.</li>
+  </ul>
+  <p class="notes"><a data-thesis="policy-change-performance">§5.4.2 Policy Change Performance</a></p>
+</section>
+
+<section class="slide" id="policy-change-result" data-slide="29">
+  <h3>Policy change optimization: results</h3>
+
+  <figure>
+    <div class="figure-body"><img class="plot" src="policy-change-log-log.png" alt="Run time for a policy change against the number of time points in the trace, log-log: the naive approach grows from about 0.02 s to about 2 s at 65,536 time points, while the optimization stays near 0.025 s throughout." width="586" height="455" loading="lazy"></div>
+    <figcaption>Run time for a policy change</figcaption>
+  </figure>
+</section>
+
+<section class="slide part">
+  <h2 id="outlook">Outlook</h2>
+</section>
+
+<section class="slide" id="future-work" data-slide="30">
+  <h3>Outlook</h3>
+
+  <ul>
+    <li><strong>Reduce the overhead of the wrapper:</strong> profile it in more depth, and
+    send time points asynchronously, without waiting for a response before sending the next one.</li>
+    <li><strong>Speed up the policy change:</strong> check constraints on variables in
+    formulas, such as $x \lt 20$, more thoroughly.</li>
+    <li><strong>Continue the partial policy change</strong> within MonPoly.</li>
+  </ul>
+  <p class="notes">The thesis closes with <a data-thesis="conclusion">§6 Conclusion</a>.</p>
+</section>

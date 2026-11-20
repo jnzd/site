@@ -85,7 +85,7 @@
       "date": "2025",
       "short": "Thesis talk",
       "path": "lex-refinement/talk",
-      "slides": "lex-refinement/slides.pdf"
+      "slides": "entries/lex-refinement/slides.pdf"
     },
     {
       "slug": "practical-work",
@@ -96,7 +96,7 @@
       "date": "2024",
       "short": "Practical-work talk",
       "path": "lex/talk",
-      "slides": "lex/slides.pdf"
+      "slides": "entries/lex/slides.pdf"
     }
   ],
   "home": {

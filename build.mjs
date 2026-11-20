@@ -60,7 +60,8 @@ function renderThesis(entry) {
     referenceLinks,
     referenceUpdates: entry.referenceUpdates || {},
     linkUpdates: entry.linkUpdates || {},
-    inserts: (entry.inserts || []).map((x) => ({ after: x.after, html: fs.readFileSync(from(x.file), 'utf8') })),
+    inserts: (entry.inserts || []).map((x) => ({ after: x.after, before: x.before, html: fs.readFileSync(from(x.file), 'utf8') })),
+    imageReplacements: entry.imageReplacements || {}, imageClasses: entry.imageClasses || {}, sortCitations: !!entry.sortCitations,
   });
   fs.rmSync(bib, { force: true });
   for (const w of warnings) console.warn(`warning (${entry.path}):`, w);
@@ -144,8 +145,10 @@ function renderTalkPage(talk, entry, thesis) {
   return fillTemplate({
     lang: 'en', title: talk.title, subtitle: talk.subtitle || '', description: talk.subtitle || talk.title,
     author: thesis.meta.author, institution: entry.institution, date: talk.date,
-    byline, people: '', actions, rail: renderRail(toc), heroVisual: '', content: html,
-    root: r, scripts: `<script src="${r}talk.js" defer></script>`, bodyClass: 'talk',
+    byline, people: '', actions, rail: renderRail(toc),
+    heroVisual: talk.heroVisual ? fs.readFileSync(at('entries', talk.heroVisual), 'utf8') : '', content: html,
+    root: r, bodyClass: 'talk',
+    scripts: [`${r}talk.js`, ...(talk.scripts || [])].map((s) => `<script src="${esc(s)}" defer></script>`).join('\n'),
   });
 }
 
@@ -188,8 +191,9 @@ async function build() {
     cards.push({ entry, title: thesis.meta.title, date: thesis.meta.date });
     for (const talk of entry.talks || []) {
       write(talk.path, renderTalkPage(talk, entry, thesis));
+      for (const f of talk.public || []) fs.cpSync(at('entries', f), path.join(dist, talk.path, path.basename(f)), { recursive: true });
       if (talk.slides) await renderSlides({
-        pdf: at('entries', talk.slides), out: path.join(dist, talk.path, 'slides'),
+        pdf: at(talk.slides), out: path.join(dist, talk.path, 'slides'),
         title: `${talk.title} · Original slides`, label: 'Original slides', back: '../', backLabel: 'Talk',
         links: [{ href: rel(talk.path + '/slides', entry.path), label: 'Thesis' }], root: rootOf(talk.path + '/slides'), stamp,
       });

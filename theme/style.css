@@ -685,4 +685,4 @@ body.home .post .intro { font-size: 1.1rem; color: var(--text); }
 .card h2 a:hover { color: var(--accent); }
 .card .meta { font: 0.75rem var(--mono); color: var(--muted); margin: 0; }
 .card .talks { list-style: none; padding: 0; margin: 0.8rem 0 0; display: grid; gap: 0.35rem; }
-.card .talks .meta { display: inline; }
+.card .talks .meta { display: block; margin-top: 0.1rem; }

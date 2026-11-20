@@ -1,35 +1,70 @@
-# Thesis site
+# Personal site
 
-A single-page, article-style web version of the thesis, built directly from
-its LaTeX source. The output is a static site with no third-party requests.
+Theses and talks as web pages, built from their LaTeX sources into one static
+site with no third-party requests.
 
 ```bash
+git clone --recurse-submodules https://github.com/jnzd/site
 npm install
 npm run dev     # build, watch and serve at http://localhost:4321
 npm run build   # one-off build into dist/
 ```
 
-Requires Node 20+ and `pandoc` on the PATH. The thesis source is read from the
-parent folder (`thesisDir` in `site.config.json`, or the `THESIS_DIR`
-environment variable).
+Requires Node 20+, `pandoc` and `pdftoppm` (poppler) on the PATH.
 
 ## Where things live
 
-| Path                  | What it is                                                    |
-|-----------------------|---------------------------------------------------------------|
-| `site.config.json`    | Thesis location, subtitle, PDF and source links, reference order |
-| `lib/preprocess.mjs`  | Rewrites LaTeX that pandoc cannot handle (proof trees, algorithms, listings, TikZ) |
-| `lib/postprocess.mjs` | Numbering, cross-references, citations, code highlighting, math rendering (KaTeX) |
-| `public/figures/`     | SVG redrawings of the three TikZ diagrams                     |
-| `src/style.css`       | Design; colours and column width are variables at the top     |
-| `src/template.html`   | Page skeleton (hero, section rail, footer)                    |
-| `src/site.js`         | Section rail and reading progress                             |
-| `build.mjs`           | Runs the pipeline and the dev server                          |
+| Path                     | What it is                                                      |
+|--------------------------|-----------------------------------------------------------------|
+| `content/`               | The thesis and slide repos, as git submodules (LaTeX sources)   |
+| `entries/<name>/`        | One folder per page: `entry.json` plus its web-only parts       |
+| `theme/`                 | Shared look: `style.css`, `template.html`, `site.js`, `talk.js`, `slides.js` |
+| `lib/preprocess.mjs`     | Rewrites LaTeX that pandoc cannot handle (proof trees, algorithms, listings, TikZ) |
+| `lib/postprocess.mjs`    | Numbering, cross-references, citations, code highlighting, math (KaTeX) |
+| `lib/talk.mjs`           | Turns a talk (hand-written slide sections) into a page linked to its thesis |
+| `lib/slides.mjs`         | Shows a PDF (original slides, the thesis PDF) as a page of images |
+| `lib/home.mjs`           | The landing page                                                 |
+| `site.json`              | Site name, intro text, custom domain (`cname`)                   |
 
-The build prints a warning for any formula, reference or citation it could not
-convert. After editing `build.mjs` or files in `lib/`, restart `npm run dev`.
+## Pages
+
+| URL                      | Source                                                          |
+|--------------------------|-----------------------------------------------------------------|
+| `/`                      | `lib/home.mjs`, `site.json`                                     |
+| `/lex-refinement/`       | Master's thesis: `content/msc-thesis`, `entries/lex-refinement/` |
+| `/lex-refinement/talk/`  | `entries/lex-refinement/talk.html`                              |
+| `/lex/talk/`             | Practical-work talk: `entries/lex/talk.html`                    |
+| `/monpoly-logging/`      | Bachelor's thesis: `content/bsc-thesis`, `entries/monpoly-logging/` |
+| `/monpoly-logging/talk/` | `entries/monpoly-logging/talk.html`                             |
+
+Each talk also gets `slides/` (its original deck as images) and each thesis
+with a `thesisPdf` gets `pdf/`.
+
+## Where a fix goes
+
+- **The thesis text itself** (a typo, a wrong formula, a citation that has since
+  been published): commit it to the thesis repo's `errata` branch. Its `main`
+  stays the submitted version. Then move the submodule here to that commit:
+  `git -C content/<name> fetch && git -C content/<name> checkout origin/errata && git add content/<name>`.
+- **Web-only additions** (talks, redrawn figures, illustrations, inserts):
+  in the page's folder under `entries/`.
+
+## entry.json
+
+A thesis entry names its submodule (`source`), the root `.tex` file (`main`),
+the bibliography, the macro files KaTeX should know (`macroFiles`), and the
+output `path`. Optional parts: `theorems` (how the thesis declares them, which
+decides the numbering), `textMacros`, `katexMacros`, `meta` (title-page facts
+LaTeX does not expose), `tikzFigures` and `imageReplacements` (SVG redrawings
+in `figures/`), `imageClasses`, `inserts` (web-only HTML placed `after` or
+`before` an element id), `bibliographyOrder`, `referenceLinks`, `heroVisual`,
+`scripts`, `public` (files served next to the page), `home` (the card on the
+home page) and `talks`.
+
+The build warns about any formula, reference or citation it could not convert.
 
 ## Publishing
 
-`dist/` is plain static files; upload it to any static host (GitHub Pages,
-Netlify, Cloudflare Pages, a university web space).
+Every push to `main` builds the site and publishes it to GitHub Pages
+(`.github/workflows/deploy.yml`). For a custom domain, set `cname` in
+`site.json` and point the domain's DNS at GitHub Pages.

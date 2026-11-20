@@ -566,20 +566,18 @@ table.ruled.patterns td:first-child { white-space: nowrap; }
 /* ---- Present mode (talk.js) ----
    Every slide is laid out on the same 960x540 stage and the stage is scaled to
    the window as a whole, so text size and title position match from slide to
-   slide. Only a slide whose content does not fit gets a wider, taller stage
-   (--fit < 1), which shrinks that slide alone. */
+   slide. Content that does not fit is zoomed out below the title (talk.js). */
 .present-bar { display: none; }
 body.presenting { overflow: hidden; }
 body.presenting .rail, body.presenting .progress, body.presenting .site-footer,
 body.presenting .scroll-hint, body.presenting .hero .actions { display: none !important; }
 body.presenting .hero:not(.current), body.presenting .slide:not(.current) { display: none; }
 body.presenting .slide.current, body.presenting .hero.current {
-  --fit: 1;
   position: fixed; left: 50%; top: 50%; z-index: 5;
-  width: calc(960px / var(--fit)); height: calc(540px / var(--fit)); min-height: 0;
+  width: 960px; height: 540px; min-height: 0;
   margin: 0; padding: 48px 64px 40px; overflow: hidden;
   display: flex; flex-direction: column; justify-content: flex-start;
-  transform: translate(-50%, -50%) scale(calc(var(--scale, 1) * var(--fit)));
+  transform: translate(-50%, -50%) scale(var(--scale, 1));
   transform-origin: center;
   background: var(--bg);
 }

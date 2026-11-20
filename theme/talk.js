@@ -21,22 +21,37 @@
   const setScale = () => document.documentElement.style.setProperty('--scale',
     Math.min(window.innerWidth / STAGE_W, window.innerHeight / STAGE_H).toFixed(4));
 
-  // A slide that overflows the stage (down, or sideways inside a code block,
-  // table or formula) gets a larger stage, i.e. is shrunk, just enough to fit.
+  // Every slide uses the same 960x540 stage, so titles never move. Content that
+  // overflows it (down, or sideways inside a code block, table or formula) is
+  // zoomed out just enough to fit: first only the big blocks (figures, code,
+  // tables), and only if that is not enough, everything below the title.
   function overflows(el) {
     if (el.scrollHeight > el.clientHeight + 1 || el.scrollWidth > el.clientWidth + 1) return true;
     return [...el.querySelectorAll('pre, .table-scroll, .katex-display')].some((b) => b.scrollWidth > b.clientWidth + 1);
   }
-  function fit(el) {
-    el.style.setProperty('--fit', 1);
-    if (!overflows(el)) return;
+  const TEXT = new Set(['H2', 'H3', 'P', 'UL', 'OL']);
+  function shrink(el, parts) {
+    const set = (z) => parts.forEach((p) => { p.style.zoom = z; });
     let lo = 0.4, hi = 1;
     for (let k = 0; k < 10; k++) {
       const mid = (lo + hi) / 2;
-      el.style.setProperty('--fit', mid);
+      set(mid);
       if (overflows(el)) hi = mid; else lo = mid;
     }
-    el.style.setProperty('--fit', lo);
+    set(lo);
+    return !overflows(el);
+  }
+  function fit(el) {
+    const body = [...el.children].filter((c) => c.tagName !== 'H3' && !c.classList.contains('notes'));
+    body.forEach((c) => { c.style.zoom = ''; });
+    if (!overflows(el)) return;
+    const blocks = body.filter((c) => !TEXT.has(c.tagName) || c.querySelector('pre, figure, table, .katex-display'));
+    if (blocks.length && shrink(el, blocks)) {
+      // Not below 0.6 for blocks alone: then the text shrinks with them.
+      if (Number(blocks[0].style.zoom) >= 0.6) return;
+    }
+    body.forEach((c) => { c.style.zoom = ''; });
+    shrink(el, body);
   }
 
   function show(n) {
@@ -45,6 +60,13 @@
     i = n;
     slides[i].classList.add('current');
     fit(slides[i]);
+    // Images still loading (lazy) change the height: fit again when they arrive.
+    const el = slides[i];
+    el.querySelectorAll('img').forEach((im) => {
+      if (im.complete) return;
+      im.loading = 'eager';
+      im.addEventListener('load', () => { if (el.classList.contains('current')) fit(el); }, { once: true });
+    });
     count.textContent = `${i + 1} / ${slides.length}`;
   }
 
@@ -63,7 +85,7 @@
   function exit() {
     const el = slides[i];
     document.body.classList.remove('presenting');
-    slides.forEach((s) => { s.classList.remove('current'); s.style.removeProperty('--fit'); });
+    slides.forEach((s) => { s.classList.remove('current'); [...s.children].forEach((c) => { c.style.zoom = ''; }); });
     if (document.fullscreenElement) document.exitFullscreen?.();
     el?.scrollIntoView({ behavior: 'instant', block: 'start' });
   }

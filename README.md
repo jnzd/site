@@ -65,6 +65,10 @@ The build warns about any formula, reference or citation it could not convert.
 
 ## Publishing
 
+If a thesis repo is private, the deploy needs a token to clone it: a
+fine-grained personal access token with read-only *Contents* access to that
+repo, saved as the Actions secret `SUBMODULE_TOKEN` in this repo.
+
 Every push to `main` builds the site and publishes it to GitHub Pages
 (`.github/workflows/deploy.yml`). For a custom domain, set `cname` in
 `site.json` and point the domain's DNS at GitHub Pages.

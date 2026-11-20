@@ -9,6 +9,16 @@
   const next = document.querySelector('.deck-nav [data-go="1"]');
   let cur = -1, queued = false;
 
+  // Closing goes back to the page the reader was opened from (the home page,
+  // the talk, the thesis); opened directly, it goes to the talk or thesis.
+  const closeLink = document.querySelector('.reader-close');
+  const cameFromSite = (() => { try { return document.referrer && new URL(document.referrer).origin === location.origin && !document.referrer.startsWith(location.href.split('#')[0]); } catch { return false; } })();
+  function close() {
+    if (cameFromSite && history.length > 1) history.back();
+    else if (closeLink) location.href = closeLink.href;
+  }
+  closeLink?.addEventListener('click', (e) => { if (cameFromSite) { e.preventDefault(); close(); } });
+
   function current() {
     if (wide) {
       const mid = box.getBoundingClientRect().left + box.clientWidth / 2;
@@ -43,7 +53,7 @@
   document.addEventListener('keydown', (e) => {
     if (e.metaKey || e.ctrlKey || e.altKey) return;
     // Esc closes the reader and goes back to the page it came from.
-    if (e.key === 'Escape' && document.body.dataset.back) { location.href = document.body.dataset.back; return; }
+    if (e.key === 'Escape') { close(); e.preventDefault(); return; }
     const keys = wide
       ? { ArrowRight: 1, ArrowLeft: -1, ArrowDown: 1, ArrowUp: -1, PageDown: 1, PageUp: -1, ' ': 1, j: 1, k: -1 }
       : { ArrowRight: 1, ArrowLeft: -1, j: 1, k: -1 };

@@ -81,6 +81,14 @@ select:hover, select:focus-visible { border-color: var(--accent); outline: none;
 .tabs button .main { color: var(--faint); margin-left: .35em; }
 .source { flex: 1; min-height: 0; }
 
+.warnings {
+  list-style: none; margin: 0 0 .6rem; padding: .5rem .8rem .5rem 2rem; flex: none; position: relative;
+  font-size: .8rem; line-height: 1.45; color: var(--text); max-height: 7rem; overflow: auto;
+  border: 1px solid color-mix(in srgb, var(--accent) 45%, transparent); border-radius: 8px;
+  background: color-mix(in srgb, var(--accent) 8%, transparent);
+}
+.warnings::before { content: "!"; position: absolute; left: .75rem; top: .45rem; font-weight: 600; color: var(--accent); }
+.warnings li + li { margin-top: .25rem; }
 pre#output {
   flex: 1; margin: 0; padding: .75rem 1rem; overflow: auto;
   font: .8rem/1.55 var(--mono); white-space: pre-wrap; overflow-wrap: anywhere; tab-size: 4;

@@ -154,6 +154,10 @@ jobs:
           node test/browser.mjs /usr/bin/google-chrome js https://lex-playground-preview.jnzd.workers.dev/
 
       # Review screenshots are committed to the prototype branch (never main).
+      - name: Layout check (no overlapping elements, phone to desktop)
+        working-directory: playground
+        run: node test/layout.mjs /usr/bin/google-chrome
+
       - name: Screenshots
         if: startsWith(github.ref, 'refs/heads/claude/')
         working-directory: playground

@@ -122,13 +122,19 @@ async function runLex(mode, main, files) {
 
 // Lex prints debug lines while compiling ("g = …", "{p = ; fs = …}", "-> …").
 // They are hidden unless "Show debug output" is ticked; warnings stay.
-const DEBUG_LINE = /^(g = |\{p = |-> |error merging )/;
+// Warnings go in their own strip above the output; every other line Lex
+// prints on the way (debug lines, the typed formula) only with "Debug output".
+const WARNING = /^Warning\b/;
 let lastResult = null;
 
 function outputText(r) {
-  const lines = r.log.split('\n').filter((l) => l.trim() !== '');
-  const shown = $('debug').checked ? lines : lines.filter((l) => !DEBUG_LINE.test(l));
-  return (shown.length ? shown.join('\n') + '\n\n' : '') + r.output;
+  const lines = r.log.split('\n').filter((l) => l.trim() !== '' && !WARNING.test(l));
+  return ($('debug').checked && lines.length ? lines.join('\n') + '\n\n' : '') + r.output;
+}
+function showWarnings(r) {
+  const ws = r.log.split('\n').filter((l) => WARNING.test(l)).map((l) => l.replace(/^Warning( at [^:]*)?:\s*/, (m, at) => (at ? at.slice(4) + ': ' : '')));
+  $('warnings').hidden = ws.length === 0;
+  $('warnings').replaceChildren(...ws.map((w) => Object.assign(document.createElement('li'), { textContent: w })));
 }
 
 // MFOTL output is highlighted; error lines are marked.
@@ -149,7 +155,7 @@ function renderDoc() {
   if (lastDoc === null) return;
   const style = $('docstyle').value;
   const theme = document.documentElement.dataset.theme;
-  const links = DOC_STYLES[style].map((h) => `<link rel="stylesheet" href="${h}">`).join('');
+  const links = ['lexdoc/base.css', ...DOC_STYLES[style]].map((h) => `<link rel="stylesheet" href="${h}">`).join('');
   $('doc').style.background = DOC_BACKGROUND[style];
   $('doc').srcdoc = lastDoc
     .replace('<html lang="en">', `<html lang="en"${theme ? ` data-theme="${theme}"` : ''}>`)
@@ -168,6 +174,7 @@ syncDocStyle();
 
 function showResult(r) {
   lastResult = r;
+  showWarnings(r);
   $('run').disabled = false;
   const n = r.smt.length;
   $('status').className = 'status ' + (r.ok ? 'ok' : 'bad');
@@ -204,10 +211,12 @@ $('engine').onchange = () => loadLex($('engine').value);
 $('example').onchange = () => { current = null; setFiles(examples[$('example').value]); };
 
 (async () => {
-  examples = await (await fetch('examples.json')).json();
+  const res = await fetch('examples.json', { cache: 'no-store' });
+  if (!res.ok) throw new Error(`cannot load the examples (HTTP ${res.status})`);
+  examples = await res.json();
   $('example').replaceChildren(...Object.keys(examples).map((k) => new Option(k, k)));
   setFiles(examples[Object.keys(examples)[0]]);
   // JS by default for now; WebAssembly is faster but needs WebAssembly GC.
   $('engine').value = 'js';
   loadLex('js');
-})();
+})().catch((e) => { status(`Could not start: ${e.message}. Reload the page.`); console.error(e); });

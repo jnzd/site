@@ -13,9 +13,16 @@ open Lex_lib
 
 let out = Buffer.create 4096
 
+(* Output goes to [out] while Lex runs, and to the console otherwise, so that
+   errors outside a run (such as a fatal exception) stay visible. *)
+let capture on =
+  let to_console s = Console.console##log (Js.string s) in
+  let f = if on then Buffer.add_string out else to_console in
+  Sys_js.set_channel_flusher stdout f;
+  Sys_js.set_channel_flusher stderr f
+
 let () =
-  Sys_js.set_channel_flusher stdout (Buffer.add_string out);
-  Sys_js.set_channel_flusher stderr (Buffer.add_string out);
+  capture false;
   (try Sys.chdir "/static" with _ -> ())
 
 let write_file name content =
@@ -30,6 +37,7 @@ let write_file name content =
 
 let run mode main names contents timeout =
   Buffer.clear out;
+  capture true;
   let log = ref "" in
   let take_log () = log := !log ^ Buffer.contents out; Buffer.clear out in
   Z3.shim_log := [];
@@ -65,6 +73,7 @@ let run mode main names contents timeout =
       false in
   Format.pp_print_flush Format.std_formatter ();
   flush stdout; flush stderr;
+  capture false;
   let smt =
     List.rev_map (fun (s, a) ->
         Js.array [| Js.Unsafe.inject (Js.string s); Js.Unsafe.inject (Js.string a) |])

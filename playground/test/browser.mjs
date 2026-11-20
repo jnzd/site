@@ -30,7 +30,13 @@ try {
     await page.selectOption('#example', ex);
     const t = Date.now();
     await page.click('#run');
-    await page.waitForFunction(() => /^(Done|Errors)/.test(document.getElementById('status').textContent), null, { timeout: 120000 });
+    try {
+      await page.waitForFunction(() => /^(Done|Errors)/.test(document.getElementById('status').textContent), null, { timeout: 120000 });
+    } catch (e) {
+      console.log(`=== ${ex}: no result; status is "${await page.textContent('#status')}"`);
+      failed++;
+      continue;
+    }
     const status = await page.textContent('#status');
     const out = await page.textContent('#output');
     const answers = await page.$$eval('#smt-list pre', (ps) => ps.map((p) => p.textContent.split('\n')[0]));

@@ -22,6 +22,7 @@ globalThis.lexZ3Check = (script) => {
   return ['', 'sat', 'unsat', 'unknown'][Atomics.load(flag, 0)];
 };
 
+process.on('exit', (code) => console.log(`[${kind}] exit code ${code}`));
 let t0 = performance.now();
 if (kind === 'js') require(path.resolve(build, 'lexweb.bc.js'));
 else require(path.resolve(build, 'lexweb.bc.wasm.js'));
@@ -37,7 +38,14 @@ function run(mode, main, files) {
   const all = { ...assets, ...files };
   queries = 0;
   const t = performance.now();
-  const r = globalThis.lexRun(mode, main, Object.keys(all), Object.values(all), '5000');
+  let r;
+  try {
+    r = globalThis.lexRun(mode, main, Object.keys(all), Object.values(all), '5000');
+  } catch (e) {
+    console.log(`\n=== ${mode} ${main}: lexRun threw`, e, e?.stack);
+    process.exitCode = 1;
+    return { ok: false, output: String(e), smt: [] };
+  }
   const ms = Math.round(performance.now() - t);
   console.log(`\n=== ${mode} ${main}: ok=${r.ok}, ${ms} ms, ${queries} Z3 queries`);
   console.log(r.output.length > 600 ? r.output.slice(0, 600) + `\n... (${r.output.length} chars)` : r.output);

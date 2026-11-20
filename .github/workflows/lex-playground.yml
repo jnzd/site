@@ -191,7 +191,7 @@ jobs:
                    example/GDPR/minitwit.rex example/GDPR/shynet.rex example/e-privacy-directive/epd.rex \
                    evaluation/01_formalization/minitwit_gdpr.rex; do
             echo "=== $f"
-            out=$(opam exec --switch native -- ./_build/default/bin/main.exe "$f" 2>&1); code=$?
+            out=$(opam exec --switch native -- ./_build/default/bin/main.exe "$f" 2>&1) && code=0 || code=$?
             echo "$out" | grep -E "error|Error|exception" | head -5
             echo "exit=$code, $(echo "$out" | wc -c) bytes of output"
           done

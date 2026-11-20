@@ -43,11 +43,11 @@ let run mode main names contents timeout =
   let log = ref "" in
   let take_log () = log := !log ^ Buffer.contents out; Buffer.clear out in
   Z3.shim_log := [];
-  Util.z3_to := timeout;
-  List.iter2 write_file names contents;
   let filepath = Filename.dirname main and basename = Filename.basename main in
   let ok =
     try
+      Util.z3_to := timeout;
+      List.iter2 write_file names contents;
       let open Errors.OrErrors in
       match Modules.do_type ["."] MFOTL_lib.Time.Span.zero filepath basename with
       | Errors errs ->
@@ -91,5 +91,15 @@ let () =
   let strings a = Array.to_list (Array.map Js.to_string (Js.to_array a)) in
   Js.Unsafe.set Js.Unsafe.global (Js.string "lexRun")
     (Js.wrap_callback (fun mode main names contents timeout ->
-         run (Js.to_string mode) (Js.to_string main) (strings names) (strings contents)
-           (Js.to_string timeout)))
+         try
+           run (Js.to_string mode) (Js.to_string main) (strings names) (strings contents)
+             (Js.to_string timeout)
+         with e ->
+           (* Never let an OCaml exception escape to JavaScript. *)
+           capture false;
+           Js.Unsafe.obj [|
+               "ok", Js.Unsafe.inject Js._false;
+               "output", Js.Unsafe.inject (Js.string ("lexRun failed: " ^ Printexc.to_string e));
+               "log", Js.Unsafe.inject (Js.string (Buffer.contents out));
+               "smt", Js.Unsafe.inject (Js.array [||]);
+             |]))

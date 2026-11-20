@@ -3,7 +3,8 @@
 // Keywords follow Lex's lexer (src/lexer.mll) and the VS Code grammar
 // (vscode/lex/syntaxes/lex.tmGrammar.json). Colours come from the site theme's
 // --tok-* variables, so the playground matches the code on the thesis pages.
-import { EditorState } from '@codemirror/state';
+import { EditorState, Compartment } from '@codemirror/state';
+import { vim, Vim } from '@replit/codemirror-vim';
 import { EditorView, keymap, lineNumbers, highlightActiveLine, highlightActiveLineGutter, drawSelection } from '@codemirror/view';
 import { defaultKeymap, history, historyKeymap, indentWithTab } from '@codemirror/commands';
 import { StreamLanguage, HighlightStyle, syntaxHighlighting, indentUnit, bracketMatching } from '@codemirror/language';
@@ -79,12 +80,22 @@ const theme = EditorView.theme({
   '.cm-activeLineGutter': { backgroundColor: 'transparent', color: 'var(--muted)' },
   '&.cm-focused .cm-selectionBackground, .cm-selectionBackground, ::selection':
     { backgroundColor: 'color-mix(in srgb, var(--accent) 28%, transparent) !important' },
+  '.cm-panels': { backgroundColor: 'transparent', color: 'var(--muted)', fontFamily: 'var(--mono)', fontSize: '.75rem' },
+  '.cm-panels-bottom': { borderTop: '1px solid var(--line)' },
+  '.cm-vim-panel input': { color: 'var(--text)', fontFamily: 'var(--mono)' },
+  '.cm-fat-cursor': { background: 'color-mix(in srgb, var(--accent) 70%, transparent) !important', color: 'var(--bg) !important' },
+  '&:not(.cm-focused) .cm-fat-cursor': { background: 'none !important', outline: '1px solid var(--accent)' },
   '.cm-matchingBracket': { backgroundColor: 'transparent', outline: '1px solid var(--faint)' },
 });
 
 // One EditorState per file, so each tab keeps its own undo history.
-export function createEditor(parent, onRun) {
+// Vim mode is optional (a checkbox on the page); :w runs Lex.
+export function createEditor(parent, onRun, { vimMode = false } = {}) {
+  const vimSlot = new Compartment();
+  const vimExt = () => (vimMode ? vim({ status: true }) : []);
+  Vim.defineEx('write', 'w', () => onRun());
   const extensions = [
+    vimSlot.of(vimExt()),
     lineNumbers(), highlightActiveLineGutter(), highlightActiveLine(), drawSelection(), history(),
     bracketMatching(), indentUnit.of('    '), lex, syntaxHighlighting(style), theme,
     keymap.of([{ key: 'Mod-Enter', run: () => { onRun(); return true; } },
@@ -100,6 +111,12 @@ export function createEditor(parent, onRun) {
       if (current !== null) states.set(current, view.state);
       current = name;
       view.setState(states.get(name) || EditorState.create({ doc: text, extensions }));
+      view.dispatch({ effects: vimSlot.reconfigure(vimExt()) });
+    },
+    setVim(on) {
+      vimMode = on;
+      view.dispatch({ effects: vimSlot.reconfigure(vimExt()) });
+      view.focus();
     },
     reset() { states.clear(); current = null; },
     focus() { view.focus(); },

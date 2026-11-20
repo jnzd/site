@@ -5,7 +5,14 @@ const status = (s) => { $('status').textContent = s; };
 
 let examples = {}, files = {}, current = null, main = null;
 let runStart = 0;
-const editor = LexEditor.createEditor($('source'), () => $('run').click());
+let vimOn = false;
+try { vimOn = localStorage.getItem('lex-vim') === '1'; } catch {}
+const editor = LexEditor.createEditor($('source'), () => $('run').click(), { vimMode: vimOn });
+$('vim').checked = vimOn;
+$('vim').onchange = () => {
+  try { localStorage.setItem('lex-vim', $('vim').checked ? '1' : '0'); } catch {}
+  editor.setVim($('vim').checked);
+};
 
 function setFiles(ex) {
   files = { ...ex.files };

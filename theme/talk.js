@@ -132,13 +132,16 @@
     if (show === fab.classList.contains('show')) return;
     fab.classList.toggle('show', show);
     if (still) return;
+    // A short glide between the title's button and the header; from at most
+    // a little way off, so it never flies in from far away after a fast scroll.
     const r = start.getBoundingClientRect(), f = fab.getBoundingClientRect();
-    const from = `translate(${r.left - f.left}px, ${r.top - f.top}px)`;
+    const clamp = (v, m) => Math.max(-m, Math.min(m, v));
+    const from = `translate(${clamp(r.left - f.left, 240)}px, ${clamp(r.top - f.top, 60)}px)`;
     fab.animate(show
-      ? [{ transform: from, opacity: 1 }, { transform: 'none', opacity: 1 }]
+      ? [{ transform: from, opacity: 0.6 }, { transform: 'none', opacity: 1 }]
       : [{ transform: 'none', opacity: 1 }, { transform: from, opacity: 0 }],
-    { duration: 500, easing: 'cubic-bezier(0.2, 0.7, 0.2, 1)' });
-  }).observe(start);
+    { duration: show ? 200 : 150, easing: 'cubic-bezier(0.25, 0.9, 0.3, 1)' });
+  }, { rootMargin: "-52px 0px 0px 0px" }).observe(start);
   bar.addEventListener('click', (e) => {
     const b = e.target.closest('button');
     if (!b) return;

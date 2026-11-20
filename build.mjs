@@ -188,7 +188,7 @@ async function build() {
     for (const d of entry.public || []) fs.cpSync(path.join(entry.dir, d), path.join(out, d), { recursive: true });
     const thesis = renderThesis(entry);
     write(entry.path, thesis.page);
-    cards.push({ entry, title: thesis.meta.title, date: thesis.meta.date });
+    cards.push({ entry, title: thesis.meta.title, date: thesis.meta.date, visual: entry.heroVisual ? fs.readFileSync(path.join(entry.dir, entry.heroVisual), 'utf8') : '' });
     for (const talk of entry.talks || []) {
       write(talk.path, renderTalkPage(talk, entry, thesis));
       for (const f of talk.public || []) fs.cpSync(at('entries', f), path.join(dist, talk.path, path.basename(f)), { recursive: true });

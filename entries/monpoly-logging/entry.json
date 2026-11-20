@@ -76,7 +76,10 @@
   "home": {
     "kind": "Bachelor's thesis, ETH Zurich",
     "year": "2023",
-    "order": 1
+    "order": 1,
+    "visualScripts": [
+      "art.js"
+    ]
   },
   "talks": [
     {
@@ -96,7 +99,8 @@
       "public": [
         "monpoly-logging/per-time-point-monpoly-vs-wrapper.png",
         "monpoly-logging/policy-change-log-log.png"
-      ]
+      ],
+      "thumbSlide": 29
     }
   ]
 }

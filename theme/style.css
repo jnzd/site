@@ -675,24 +675,47 @@ html, body { overflow-x: clip; }
 .site-nav .site-name:hover { color: var(--accent); }
 .site-footer a { color: inherit; text-decoration: none; }
 .site-footer a:hover { color: var(--accent); }
-body.home .hero { min-height: auto; padding-bottom: 2rem; }
-body.home .scroll-hint, body.home .rail, body.home .hero-visual:empty { display: none; }
-body.home .post .intro { font-size: 1.1rem; color: var(--text); }
-.cards { display: grid; gap: 1.25rem; margin-top: 2rem; }
-.card { border: 1px solid var(--line); border-radius: 8px; padding: 1.25rem 1.5rem; background: var(--panel); }
-.card h2 { margin: 0.2rem 0 0.9rem; font-size: 1.25rem; border: 0; padding: 0; }
-.card h2 a { color: var(--strong); text-decoration: none; }
-.card h2 a:hover { color: var(--accent); text-decoration: underline; text-underline-offset: 0.2em; }
-.card .meta { font: 0.75rem var(--mono); color: var(--muted); margin: 0; }
-.card .card-actions { display: flex; flex-wrap: wrap; gap: 0.5rem; margin: 0 0 1.1rem; }
-.card .talks-label { font: 0.7rem var(--mono); text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); margin: 0 0 0.4rem; }
-.post ul.talks { list-style: none; padding: 0; margin: 0; display: grid; gap: 0.5rem; }
-.post ul.talks > li { margin: 0; display: flex; align-items: center; gap: 0.6rem; }
-.post ul.talks > li::before { display: none; }
-.talk-link { flex: 1; min-width: 0; display: grid; grid-template-columns: 1fr auto; column-gap: 0.75rem; align-items: center; padding: 0.6rem 0.85rem; border: 1px solid var(--line); border-radius: 6px; color: var(--text); text-decoration: none; transition: border-color 0.15s, background 0.15s; }
-.talk-link:hover { border-color: var(--accent); background: color-mix(in srgb, var(--accent) 6%, transparent); text-decoration: none; }
-.talk-link .talk-title { color: var(--strong); font-weight: 600; font-size: 0.95rem; }
-.talk-link .meta { grid-column: 1; }
-.talk-link .go { grid-column: 2; grid-row: 1 / span 2; color: var(--accent); font-size: 1.1rem; }
-.button.small { padding: 0.35rem 0.85rem; font-size: 0.8rem; flex: none; }
-@media (max-width: 560px) { .post ul.talks > li { flex-direction: column; align-items: stretch; } .button.small { align-self: flex-start; } }
+/* ---- Home page ---- */
+body.home .hero { min-height: auto; padding-bottom: 1rem; }
+body.home .hero .subtitle { max-width: 36rem; }
+body.home .scroll-hint, body.home .rail, body.home .progress { display: none; }
+body.home main { max-width: 68rem; margin: 0 auto; padding: 0 1.5rem; }
+body.home .post { max-width: none; }
+.home-section { margin: 3.5rem 0 4.5rem; }
+.post .section-label { font: 600 0.75rem var(--mono); text-transform: uppercase; letter-spacing: 0.14em; color: var(--muted); border: 0; margin: 0 0 1.75rem; padding: 0 0 0.6rem; border-bottom: 1px solid var(--line); }
+.post .section-label::before { content: none; }
+.kicker { font: 0.75rem var(--mono); color: var(--muted); margin: 0 0 0.6rem; }
+.kicker .year { color: var(--accent); margin-right: 0.75rem; font-weight: 600; }
+
+/* A thesis: its illustration beside its text, alternating sides. */
+.feature { display: grid; grid-template-columns: 1.15fr 1fr; gap: 2.5rem; align-items: center; margin-bottom: 4rem; }
+.feature.flip .feature-visual { order: 2; }
+.feature-visual { display: block; padding: 1.75rem; border: 1px solid var(--line); border-radius: 12px; background: var(--panel); transition: border-color 0.2s, transform 0.2s; }
+.feature-visual:hover { border-color: var(--accent); transform: translateY(-2px); }
+.feature-visual svg { display: block; width: 100%; height: auto; overflow: visible; }
+.post .feature h2 { font-size: clamp(1.4rem, 2.6vw, 1.9rem); line-height: 1.2; margin: 0 0 0.8rem; border: 0; padding: 0; }
+.post .feature h2::before { content: none; }
+.feature h2 a { color: var(--strong); text-decoration: none; }
+.feature h2 a:hover { color: var(--accent); }
+.feature .summary { color: var(--muted); margin: 0 0 1.4rem; }
+.feature-actions, .talk-actions { display: flex; flex-wrap: wrap; gap: 0.5rem; margin: 0; }
+
+/* Talks: a card per talk, led by the first slide. */
+.talk-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(17rem, 1fr)); gap: 1.75rem; }
+.talk-thumb { position: relative; display: block; aspect-ratio: 16 / 10; overflow: hidden; border-radius: 10px; border: 1px solid var(--line); background: #fff; margin-bottom: 0.9rem; }
+.talk-thumb img { display: block; width: 100%; height: 100%; object-fit: cover; object-position: center; transition: transform 0.35s; }
+.talk-thumb .play { position: absolute; inset: auto 0.6rem 0.6rem auto; padding: 0.3rem 0.75rem; border-radius: 999px; font-size: 0.78rem; font-weight: 600; background: var(--strong); color: var(--bg); opacity: 0; transform: translateY(4px); transition: opacity 0.2s, transform 0.2s; }
+.talk-card:hover .talk-thumb img { transform: scale(1.03); }
+.talk-card:hover .talk-thumb .play { opacity: 1; transform: none; }
+.talk-card:hover .talk-thumb { border-color: var(--accent); }
+.post .talk-card h3 { font-size: 1.05rem; line-height: 1.3; margin: 0 0 0.8rem; }
+.post .talk-card h3::before { content: none; }
+.talk-card h3 a { color: var(--strong); text-decoration: none; }
+.talk-card h3 a:hover { color: var(--accent); }
+.button.small { padding: 0.35rem 0.85rem; font-size: 0.8rem; }
+
+@media (max-width: 52rem) {
+  .feature, .feature.flip { grid-template-columns: 1fr; gap: 1.25rem; }
+  .feature.flip .feature-visual { order: 0; }
+  .feature-visual { padding: 1.1rem; }
+}

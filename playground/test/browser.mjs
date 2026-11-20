@@ -27,6 +27,10 @@ try {
     const answers = await page.$$eval('#smt-list pre', (ps) => ps.map((p) => p.textContent.split('\n')[0]));
     console.log(`\n=== ${ex}: ${status} (wall ${Date.now() - t} ms)\n${out.slice(0, 300)}\n...\n${out.slice(-1500)}\n${answers.join('\n')}`);
     if (!status.startsWith('Done')) failed++;
+    if (/^(g = |\{p = )/m.test(out)) { console.log('  FAIL: debug lines shown by default'); failed++; }
+    await page.check('#debug');
+    if (!/^g = /m.test(await page.textContent('#output'))) console.log('  note: no debug lines with the toggle on');
+    await page.uncheck('#debug');
     await page.screenshot({ path: `screenshot-${examples.indexOf(ex)}.png` });
   }
 } finally {

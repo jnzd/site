@@ -94,7 +94,7 @@ async function runLex(mode, main, files) {
     guessed = [];
     await new Promise((r) => setTimeout(r, 0)); // let the status line paint
     const r = self.lexRun(mode, main, Object.keys(all), Object.values(all), '5000');
-    const res = { ok: r.ok, output: r.output, smt: Array.from(r.smt, (q) => [q[0], q[1]]), passes: pass };
+    const res = { ok: r.ok, output: r.output, log: r.log || '', smt: Array.from(r.smt, (q) => [q[0], q[1]]), passes: pass };
     if (!guessed.length) return res;
     let wrong = false;
     for (const [i, s] of guessed.entries()) {
@@ -108,7 +108,19 @@ async function runLex(mode, main, files) {
   }
 }
 
+// Lex prints debug lines while compiling ("g = …", "{p = ; fs = …}", "-> …").
+// They are hidden unless "Show debug output" is ticked; warnings stay.
+const DEBUG_LINE = /^(g = |\{p = |-> |error merging )/;
+let lastResult = null;
+
+function outputText(r) {
+  const lines = r.log.split('\n').filter((l) => l.trim() !== '');
+  const shown = $('debug').checked ? lines : lines.filter((l) => !DEBUG_LINE.test(l));
+  return (shown.length ? shown.join('\n') + '\n\n' : '') + r.output;
+}
+
 function showResult(r) {
+  lastResult = r;
   $('run').disabled = false;
   const n = r.smt.length;
   status(`${r.ok ? 'Done' : 'Errors'} in ${Math.round(performance.now() - runStart)} ms` +
@@ -116,7 +128,7 @@ function showResult(r) {
   const isDoc = r.ok && $('mode').value === 'doc';
   $('output').hidden = isDoc;
   $('doc').hidden = !isDoc;
-  if (isDoc) $('doc').srcdoc = r.output; else $('output').textContent = r.output;
+  if (isDoc) $('doc').srcdoc = r.output; else $('output').textContent = outputText(r);
   $('smt').hidden = n === 0;
   $('smt-list').replaceChildren(...r.smt.map(([s, a], i) => {
     const p = document.createElement('pre');
@@ -125,6 +137,10 @@ function showResult(r) {
     return p;
   }));
 }
+
+$('debug').onchange = () => {
+  if (lastResult && !$('output').hidden) $('output').textContent = outputText(lastResult);
+};
 
 $('run').onclick = async () => {
   if (typeof self.lexRun !== 'function') return;

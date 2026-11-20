@@ -2,8 +2,10 @@
 
      lexRun(mode, mainFile, names, contents, timeoutMs)
 
-   with mode "mfotl" or "doc", and gets back { ok, output, smt }, where smt is
-   the list of [script, answer] pairs that went to Z3. Files live in
+   with mode "mfotl" or "doc", and gets back { ok, output, log, smt }. On
+   output is the result or the errors, and log is what Lex printed on the
+   way (warnings and debug lines).
+   smt is the list of [script, answer] pairs that went to Z3. Files live in
    js_of_ocaml's in-memory file system, under the working directory. *)
 
 open Js_of_ocaml
@@ -28,6 +30,8 @@ let write_file name content =
 
 let run mode main names contents timeout =
   Buffer.clear out;
+  let log = ref "" in
+  let take_log () = log := !log ^ Buffer.contents out; Buffer.clear out in
   Z3.shim_log := [];
   Util.z3_to := timeout;
   List.iter2 write_file names contents;
@@ -37,19 +41,26 @@ let run mode main names contents timeout =
       let open Errors.OrErrors in
       match Modules.do_type ["."] MFOTL_lib.Time.Span.zero filepath basename with
       | Errors errs ->
+         take_log ();
          Buffer.add_string out (Errors.to_string_multiple errs); false
       | Ok (_, eprog) ->
          (match mode with
           | "doc" ->
              let outname = main ^ "_doc.html" in
              Doc.to_file basename outname eprog;
-             Buffer.clear out;
+             take_log ();
              Buffer.add_string out (In_channel.with_open_bin outname In_channel.input_all)
           | _ ->
              let cprog = Compiler.compile eprog false false in
+             Format.pp_print_flush Format.std_formatter ();
+             flush stdout; flush stderr;
+             take_log ();
              Buffer.add_string out (Clex.to_string cprog));
          true
     with e ->
+      Format.pp_print_flush Format.std_formatter ();
+      flush stdout; flush stderr;
+      take_log ();
       Buffer.add_string out ("\nUncaught exception: " ^ Printexc.to_string e ^ "\n");
       false in
   Format.pp_print_flush Format.std_formatter ();
@@ -61,6 +72,7 @@ let run mode main names contents timeout =
   Js.Unsafe.obj [|
       "ok", Js.Unsafe.inject (Js.bool ok);
       "output", Js.Unsafe.inject (Js.string (Buffer.contents out));
+      "log", Js.Unsafe.inject (Js.string !log);
       "smt", Js.Unsafe.inject (Js.array (Array.of_list smt));
     |]
 

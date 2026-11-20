@@ -22,3 +22,4 @@ iframe { flex: 1; border: 1px solid var(--line); border-radius: .35rem; backgrou
 #status { color: var(--muted); }
 details { margin-top: .5rem; font-size: .85rem; max-height: 40%; overflow: auto; }
 details pre { font-size: .72rem; max-height: 18rem; margin: .4rem 0; }
+.bar .debug { margin-left: auto; color: var(--muted, #666); }

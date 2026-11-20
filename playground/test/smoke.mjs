@@ -40,19 +40,28 @@ function run(mode, main, files) {
   const r = globalThis.lexRun(mode, main, Object.keys(all), Object.values(all), '5000');
   const ms = Math.round(performance.now() - t);
   console.log(`\n=== ${mode} ${main}: ok=${r.ok}, ${ms} ms, ${queries} Z3 queries`);
-  console.log(r.output.length > 1500 ? r.output.slice(0, 1500) + `\n... (${r.output.length} chars)` : r.output);
+  console.log(r.output.length > 600 ? r.output.slice(0, 600) + `\n... (${r.output.length} chars)` : r.output);
   if (r.smt.length) console.log('--- first SMT-LIB query:\n' + r.smt[0][0] + '--- answer: ' + r.smt[0][1]);
   return r;
 }
 
+// Must pass: plain compilation and Lexdoc.
 let failed = 0;
-const check = (r) => { if (!r.ok) failed++; };
-check(run('mfotl', 'hello.lex', { 'hello.lex': file('example/unit/hello.lex') }));
-check(run('mfotl', 'tutorial.lex', { 'tutorial.lex': file('example/tutorial/tutorial.lex') }));
-check(run('mfotl', 'epd/epd.rex', {
-  'epd/epd.lex': file('example/e-privacy-directive/epd.lex'),
-  'epd/epd.rex': file('example/e-privacy-directive/epd.rex'),
-}));
-check(run('doc', 'tutorial.lex', { 'tutorial.lex': file('example/tutorial/tutorial.lex') }));
+const must = (r) => { if (!r.ok) failed++; };
+must(run('mfotl', 'tutorial.lex', { 'tutorial.lex': file('example/tutorial/tutorial.lex') }));
+must(run('doc', 'tutorial.lex', { 'tutorial.lex': file('example/tutorial/tutorial.lex') }));
+
+// Refinements, which go through Z3. Reported, not required: some examples
+// in the repository may not type-check at this commit.
+const gdprXml = file('example/GDPR/GDPR.xml');
+const results = {
+  'hello.lex (imports GDPR formex)': run('mfotl', 'hello.lex', { 'hello.lex': file('example/unit/hello.lex'), 'GDPR/GDPR.xml': gdprXml }),
+  'GDPR/paper.rex': run('mfotl', 'GDPR/paper.rex', { 'GDPR/paper.rex': file('example/GDPR/paper.rex'), 'GDPR/paper.lex': file('example/GDPR/paper.lex'), 'GDPR/GDPR.xml': gdprXml }),
+  'GDPR/minitwit.rex': run('mfotl', 'GDPR/minitwit.rex', { 'GDPR/minitwit.rex': file('example/GDPR/minitwit.rex'), 'GDPR/paper.lex': file('example/GDPR/paper.lex'), 'GDPR/GDPR.xml': gdprXml }),
+  'evaluation minitwit_gdpr.rex': run('mfotl', 'ev/minitwit_gdpr.rex', { 'ev/minitwit_gdpr.rex': file('evaluation/01_formalization/minitwit_gdpr.rex'), 'ev/gdpr.lex': file('evaluation/01_formalization/gdpr.lex'), 'ev/GDPR.xml': file('evaluation/01_formalization/GDPR.xml') }),
+  'epd/epd.rex': run('mfotl', 'epd/epd.rex', { 'epd/epd.rex': file('example/e-privacy-directive/epd.rex'), 'epd/epd.lex': file('example/e-privacy-directive/epd.lex') }),
+};
+console.log('\n=== summary');
+for (const [k, r] of Object.entries(results)) console.log(`${r.ok ? 'ok  ' : 'FAIL'} ${k}: ${r.smt.length} Z3 queries, answers ${r.smt.map((q) => q[1]).join(',') || '-'}`);
 await worker.terminate();
 process.exit(failed ? 1 : 0);

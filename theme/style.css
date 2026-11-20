@@ -680,9 +680,19 @@ body.home .scroll-hint, body.home .rail, body.home .hero-visual:empty { display:
 body.home .post .intro { font-size: 1.1rem; color: var(--text); }
 .cards { display: grid; gap: 1.25rem; margin-top: 2rem; }
 .card { border: 1px solid var(--line); border-radius: 8px; padding: 1.25rem 1.5rem; background: var(--panel); }
-.card h2 { margin: 0.2rem 0 0.6rem; font-size: 1.25rem; border: 0; padding: 0; }
+.card h2 { margin: 0.2rem 0 0.9rem; font-size: 1.25rem; border: 0; padding: 0; }
 .card h2 a { color: var(--strong); text-decoration: none; }
-.card h2 a:hover { color: var(--accent); }
+.card h2 a:hover { color: var(--accent); text-decoration: underline; text-underline-offset: 0.2em; }
 .card .meta { font: 0.75rem var(--mono); color: var(--muted); margin: 0; }
-.card .talks { list-style: none; padding: 0 0 0 1.3rem; margin: 0.8rem 0 0; display: grid; gap: 0.35rem; }
-.card .talks .meta { display: block; margin-top: 0.1rem; }
+.card .card-actions { display: flex; flex-wrap: wrap; gap: 0.5rem; margin: 0 0 1.1rem; }
+.card .talks-label { font: 0.7rem var(--mono); text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); margin: 0 0 0.4rem; }
+.post ul.talks { list-style: none; padding: 0; margin: 0; display: grid; gap: 0.5rem; }
+.post ul.talks > li { margin: 0; display: flex; align-items: center; gap: 0.6rem; }
+.post ul.talks > li::before { display: none; }
+.talk-link { flex: 1; min-width: 0; display: grid; grid-template-columns: 1fr auto; column-gap: 0.75rem; align-items: center; padding: 0.6rem 0.85rem; border: 1px solid var(--line); border-radius: 6px; color: var(--text); text-decoration: none; transition: border-color 0.15s, background 0.15s; }
+.talk-link:hover { border-color: var(--accent); background: color-mix(in srgb, var(--accent) 6%, transparent); text-decoration: none; }
+.talk-link .talk-title { color: var(--strong); font-weight: 600; font-size: 0.95rem; }
+.talk-link .meta { grid-column: 1; }
+.talk-link .go { grid-column: 2; grid-row: 1 / span 2; color: var(--accent); font-size: 1.1rem; }
+.button.small { padding: 0.35rem 0.85rem; font-size: 0.8rem; flex: none; }
+@media (max-width: 560px) { .post ul.talks > li { flex-direction: column; align-items: stretch; } .button.small { align-self: flex-start; } }

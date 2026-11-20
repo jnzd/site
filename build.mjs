@@ -196,7 +196,7 @@ async function build() {
       if (talk.slides) await renderSlides({
         pdf: at(talk.slides), out: path.join(dist, talk.path, 'slides'),
         title: `${talk.title} · Original slides`, label: 'Original slides', back: '../', backLabel: 'Talk',
-        links: [{ href: rel(talk.path + '/slides', entry.path), label: 'Thesis', title: 'Read the thesis' }], root: rootOf(talk.path + '/slides'), stamp,
+        links: [{ href: rel(talk.path + '/slides', entry.path), label: 'Thesis', title: 'Read the thesis', icon: 'book' }], root: rootOf(talk.path + '/slides'), stamp,
       });
     }
     if (entry.thesisPdf) await renderSlides({

@@ -860,3 +860,12 @@ body.reader.full .pages.slides .sheet.cur { animation: sheet-in 0.12s ease-out; 
 @keyframes sheet-in { from { opacity: 0.4; } }
 @media (prefers-reduced-motion: reduce) { body.reader.full .pages.slides .sheet.cur { animation: none; } }
 body.nav-hidden .site-nav:not(:focus-within) { transform: translateY(-100%); }
+/* Present mode: the stage has the screen's shape (set by talk.js), and a slide
+   that still overflows is laid out larger and scaled down whole (--fit). */
+body.presenting .slide.current, body.presenting .hero.current {
+  width: calc(var(--stage-w, 960px) / var(--fit, 1)); height: calc(var(--stage-h, 540px) / var(--fit, 1));
+  transform: translate(-50%, -50%) scale(calc(var(--scale, 1) * var(--fit, 1)));
+}
+body.presenting .slide.current > *, body.presenting .hero.current > * { flex-shrink: 0; }
+/* Sizes tied to the window would grow twice on the scaled stage. */
+body.presenting .hero.current h1 { font-size: 60px; }

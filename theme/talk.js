@@ -20,8 +20,16 @@
 
   // The stage is 960x540; one scale for the window, the same for every slide.
   const STAGE_W = 960, STAGE_H = 540;
-  const setScale = () => document.documentElement.style.setProperty('--scale',
-    Math.min(window.innerWidth / STAGE_W, window.innerHeight / STAGE_H).toFixed(4));
+  // The stage takes the screen's shape: at least 960x540, taller on a squarer
+  // screen (an iPad), wider on a wider one, so nothing is letterboxed away.
+  const root = document.documentElement.style;
+  function setScale() {
+    const W = window.innerWidth, H = window.innerHeight;
+    const scale = Math.min(W / STAGE_W, H / STAGE_H);
+    root.setProperty('--scale', scale.toFixed(4));
+    root.setProperty('--stage-w', (W / scale).toFixed(1) + 'px');
+    root.setProperty('--stage-h', (H / scale).toFixed(1) + 'px');
+  }
 
   // Every slide uses the same 960x540 stage, so titles never move. Content that
   // overflows it (down, or sideways inside a code block, table or formula) is
@@ -43,7 +51,29 @@
     set(lo);
     return !overflows(el);
   }
+  // Measured from what is drawn, not from scrollHeight, so it holds in every
+  // browser (Safari reports zoomed content differently).
+  function spills(el) {
+    const r = el.getBoundingClientRect(), cs = getComputedStyle(el), k = r.width / el.offsetWidth;
+    const bottom = r.bottom - parseFloat(cs.paddingBottom) * k * 0.5 + 1;
+    return [...el.children].some((c) => c.getBoundingClientRect().bottom > bottom);
+  }
+  // Last resort, when zooming parts was not enough: lay the slide out on a
+  // bigger stage and scale all of it down, title included.
+  function fitWhole(el) {
+    el.style.removeProperty('--fit');
+    for (let k = 0; k < 4 && (overflows(el) || spills(el)); k++) {
+      const h = el.scrollHeight, c = el.clientHeight;
+      const f = Math.max(0.4, Math.min(0.97, (Number(el.style.getPropertyValue('--fit')) || 1) * c / Math.max(h * 1.03, c * 1.03)));
+      el.style.setProperty('--fit', f.toFixed(4));
+    }
+  }
   function fit(el) {
+    el.style.removeProperty('--fit');
+    fitParts(el);
+    if (overflows(el) || spills(el)) fitWhole(el);
+  }
+  function fitParts(el) {
     const body = [...el.children].filter((c) => c.tagName !== 'H3' && !c.classList.contains('notes'));
     body.forEach((c) => { c.style.zoom = ''; });
     if (!overflows(el)) return;
@@ -112,7 +142,7 @@
     document.body.classList.toggle('deck', on);
     document.documentElement.style.setProperty('--deck-z', z.toFixed(4));
     // Cards (and the title) grow taller rather than shrink their content: no zoom outside present mode.
-    slides.forEach((s) => [...s.children].forEach((c) => { c.style.zoom = ''; }));
+    slides.forEach((s) => { s.style.removeProperty('--fit'); [...s.children].forEach((c) => { c.style.zoom = ''; }); });
   }
   deck();
 
@@ -177,6 +207,7 @@
     }
   });
   document.addEventListener('fullscreenchange', () => { if (!document.fullscreenElement && presenting()) exit(); });
-  window.addEventListener('resize', () => { if (presenting()) setScale(); else deck(); });
+  window.addEventListener('resize', () => { if (presenting()) { setScale(); fit(slides[i]); } else deck(); });
+  document.fonts?.ready.then(() => { if (presenting()) fit(slides[i]); });
   if (new URLSearchParams(location.search).has('present')) enter();
 })();

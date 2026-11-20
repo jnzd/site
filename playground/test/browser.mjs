@@ -24,7 +24,8 @@ try {
     await page.waitForFunction(() => /^(Done|Errors)/.test(document.getElementById('status').textContent), null, { timeout: 120000 });
     const status = await page.textContent('#status');
     const out = await page.textContent('#output');
-    console.log(`\n=== ${ex}: ${status} (wall ${Date.now() - t} ms)\n${out.slice(0, 400)}`);
+    const answers = await page.$$eval('#smt-list pre', (ps) => ps.map((p) => p.textContent.split('\n')[0]));
+    console.log(`\n=== ${ex}: ${status} (wall ${Date.now() - t} ms)\n${out.slice(0, 300)}\n...\n${out.slice(-1500)}\n${answers.join('\n')}`);
     if (!status.startsWith('Done')) failed++;
     await page.screenshot({ path: `screenshot-${examples.indexOf(ex)}.png` });
   }

@@ -42,7 +42,7 @@ jobs:
       - name: Set up opam and OCaml packages
         if: steps.opam-cache.outputs.cache-hit != 'true'
         run: |
-          sudo apt-get update && sudo apt-get install -y opam
+          sudo apt-get update && sudo apt-get install -y opam binaryen cmake ninja-build
           opam init -y --disable-sandboxing --bare -n
           opam switch create -y lexweb ocaml-base-compiler.5.2.1
           # Lex's parser uses --code-ancient, which newer menhir releases dropped.

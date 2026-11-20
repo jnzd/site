@@ -111,8 +111,8 @@
     const on = (window.innerWidth - 200) / STAGE_W >= 0.75 && z >= 0.6;
     document.body.classList.toggle('deck', on);
     document.documentElement.style.setProperty('--deck-z', z.toFixed(4));
-    // Cards grow taller rather than shrink their content: no zoom outside present mode.
-    content.forEach((s) => [...s.children].forEach((c) => { c.style.zoom = ''; }));
+    // Cards (and the title) grow taller rather than shrink their content: no zoom outside present mode.
+    slides.forEach((s) => [...s.children].forEach((c) => { c.style.zoom = ''; }));
   }
   deck();
 

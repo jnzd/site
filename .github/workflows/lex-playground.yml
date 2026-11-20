@@ -138,3 +138,61 @@ jobs:
           path: |
             playground/dist
             playground/screenshot-*.png
+
+  # Runs native Lex (with the real Z3 OCaml bindings) on the same examples, to
+  # tell stale examples apart from problems of the browser build.
+  native:
+    runs-on: ubuntu-24.04
+    env:
+      LEX_REPO: https://github.com/francois-hublet/lex
+      LEX_COMMIT: 7eb1d8f06b98032d418214f418cab7d38efcf3c2
+      OPAM_KEY: opam-native-v1-ocaml-5.2.1-menhir-20240715
+    steps:
+      - name: Fetch Lex
+        run: |
+          git init -q lex
+          cd lex
+          git remote add origin "$LEX_REPO"
+          git fetch -q --depth 1 origin "$LEX_COMMIT"
+          git checkout -q FETCH_HEAD
+          git submodule update --init
+
+      - id: opam-cache
+        uses: actions/cache/restore@v4
+        with:
+          path: ~/.opam
+          key: ${{ env.OPAM_KEY }}
+
+      - name: Set up opam and OCaml packages (Z3 builds from source, slow once)
+        if: steps.opam-cache.outputs.cache-hit != 'true'
+        run: |
+          sudo apt-get update && sudo apt-get install -y opam libgmp-dev python3-dev pkg-config
+          opam init -y --disable-sandboxing --bare -n
+          opam switch create -y native ocaml-base-compiler.5.2.1
+          opam install -y --switch native dune menhir.20240715 core core_unix ppx_jane \
+            xml-light calendar re zarith pyml z3
+
+      - if: steps.opam-cache.outputs.cache-hit != 'true'
+        uses: actions/cache/save@v4
+        with:
+          path: ~/.opam
+          key: ${{ env.OPAM_KEY }}
+
+      - name: Build native Lex
+        working-directory: lex
+        run: |
+          [ -x "$(command -v opam)" ] || (sudo apt-get update && sudo apt-get install -y opam libgmp-dev python3-dev)
+          opam exec --switch native -- dune build bin/main.exe 2>&1 | tail -20
+
+      - name: Run the examples
+        working-directory: lex
+        run: |
+          for f in example/tutorial/tutorial.lex example/unit/hello.lex example/GDPR/paper.rex \
+                   example/GDPR/minitwit.rex example/GDPR/shynet.rex example/e-privacy-directive/epd.rex \
+                   evaluation/01_formalization/minitwit_gdpr.rex; do
+            echo "=== $f"
+            out=$(opam exec --switch native -- ./_build/default/bin/main.exe "$f" 2>&1); code=$?
+            echo "$out" | grep -E "error|Error|exception" | head -5
+            echo "exit=$code, $(echo "$out" | wc -c) bytes of output"
+          done
+

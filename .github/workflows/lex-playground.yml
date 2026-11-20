@@ -18,6 +18,7 @@ jobs:
     env:
       LEX_REPO: https://github.com/francois-hublet/lex
       LEX_COMMIT: 7eb1d8f06b98032d418214f418cab7d38efcf3c2
+      OPAM_KEY: opam-v1-ocaml-5.2.1-menhir-20240715
     steps:
       - uses: actions/checkout@v4
 
@@ -31,30 +32,47 @@ jobs:
           git submodule update --init
           git log -1 --format='Lex %h %ad %s'
 
-      - uses: ocaml/setup-ocaml@v3
+      # The opam switch is cached as a whole; change OPAM_KEY to rebuild it.
+      - id: opam-cache
+        uses: actions/cache/restore@v4
         with:
-          ocaml-compiler: '5.2'
+          path: ~/.opam
+          key: ${{ env.OPAM_KEY }}
 
-      - name: Install OCaml packages
-        run: >
-          opam install -y dune menhir core core_kernel ppx_jane xml-light calendar re
-          zarith zarith_stubs_js js_of_ocaml js_of_ocaml-ppx js_of_ocaml-compiler
-          wasm_of_ocaml-compiler binaryen-bin
+      - name: Set up opam and OCaml packages
+        if: steps.opam-cache.outputs.cache-hit != 'true'
+        run: |
+          sudo apt-get update && sudo apt-get install -y opam
+          opam init -y --disable-sandboxing --bare -n
+          opam switch create -y lexweb ocaml-base-compiler.5.2.1
+          # Lex's parser uses --code-ancient, which newer menhir releases dropped.
+          opam install -y --switch lexweb dune menhir.20240715 core core_kernel ppx_jane \
+            xml-light calendar re zarith zarith_stubs_js js_of_ocaml js_of_ocaml-ppx \
+            js_of_ocaml-compiler wasm_of_ocaml-compiler binaryen-bin
 
-      - run: opam list --installed --columns=name,version dune core js_of_ocaml-compiler wasm_of_ocaml-compiler binaryen-bin
+      - if: steps.opam-cache.outputs.cache-hit != 'true'
+        uses: actions/cache/save@v4
+        with:
+          path: ~/.opam
+          key: ${{ env.OPAM_KEY }}
+
+      - name: OCaml package versions
+        run: |
+          [ -x "$(command -v opam)" ] || (sudo apt-get update && sudo apt-get install -y opam)
+          opam list --switch lexweb --installed --columns=name,version dune menhir core js_of_ocaml-compiler wasm_of_ocaml-compiler binaryen-bin
 
       - name: Assemble the dune project
         run: python3 playground/ocaml/prepare.py lex lexbuild
 
       - name: Build (js_of_ocaml)
         working-directory: lexbuild
-        run: opam exec -- dune build --profile release web/lexweb.bc.js
+        run: opam exec --switch lexweb -- dune build --profile release web/lexweb.bc.js
 
       - name: Build (wasm_of_ocaml)
         id: wasm
         continue-on-error: true
         working-directory: lexbuild
-        run: opam exec -- dune build --profile release web/lexweb.bc.wasm.js
+        run: opam exec --switch lexweb -- dune build --profile release web/lexweb.bc.wasm.js
 
       - name: Sizes
         run: |

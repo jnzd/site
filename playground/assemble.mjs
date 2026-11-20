@@ -30,10 +30,10 @@ writeFileSync(path.join(dist, 'lexdoc-assets.json'), JSON.stringify({
 }));
 writeFileSync(path.join(dist, 'examples.json'), JSON.stringify({
   'Tutorial (GDPR excerpt)': { main: 'tutorial.lex', files: { 'tutorial.lex': read('example/tutorial/tutorial.lex') } },
-  'ePrivacy Directive: refinement (uses Z3)': { main: 'epd/epd.rex', files: {
-    'epd/epd.rex': read('example/e-privacy-directive/epd.rex'),
-    'epd/epd.lex': read('example/e-privacy-directive/epd.lex'),
+  'MiniTwit refines the GDPR (uses Z3)': { main: 'gdpr/minitwit_gdpr.rex', files: {
+    'gdpr/minitwit_gdpr.rex': read('evaluation/01_formalization/minitwit_gdpr.rex'),
+    'gdpr/gdpr.lex': read('evaluation/01_formalization/gdpr.lex'),
+    'gdpr/GDPR.xml': read('evaluation/01_formalization/GDPR.xml'),
   } },
-  'GDPR article 5/6/8 (hello)': { main: 'hello.lex', files: { 'hello.lex': read('example/unit/hello.lex') } },
-}, null, 1));
+}));
 console.log('assembled', dist);

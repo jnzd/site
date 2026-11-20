@@ -9,6 +9,7 @@
   "dependencies": {
     "coi-serviceworker": "0.1.7",
     "esbuild": "0.25.0",
-    "z3-solver": "5.4.1"
+    "z3-solver": "5.4.1",
+    "playwright-core": "1.65.1"
   }
 }

@@ -15,7 +15,8 @@ function showTab(name) {
   if (current) files[current] = $('source').value;
   current = name;
   $('source').value = files[name];
-  $('tabs').replaceChildren(...Object.keys(files).map((f) => {
+  // Large legal-text sources (formex / Akoma Ntoso XML) are sent along but not shown.
+  $('tabs').replaceChildren(...Object.keys(files).filter((f) => !f.endsWith('.xml')).map((f) => {
     const b = document.createElement('button');
     b.textContent = f.split('/').pop() + (f === main ? ' (main)' : '');
     b.className = f === name ? 'active' : '';
@@ -125,8 +126,7 @@ $('source').addEventListener('keydown', (e) => {
   examples = await (await fetch('examples.json')).json();
   $('example').replaceChildren(...Object.keys(examples).map((k) => new Option(k, k)));
   setFiles(examples[Object.keys(examples)[0]]);
-  const wasmGC = WebAssembly.validate(new Uint8Array([0,97,115,109,1,0,0,0,1,5,1,95,1,127,0]));
-  const engine = wasmGC ? 'wasm' : 'js';
-  $('engine').value = engine;
-  startWorker(engine);
+  // JS by default: the Wasm build still lacks a few Jane Street runtime stubs.
+  $('engine').value = 'js';
+  startWorker('js');
 })();

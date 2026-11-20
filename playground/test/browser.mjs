@@ -1,0 +1,35 @@
+// Opens the assembled playground in headless Chrome (with COOP/COEP served by
+// serve.mjs), runs the examples and prints what the page shows.
+// Usage: node browser.mjs [chrome executable]
+import { chromium } from 'playwright-core';
+import { spawn } from 'node:child_process';
+
+const server = spawn(process.execPath, [new URL('../serve.mjs', import.meta.url).pathname, '8123'], { stdio: 'inherit' });
+await new Promise((r) => setTimeout(r, 500));
+const browser = await chromium.launch({ executablePath: process.argv[2] || '/usr/bin/google-chrome', args: ['--no-sandbox'] });
+let failed = 0;
+try {
+  const page = await browser.newPage({ viewport: { width: 1280, height: 800 } });
+  page.on('console', (m) => console.log('  console:', m.text()));
+  page.on('pageerror', (e) => { console.log('  pageerror:', e.message); failed++; });
+  const t0 = Date.now();
+  await page.goto('http://localhost:8123/');
+  await page.waitForFunction(() => !document.getElementById('run').disabled, null, { timeout: 60000 });
+  console.log(`page ready in ${Date.now() - t0} ms: ${await page.textContent('#status')}`);
+  const examples = await page.$$eval('#example option', (os) => os.map((o) => o.value));
+  for (const ex of examples) {
+    await page.selectOption('#example', ex);
+    const t = Date.now();
+    await page.click('#run');
+    await page.waitForFunction(() => /^(Done|Errors)/.test(document.getElementById('status').textContent), null, { timeout: 120000 });
+    const status = await page.textContent('#status');
+    const out = await page.textContent('#output');
+    console.log(`\n=== ${ex}: ${status} (wall ${Date.now() - t} ms)\n${out.slice(0, 400)}`);
+    if (!status.startsWith('Done')) failed++;
+    await page.screenshot({ path: `screenshot-${examples.indexOf(ex)}.png` });
+  }
+} finally {
+  await browser.close();
+  server.kill();
+}
+process.exit(failed ? 1 : 0);

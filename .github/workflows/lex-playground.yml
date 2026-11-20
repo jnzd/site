@@ -107,7 +107,14 @@ jobs:
       - name: Assemble the playground
         run: node playground/assemble.mjs lexbuild/_build/default/web lex
 
+      - name: Browser test (headless Chrome)
+        working-directory: playground
+        run: node test/browser.mjs /usr/bin/google-chrome
+
       - uses: actions/upload-artifact@v4
+        if: always()
         with:
           name: lex-playground
-          path: playground/dist
+          path: |
+            playground/dist
+            playground/screenshot-*.png

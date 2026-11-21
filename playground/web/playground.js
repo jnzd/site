@@ -476,13 +476,24 @@ const SECTIONS = ['source-pane', 'output-pane', 'lexdoc'];
 // What each tab shows. In "two", Result holds both (Lexdoc is a file tab).
 const VIEW = layout === 'two' ? { 'source-pane': ['source-pane'], 'output-pane': ['output-pane', 'lexdoc'] } : null;
 let currentView = 'source-pane';
+// Each view keeps its own scroll position. Once the page has scrolled past
+// the title, switching views keeps it out of sight (the bar stays on top)
+// rather than jumping back to the top of the page.
+const viewScroll = {};
+const titleBottom = () => { const h = document.querySelector('header.intro'); return h ? h.offsetTop + h.offsetHeight : 0; };
 function setView(id) {
+  const pin0 = titleBottom(), y0 = scrollY;
+  viewScroll[currentView] = y0;
   currentView = id;
   const show = VIEW ? VIEW[id] : [id];
   for (const s of SECTIONS) $(s).classList.toggle('off-view', !show.includes(s));
   for (const l of jumpLinks) l.classList.toggle('current', l.dataset.for === id);
   for (const l of jumpLinks) if (l.dataset.for === id) l.classList.remove('fresh');
-  scrollTo(0, 0);
+  // The title shows only with the source: when it comes back, scroll by its
+  // height, so the bar stays where it was.
+  const pin = titleBottom(), h = document.querySelector('header.intro');
+  if (pin0 === 0 && pin > 0) scrollTo(0, Math.max(y0 + h.offsetHeight, viewScroll[id] ?? 0)); // the bar stays put
+  else scrollTo(0, y0 >= pin0 ? Math.max(pin, viewScroll[id] ?? pin) : y0);
   requestAnimationFrame(fitDoc);
   renderStrip();
 }

@@ -397,6 +397,16 @@ $('run').onclick = async () => {
     renderOutput({ ok: false, output: String(e), log: '', smt: [] });
   }
 };
+// Loading the WebAssembly build makes Safari's page process crash and reload
+// (seen on iPad, 2026-11), and every iOS browser is Safari underneath. So it
+// is offered only elsewhere; ?engine=wasm still loads it, for testing.
+const webkit = /AppleWebKit/.test(navigator.userAgent) && !/Chrome\/|Chromium\/|Edg\//.test(navigator.userAgent);
+const wantWasm = new URLSearchParams(location.search).get('engine') === 'wasm';
+if (webkit && !wantWasm) {
+  const o = $('engine').querySelector('option[value="wasm"]');
+  o.disabled = true;
+  o.textContent = 'WebAssembly (not in Safari yet)';
+}
 $('engine').onchange = () => loadLex($('engine').value);
 $('example').onchange = () => { current = null; setFiles(examples[$('example').value]); };
 
@@ -407,6 +417,6 @@ $('example').onchange = () => { current = null; setFiles(examples[$('example').v
   $('example').replaceChildren(...Object.keys(examples).map((k) => new Option(k, k)));
   setFiles(examples[Object.keys(examples)[0]]);
   // JS by default for now; WebAssembly is faster but needs WebAssembly GC.
-  $('engine').value = 'js';
-  loadLex('js');
+  $('engine').value = wantWasm ? 'wasm' : 'js';
+  loadLex($('engine').value);
 })().catch((e) => { status(`Could not start: ${e.message}. Reload the page.`); console.error(e); });

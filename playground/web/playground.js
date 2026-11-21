@@ -126,7 +126,7 @@ let lexReady = null;
 function loadLex(e) {
   engine = e;
   const t = performance.now();
-  status(`Loading Lex (${e})…`);
+  status(`Loading Lex${e === 'wasm' ? ' (wasm)' : ''}…`);
   $('run').disabled = true;
   delete self.lexRun;
   lexReady = (async () => {
@@ -135,7 +135,7 @@ function loadLex(e) {
       if (i > 1000) throw new Error('Lex did not start');
       await new Promise((r) => setTimeout(r, 10));
     }
-    status(`Lex loaded (${e}) in ${Math.round(performance.now() - t)} ms`);
+    status(`Lex loaded${e === 'wasm' ? ' (wasm)' : ''} in ${Math.round(performance.now() - t)} ms`);
     $('run').disabled = false;
   })().catch((err) => status(String(err)));
 }
@@ -429,17 +429,11 @@ $('run').onclick = async () => {
     renderOutput({ ok: false, output: String(e), log: '', smt: [] });
   }
 };
-// Loading the WebAssembly build makes Safari's page process crash and reload
-// (seen on iPad, 2026-11), and every iOS browser is Safari underneath. So it
-// is offered only elsewhere; ?engine=wasm still loads it, for testing.
-const webkit = /AppleWebKit/.test(navigator.userAgent) && !/Chrome\/|Chromium\/|Edg\//.test(navigator.userAgent);
+// Lex runs as JavaScript (js_of_ocaml). The WebAssembly build
+// (wasm_of_ocaml) is not offered on the page: the choice means nothing to a
+// visitor, and loading it crashes Safari's page process (iPad, 2026-11).
+// ?engine=wasm loads it, for testing.
 const wantWasm = new URLSearchParams(location.search).get('engine') === 'wasm';
-if (webkit && !wantWasm) {
-  const o = $('engine').querySelector('option[value="wasm"]');
-  o.disabled = true;
-  o.textContent = 'WebAssembly (not in Safari yet)';
-}
-$('engine').onchange = () => loadLex($('engine').value);
 
 // ---- Phones: the section bar ---------------------------------------------
 const phone = matchMedia('(max-width: 860px)');
@@ -560,7 +554,5 @@ $('example').onchange = () => { current = null; setFiles(examples[$('example').v
   examples = await res.json();
   $('example').replaceChildren(...Object.keys(examples).map((k) => new Option(k, k)));
   setFiles(examples[Object.keys(examples)[0]]);
-  // JS by default for now; WebAssembly is faster but needs WebAssembly GC.
-  $('engine').value = wantWasm ? 'wasm' : 'js';
-  loadLex($('engine').value);
+  loadLex(wantWasm ? 'wasm' : 'js');
 })().catch((e) => { status(`Could not start: ${e.message}. Reload the page.`); console.error(e); });

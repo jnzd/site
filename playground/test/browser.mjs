@@ -17,13 +17,10 @@ try {
   page.on('console', (m) => console.log('  console:', m.text()));
   page.on('pageerror', (e) => { console.log('  pageerror:', e.message); failed++; });
   const t0 = Date.now();
-  await page.goto(url || 'http://localhost:8123/');
+  // The engine is chosen by the address only (?engine=wasm); JavaScript otherwise.
+  await page.goto((url || 'http://localhost:8123/') + (engine === 'js' ? '' : `?engine=${engine}`));
   await page.waitForFunction(() => !document.getElementById('run').disabled, null, { timeout: 60000 });
-  if (engine !== 'js') {
-    await page.selectOption('#engine', engine);
-    await page.waitForFunction((e) => document.getElementById('status').textContent.includes(`(${e})`) &&
-      !document.getElementById('run').disabled, engine, { timeout: 60000 });
-  }
+  if (engine !== 'js' && !(await page.textContent('#status')).includes(`(${engine})`)) throw new Error(`not running on ${engine}`);
   console.log(`page ready in ${Date.now() - t0} ms: ${await page.textContent('#status')}`);
   const examples = await page.$$eval('#example option', (os) => os.map((o) => o.value));
   for (const ex of examples) {

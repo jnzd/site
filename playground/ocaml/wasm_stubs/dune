@@ -1,0 +1,4 @@
+(library
+ (name wasm_stubs)
+ (modules wasm_stubs)
+ (wasm_of_ocaml (wasm_files base_stubs.wat)))

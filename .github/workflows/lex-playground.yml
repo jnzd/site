@@ -1,0 +1,249 @@
+# Prototype: builds Lex for the browser (js_of_ocaml and wasm_of_ocaml),
+# smoke-tests it under Node with Z3 (z3-solver, Wasm) and uploads the
+# assembled playground as an artifact. It does not deploy anything.
+name: Lex playground (prototype)
+
+on:
+  push:
+    branches: ['claude/**']
+    paths: ['playground/**', '.github/workflows/lex-playground.yml']
+  workflow_dispatch:
+
+permissions:
+  contents: write  # only to commit review screenshots to the claude/** branch
+
+concurrency:
+  group: lex-playground-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-24.04
+    env:
+      LEX_REPO: https://github.com/francois-hublet/lex
+      LEX_COMMIT: 7eb1d8f06b98032d418214f418cab7d38efcf3c2
+      OPAM_KEY: opam-v1-ocaml-5.2.1-menhir-20240715
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Fetch Lex
+        run: |
+          git init -q lex
+          cd lex
+          git remote add origin "$LEX_REPO"
+          git fetch -q --depth 1 origin "$LEX_COMMIT"
+          git checkout -q FETCH_HEAD
+          git submodule update --init
+          git log -1 --format='Lex %h %ad %s'
+
+      # The opam switch is cached as a whole; change OPAM_KEY to rebuild it.
+      - id: opam-cache
+        uses: actions/cache/restore@v4
+        with:
+          path: ~/.opam
+          key: ${{ env.OPAM_KEY }}
+
+      - name: Set up opam and OCaml packages
+        if: steps.opam-cache.outputs.cache-hit != 'true'
+        run: |
+          sudo apt-get update && sudo apt-get install -y opam binaryen cmake ninja-build
+          opam init -y --disable-sandboxing --bare -n
+          opam switch create -y lexweb ocaml-base-compiler.5.2.1
+          # Lex's parser uses --code-ancient, which newer menhir releases dropped.
+          opam install -y --switch lexweb dune menhir.20240715 core core_kernel ppx_jane \
+            xml-light calendar re zarith zarith_stubs_js js_of_ocaml js_of_ocaml-ppx \
+            js_of_ocaml-compiler wasm_of_ocaml-compiler binaryen-bin
+
+      - if: steps.opam-cache.outputs.cache-hit != 'true'
+        uses: actions/cache/save@v4
+        with:
+          path: ~/.opam
+          key: ${{ env.OPAM_KEY }}
+
+      - name: OCaml package versions
+        run: |
+          [ -x "$(command -v wasm-opt)" ] || (sudo apt-get update && sudo apt-get install -y opam binaryen)
+          opam list --switch lexweb --installed --columns=name,version dune menhir core js_of_ocaml-compiler wasm_of_ocaml-compiler binaryen-bin
+
+      - name: Assemble the dune project
+        run: |
+          python3 playground/ocaml/prepare.py lex lexbuild
+          # The site's package.json says "type": "module"; the build output is CommonJS.
+          echo '{"type": "commonjs"}' > lexbuild/package.json
+
+      - name: Build (js_of_ocaml)
+        working-directory: lexbuild
+        run: opam exec --switch lexweb -- dune build --profile release web/lexweb.bc.js
+
+      - name: Build (wasm_of_ocaml)
+        id: wasm
+        continue-on-error: true
+        working-directory: lexbuild
+        run: opam exec --switch lexweb -- dune build --profile release web/lexweb.bc.wasm.js
+
+      - name: Sizes
+        run: |
+          cd lexbuild/_build/default/web
+          for f in lexweb.bc.js lexweb.bc.wasm.js lexweb.bc.wasm.assets/*; do
+            [ -f "$f" ] && printf '%-60s %10d bytes  gzip %9d  brotli %9d\n' "$f" \
+              "$(stat -c %s "$f")" "$(gzip -9c "$f" | wc -c)" "$(brotli -c "$f" | wc -c)"
+          done
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - run: npm install
+        working-directory: playground
+
+      - name: Smoke test (JS)
+        run: node playground/test/smoke.mjs js lexbuild/_build/default/web lex
+
+      - name: Smoke test (Wasm)
+        if: steps.wasm.outcome == 'success'
+        continue-on-error: true
+        run: node playground/test/smoke.mjs wasm lexbuild/_build/default/web lex
+
+      - name: Assemble the playground
+        run: node playground/assemble.mjs lexbuild/_build/default/web lex
+
+      - name: Stack probe (diagnostic)
+        working-directory: playground
+        run: |
+          node test/stack-probe.mjs /usr/bin/google-chrome
+          for s in 300 500 700 984; do
+            echo "node --stack-size=$s:"
+            node --stack-size=$s test/smoke.mjs js ../lexbuild/_build/default/web ../lex 2>&1 | grep -E 'minitwit_gdpr|Stack overflow|RangeError' | head -3 || true
+          done
+
+      - name: Browser test (headless Chrome)
+        working-directory: playground
+        run: node test/browser.mjs /usr/bin/google-chrome
+
+      - name: Browser test (headless Chrome, Wasm engine)
+        continue-on-error: true
+        working-directory: playground
+        run: node test/browser.mjs /usr/bin/google-chrome wasm
+
+      # Preview: the built files go to a prerelease, which a Cloudflare Worker
+      # (lex-playground-preview.jnzd.workers.dev) serves with the
+      # COOP/COEP headers Z3 needs. Nothing on degelo.dev changes.
+      - name: Publish preview files
+        if: startsWith(github.ref, 'refs/heads/claude/')
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: lex-playground-preview
+        run: |
+          mkdir -p preview-assets
+          (cd playground/dist && find . -type f) | while read -r f; do
+            n="${f#./}"; cp "playground/dist/$n" "preview-assets/${n//\//__}"
+          done
+          ls preview-assets
+          gh release delete "$TAG" --cleanup-tag -y 2>/dev/null || true
+          gh release create "$TAG" --prerelease --target "$GITHUB_SHA" \
+            --title "Lex playground preview (not a release)" \
+            --notes "Built files for the Lex playground preview from branch ${GITHUB_REF#refs/heads/}, commit $GITHUB_SHA. Replaced on every push; safe to delete." \
+            preview-assets/*
+
+      - name: Browser test of the preview link
+        if: startsWith(github.ref, 'refs/heads/claude/')
+        continue-on-error: true
+        working-directory: playground
+        run: |
+          curl -sSI https://lex-playground-preview.jnzd.workers.dev/ | grep -iE '^(HTTP|cross-origin|content-type)'
+          node test/browser.mjs /usr/bin/google-chrome js https://lex-playground-preview.jnzd.workers.dev/
+
+      # Review screenshots are committed to the prototype branch (never main).
+      - name: Layout check (no overlapping elements, phone to desktop)
+        working-directory: playground
+        run: node test/layout.mjs /usr/bin/google-chrome
+
+      - name: Screenshots
+        if: startsWith(github.ref, 'refs/heads/claude/')
+        working-directory: playground
+        run: |
+          node test/screenshots.mjs /usr/bin/google-chrome screenshots
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add screenshots
+          git diff --cached --quiet || (git commit -m "Lex playground: review screenshots from CI" && git push origin HEAD:${GITHUB_REF#refs/heads/})
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: lex-playground
+          path: |
+            playground/dist
+            playground/screenshot-*.png
+
+  # Runs native Lex (with the real Z3 OCaml bindings) on the same examples, to
+  # tell stale examples apart from problems of the browser build.
+  native:
+    runs-on: ubuntu-24.04
+    env:
+      LEX_REPO: https://github.com/francois-hublet/lex
+      LEX_COMMIT: 7eb1d8f06b98032d418214f418cab7d38efcf3c2
+      OPAM_KEY: opam-native-v1-ocaml-5.2.1-menhir-20240715
+    steps:
+      - name: Fetch Lex
+        run: |
+          git init -q lex
+          cd lex
+          git remote add origin "$LEX_REPO"
+          git fetch -q --depth 1 origin "$LEX_COMMIT"
+          git checkout -q FETCH_HEAD
+          git submodule update --init
+
+      - id: opam-cache
+        uses: actions/cache/restore@v4
+        with:
+          path: ~/.opam
+          key: ${{ env.OPAM_KEY }}
+
+      - name: Set up opam and OCaml packages (Z3 builds from source, slow once)
+        if: steps.opam-cache.outputs.cache-hit != 'true'
+        run: |
+          sudo apt-get update && sudo apt-get install -y opam libgmp-dev python3-dev pkg-config
+          opam init -y --disable-sandboxing --bare -n
+          opam switch create -y native ocaml-base-compiler.5.2.1
+          opam install -y --switch native dune menhir.20240715 core core_unix ppx_jane \
+            xml-light calendar re zarith pyml z3
+
+      - if: steps.opam-cache.outputs.cache-hit != 'true'
+        uses: actions/cache/save@v4
+        with:
+          path: ~/.opam
+          key: ${{ env.OPAM_KEY }}
+
+      - name: Build native Lex
+        working-directory: lex
+        run: |
+          [ -x "$(command -v opam)" ] || (sudo apt-get update && sudo apt-get install -y opam libgmp-dev python3-dev)
+          opam exec --switch native -- dune build bin/main.exe 2>&1 | tail -20
+
+      - name: Run the examples
+        working-directory: lex
+        run: |
+          for f in example/tutorial/tutorial.lex example/unit/hello.lex example/GDPR/paper.rex \
+                   example/GDPR/minitwit.rex example/GDPR/shynet.rex example/e-privacy-directive/epd.rex \
+                   evaluation/01_formalization/minitwit_gdpr.rex; do
+            echo "=== $f"
+            out=$(opam exec --switch native -- ./_build/default/bin/main.exe "$f" 2>&1) && code=0 || code=$?
+            echo "$out" | grep -E "error|Error|exception" | head -5
+            echo "exit=$code, $(echo "$out" | wc -c) bytes of output"
+          done
+
+
+      - name: Lexdoc of the examples (does native Lex build it?)
+        working-directory: lex
+        env:
+          OCAMLRUNPARAM: b
+        run: |
+          mkdir -p _build/default/bin/assets && cp -r assets/. _build/default/bin/assets/
+          for f in example/tutorial/tutorial.lex evaluation/01_formalization/minitwit_gdpr.rex; do
+            echo "=== $f"
+            out=$(opam exec --switch native -- ./_build/default/bin/main.exe -mode doc -o /tmp/doc.html "$f" 2>&1) && code=0 || code=$?
+            echo "$out" | grep -vE "^(g = |\{p = |-> )" | tail -25
+            echo "exit=$code, html: $(wc -c < /tmp/doc.html 2>/dev/null || echo none) bytes"
+            rm -f /tmp/doc.html
+          done

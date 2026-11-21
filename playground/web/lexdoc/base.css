@@ -1,0 +1,18 @@
+/* Layout fixes for every Lexdoc style, the original included. Lexdoc sets a
+   declaration and its reading side by side (Bootstrap col-6). In a narrow
+   frame long names ran into the reading, so there the reading moves below. */
+.row > * { min-width: 0; }
+.lex-stmt, .lex-reading { overflow-wrap: anywhere; }
+@media (max-width: 36rem) {
+  .row > .col-6 { flex: 0 0 100%; max-width: 100%; }
+  .row > .col-6 + .col-6 { margin-top: .4rem; }
+  .lex-section-links { float: none; display: block; margin-left: 0; }
+}
+
+/* Jumps (lexdoc/tap.js): clear the bars on top, and show where we landed. */
+[id^="lex-event-"], [id^="lex-section-"] { scroll-margin-top: 4.5rem; }
+.lex-jumped { animation: lex-jumped 1.6s ease-out; }
+@keyframes lex-jumped { from { background: color-mix(in srgb, #f5c542 45%, transparent); } to { background: transparent; } }
+/* A tap pins a formula and its reading: tell touch browsers these are tappable. */
+.lex-subformula, .lex-subformula-reading, .lex-type-fix, .lex-type-fix-reading { cursor: pointer; -webkit-tap-highlight-color: transparent; }
+@media (prefers-reduced-motion: reduce) { .lex-jumped { animation: none; } }

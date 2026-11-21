@@ -1,0 +1,108 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Lex playground</title>
+<meta name="description" content="Write Lex, a language for legal rules, and compile it to temporal logic in your browser.">
+<!-- z3-solver uses threads, so it needs SharedArrayBuffer and thus COOP/COEP
+     headers. GitHub Pages cannot send them; this service worker adds them
+     (and reloads the page once). Lex itself does not need them. -->
+<script src="coi-serviceworker.js"></script>
+<script>try{var t=localStorage.getItem("theme");if(t)document.documentElement.dataset.theme=t}catch(e){}</script>
+<!-- theme.css is the site's fonts and colours (theme/style.css), copied by assemble.mjs. -->
+<link rel="stylesheet" href="theme.css">
+<link rel="stylesheet" href="playground.css">
+<script src="theme.js" defer></script>
+</head>
+<body>
+<script>/* phone layout prototype (see playground.js), set before the first paint */(function(){var l=new URLSearchParams(location.search).get("layout"),c=document.body.classList,all=["tabs","flow","top","two","strip","picker","stack","chips"];if(all.indexOf(l)<0)l="scroll";c.add("layout-"+l);if(l!=="scroll")c.add("layout-tabbed");if(l!=="scroll"&&l!=="tabs")c.add("flow");if(["top","strip","picker","stack","chips"].indexOf(l)>=0)c.add("fab");if(["top","picker","stack","chips"].indexOf(l)>=0)c.add("toptabs")})()</script>
+<nav class="site-nav" aria-label="Site"><a class="site-name" href="https://degelo.dev/">degelo.dev</a><span class="crumb">Lex playground</span></nav>
+
+<header class="intro">
+  <h1>Lex playground</h1>
+  <p>Lex turns legal provisions into rules a computer can enforce. Write Lex on the left and compile it to
+  metric first-order temporal logic (MFOTL), and read it as Lexdoc further down. Everything runs in your browser:
+  the Lex compiler, and Z3 for checking refinements (<code>.rex</code> files), which loads the first time
+  one needs it (about 9&nbsp;MB).</p>
+</header>
+
+<!-- Phones: the panes stack, so a bar that stays on top jumps between them,
+     shows which one is in view, and keeps Run in reach. Hidden on wider screens. -->
+<nav class="jump" id="jump" aria-label="Sections">
+  <a href="#source-pane" data-for="source-pane">Source</a>
+  <a href="#output-pane" data-for="output-pane">Output<span class="jump-state" aria-hidden="true"></span></a>
+  <a href="#lexdoc" data-for="lexdoc">Lexdoc<span class="jump-state" aria-hidden="true"></span></a>
+  <button id="run-mini" class="button primary" disabled aria-label="Run">
+    <svg class="icon" viewBox="0 0 16 16" aria-hidden="true"><path d="M5 3.5v9l7-4.5z" fill="currentColor"/></svg>Run</button>
+</nav>
+<!-- "strip" prototype: every file, input and output, in one row of tabs. -->
+<nav class="strip" id="strip" aria-label="Files"></nav>
+
+<main class="workbench">
+  <section class="pane editor" id="source-pane">
+    <div class="bar">
+      <label class="field"><span>Example</span><select id="example"></select></label>
+      <button id="run" class="button primary" disabled title="Run (Ctrl+Enter)">
+        <svg class="icon" viewBox="0 0 16 16" aria-hidden="true"><path d="M5 3.5v9l7-4.5z" fill="currentColor"/></svg>Run</button>
+    </div>
+    <div class="frame">
+      <div class="tabs-row"><div class="tabs" id="tabs" role="tablist"></div>
+        <label class="vim-toggle" title="Vim key bindings (:w runs Lex)"><input type="checkbox" id="vim"> Vim</label></div>
+      <div id="source" class="source"></div>
+      <div id="stack-src" class="stack" hidden></div>
+    </div>
+  </section>
+  <section class="pane output" id="output-pane">
+    <div class="bar">
+      <span id="status" class="status" role="status">Loading Lex…</span>
+    </div>
+    <ul id="warnings" class="warnings" aria-label="Warnings" hidden></ul>
+    <div class="frame">
+      <!-- One tab per file Lex writes (name.sig, name.mfotl, as lex -o name
+           does), errors instead when it fails, and what Lex printed on the way. -->
+      <div class="tabs-row"><div class="tabs" id="out-tabs" role="tablist"><span class="pane-title">MFOTL</span></div>
+        <div class="doc-tools" id="out-tools" hidden>
+          <button class="icon-button" id="out-copy" title="Copy this file" aria-label="Copy">
+            <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M5.5 5.5h8v8h-8zM10.5 5.5v-3h-8v8h3"/></svg></button>
+          <button class="icon-button" id="out-download" title="Download this file" aria-label="Download">
+            <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 1.5v9M4.5 7 8 10.5 11.5 7M2 12.5V14.5h12v-2"/></svg></button>
+        </div></div>
+      <pre id="output"></pre>
+      <div id="trace" class="trace" hidden></div>
+      <div id="stack-out" class="stack" hidden></div>
+    </div>
+    <details id="smt" hidden><summary>SMT-LIB queries sent to Z3</summary><div id="smt-list"></div></details>
+    <details id="lexlog" hidden><summary>Lex's debug output</summary><pre id="lexlog-text"></pre></details>
+  </section>
+</main>
+
+<section class="lexdoc-section" id="lexdoc" aria-label="Lexdoc">
+  <div class="frame">
+    <div class="tabs-row"><div class="tabs"><span class="pane-title">Lexdoc</span></div>
+        <div class="doc-tools" id="doc-tools">
+          <select id="docstyle" aria-label="Lexdoc style" title="Lexdoc style">
+            <option value="site">Site style</option><option value="statute">Statute style</option><option value="lexdoc">Original style</option></select>
+          <button class="icon-button" id="doc-open" title="Open Lexdoc full-size in a new tab" aria-label="Open full-size">
+            <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M9 2h5v5M14 2 7.5 8.5M12 9.5V14H2V4h4.5"/></svg></button>
+          <button class="icon-button" id="doc-print" title="Print, or save as PDF" aria-label="Print or save as PDF">
+            <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M4 6V1.5h8V6M4 12H2V6h12v6h-2M4 9.5h8v5H4z"/></svg></button>
+          <button class="icon-button" id="doc-download" title="Download as a standalone HTML file" aria-label="Download HTML">
+            <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 1.5v9M4.5 7 8 10.5 11.5 7M2 12.5V14.5h12v-2"/></svg></button>
+        </div>
+    </div>
+    <p id="doc-empty" class="doc-empty">Run Lex to see its Lexdoc here: the program as a document, each declaration and rule next to its reading.</p>
+    <iframe id="doc" title="Lexdoc output" hidden></iframe>
+  </div>
+</section>
+
+<footer class="site-footer">
+  <span class="proto">Phone layout prototype: <a href="?layout=scroll">Scroll</a> · <a href="?layout=tabs">Tabs</a> · <a href="?layout=flow">Flow</a> · <a href="?layout=top">Top</a> · <a href="?layout=two">Two</a> · <a href="?layout=strip">Strip</a> · <a href="?layout=picker">Picker</a> · <a href="?layout=stack">Stack</a> · <a href="?layout=chips">Chips</a></span>
+  <span><a href="https://github.com/francois-hublet/lex">Lex source</a>, compiled for the browser with js_of_ocaml and wasm_of_ocaml</span>
+  <span class="shortcut"><kbd class="mod">Ctrl</kbd>&thinsp;+&thinsp;<kbd>Enter</kbd> runs</span>
+</footer>
+<script src="lexdoc/save.js"></script>
+<script src="editor.js"></script>
+<script src="playground.js"></script>
+</body>
+</html>

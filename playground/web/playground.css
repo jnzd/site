@@ -1,0 +1,350 @@
+/* Lex playground. Fonts and colours (--bg, --text, --accent, --tok-*, ...)
+   come from theme.css, the site's own theme, so light/dark and the toggle
+   work as on the rest of the site. */
+* { box-sizing: border-box; }
+[hidden] { display: none !important; }
+body {
+  margin: 0; background: var(--bg); color: var(--text);
+  font: 400 1rem/1.6 var(--sans);
+  -webkit-font-smoothing: antialiased;
+}
+a { color: var(--accent); text-decoration: none; }
+a:hover { text-decoration: underline; text-underline-offset: .2em; }
+code, kbd { font: .88em var(--mono); }
+kbd { border: 1px solid var(--line); border-bottom-width: 2px; border-radius: 4px; padding: 0 .3em; }
+
+/* ---- Header (the site's nav bar) ---- */
+.site-nav {
+  height: 3.25rem; padding: 0 1.5rem; font-size: .85rem; flex: none;
+  display: flex; align-items: center; gap: .6rem; border-bottom: 1px solid var(--line);
+}
+.site-nav .site-name { color: var(--muted); font-weight: 600; letter-spacing: .01em; }
+.site-nav .site-name:hover { color: var(--accent); text-decoration: none; }
+.site-nav .crumb { color: var(--faint); }
+.site-nav .crumb::before { content: "/"; margin-right: .6rem; }
+.theme-toggle {
+  margin-left: auto; display: inline-flex; align-items: center; gap: .4rem;
+  font: .72rem var(--mono); color: var(--muted); background: none;
+  border: 1px solid var(--line); border-radius: 999px; padding: .25rem .7rem; cursor: pointer;
+}
+.theme-toggle:hover { color: var(--accent); border-color: var(--accent); }
+.theme-toggle svg { width: .9rem; height: .9rem; }
+
+.intro { padding: 1.75rem 1.5rem .5rem; max-width: 52rem; flex: none; }
+.intro h1 { font-size: 1.9rem; line-height: 1.1; letter-spacing: -.02em; font-weight: 600; color: var(--strong); margin: 0 0 .6rem; }
+.intro p { color: var(--muted); margin: 0; font-size: .92rem; text-wrap: pretty; }
+
+/* ---- Editor and output side by side ---- */
+.workbench {
+  /* Editor and MFOTL fill most of the window; Lexdoc follows below. */
+  height: max(34rem, calc(100vh - 6rem)); height: max(34rem, calc(100dvh - 6rem));
+  display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 1.25rem;
+  padding: 1rem 1.5rem 1.25rem;
+}
+.pane { display: flex; flex-direction: column; min-height: 0; min-width: 0; }
+.bar { display: flex; gap: .5rem 1rem; align-items: center; flex-wrap: wrap; font-size: .82rem; margin-bottom: .6rem; min-height: 2.1rem; }
+.field { display: inline-flex; align-items: center; gap: .4rem; color: var(--muted); }
+select {
+  font: inherit; color: var(--text); background: var(--panel);
+  border: 1px solid var(--line); border-radius: 999px; padding: .28rem 1.7rem .28rem .75rem;
+  appearance: none; cursor: pointer;
+  background-image: linear-gradient(45deg, transparent 50%, var(--muted) 50%), linear-gradient(135deg, var(--muted) 50%, transparent 50%);
+  background-position: right .85rem center, right .6rem center; background-size: .25rem .25rem; background-repeat: no-repeat;
+}
+select:hover, select:focus-visible { border-color: var(--accent); outline: none; }
+.button {
+  display: inline-flex; align-items: center; font: 600 .85rem var(--sans);
+  padding: .35rem 1rem; border-radius: 999px; border: 1px solid var(--line);
+  color: var(--strong); background: none; cursor: pointer;
+}
+.button .icon { width: 1em; height: 1em; margin-right: .35em; }
+.button.primary { background: var(--strong); border-color: var(--strong); color: var(--bg); margin-left: auto; }
+.button.primary:hover:not(:disabled) { background: var(--accent); border-color: var(--accent); }
+.button:disabled { opacity: .45; cursor: default; }
+
+.frame {
+  flex: 1; min-height: 0; display: flex; flex-direction: column;
+  background: var(--panel); border-radius: 8px; overflow: hidden;
+}
+.tabs-row { display: flex; align-items: stretch; border-bottom: 1px solid var(--line); flex: none; }
+.tabs { display: flex; gap: 0; flex: 1; min-width: 0; overflow-x: auto; }
+.vim-toggle { display: inline-flex; align-items: center; gap: .35rem; padding: 0 .9rem; font: .72rem var(--mono); color: var(--muted); cursor: pointer; white-space: nowrap; }
+.vim-toggle:hover { color: var(--text); }
+.vim-toggle input { accent-color: var(--accent); margin: 0; }
+.tabs button {
+  font: .75rem var(--mono); color: var(--muted); background: none; border: 0;
+  border-bottom: 2px solid transparent; padding: .5rem .9rem .4rem; cursor: pointer; white-space: nowrap;
+}
+.tabs button:hover { color: var(--text); }
+.tabs button.active { color: var(--strong); border-bottom-color: var(--accent); }
+.tabs button .main { color: var(--faint); margin-left: .35em; }
+.source { flex: 1; min-height: 0; }
+.doc-tools { display: flex; align-items: center; gap: .15rem; padding: 0 .4rem; }
+.doc-tools select { font-size: .75rem; padding: .18rem 1.6rem .18rem .65rem; background-color: transparent; margin-right: .25rem; }
+.icon-button { display: inline-grid; place-items: center; width: 1.9rem; height: 1.9rem; border: 0; border-radius: 999px; background: none; color: var(--muted); cursor: pointer; }
+.icon-button:hover, .icon-button:focus-visible { color: var(--accent); background: color-mix(in srgb, var(--accent) 12%, transparent); outline: none; }
+.icon-button svg { width: 1rem; height: 1rem; fill: none; stroke: currentColor; stroke-width: 1.4; stroke-linecap: round; stroke-linejoin: round; }
+
+.warnings {
+  list-style: none; margin: 0 0 .6rem; padding: .5rem .8rem .5rem 2rem; flex: none; position: relative;
+  font-size: .8rem; line-height: 1.45; color: var(--text); max-height: 7rem; overflow: auto;
+  border: 1px solid color-mix(in srgb, var(--accent) 45%, transparent); border-radius: 8px;
+  background: color-mix(in srgb, var(--accent) 8%, transparent);
+}
+.warnings::before { content: "!"; position: absolute; left: .75rem; top: .45rem; font-weight: 600; color: var(--accent); }
+.warnings li + li { margin-top: .25rem; }
+pre#output, .trace, details, .tabs { overscroll-behavior: none; }
+/* The keyboard shortcut means nothing without a keyboard. */
+@media (hover: none) and (pointer: coarse) { .shortcut { display: none; } }
+pre#output {
+  flex: 1; margin: 0; padding: .75rem 1rem; overflow: auto;
+  font: .8rem/1.55 var(--mono); white-space: pre-wrap; overflow-wrap: anywhere; tab-size: 4;
+}
+pre#output.error { color: var(--text); }
+pre#output .err { color: var(--accent); }
+pre#output .note { color: var(--tok-com); }
+iframe { flex: 1; border: 0; background: white; }
+.status { color: var(--muted); font-variant-numeric: tabular-nums; }
+.status.ok::before, .status.bad::before { content: ""; display: inline-block; width: .5rem; height: .5rem; border-radius: 50%; margin-right: .45rem; vertical-align: .05rem; background: var(--tok-op); }
+.status.bad::before { background: var(--accent); }
+
+details { margin-top: .75rem; font-size: .82rem; max-height: 40%; overflow: auto; flex: none; }
+details summary { cursor: pointer; color: var(--muted); }
+details summary:hover { color: var(--accent); }
+details pre { font: .72rem/1.5 var(--mono); background: var(--panel); border-radius: 6px; padding: .6rem .8rem; margin: .5rem 0; white-space: pre-wrap; overflow-wrap: anywhere; }
+
+/* The trace tab: Lex's compiler output, one block per defined predicate. */
+.trace { flex: 1; min-height: 0; overflow: auto; padding: .75rem 1rem 1rem; font-size: .8rem; }
+.trace-intro { margin: 0 0 .9rem; color: var(--muted); font-size: .8rem; line-height: 1.5; text-wrap: pretty; }
+.trace-def { padding: .6rem 0 .7rem; border-top: 1px solid var(--line); }
+.trace-def h3 { margin: 0 0 .4rem; font: 600 .8rem/1.45 var(--mono); color: var(--strong); overflow-wrap: anywhere; }
+.trace-def dl { margin: 0; display: grid; grid-template-columns: max-content minmax(0, 1fr); gap: .3rem .9rem; }
+.trace-def dt { color: var(--faint); font-size: .72rem; text-transform: uppercase; letter-spacing: .04em; padding-top: .1rem; }
+.trace-def dd { margin: 0; font: .76rem/1.5 var(--mono); overflow-wrap: anywhere; }
+.trace-def ol { margin: 0; padding-left: 1.3rem; }
+.trace-def ol li + li { margin-top: .15rem; }
+.trace-formula, .trace-def pre { font: .76rem/1.55 var(--mono); white-space: pre-wrap; overflow-wrap: anywhere; margin: 0; }
+@media (max-width: 520px) { .trace-def dl { grid-template-columns: minmax(0, 1fr); } .trace-def dd { margin-bottom: .3rem; } }
+.icon-button.done { color: var(--tok-op); }
+
+/* Code colours, as in the listings on the thesis pages. */
+.tok-kw { color: var(--tok-kw); font-weight: 600; }
+.tok-op { color: var(--tok-op); font-weight: 600; }
+.tok-fn { color: var(--tok-fn); }
+.tok-str { color: var(--tok-str); }
+.tok-com { color: var(--tok-com); }
+
+.site-footer { border-top: 1px solid var(--line); padding: .9rem 1.5rem;
+  display: flex; flex-wrap: wrap; gap: .3rem 2rem; justify-content: space-between;
+  font-size: .75rem; color: var(--muted);
+}
+.site-footer a { color: inherit; text-decoration: underline; text-decoration-color: var(--faint); text-underline-offset: .2em; }
+.site-footer a:hover { color: var(--accent); }
+
+.pane-title { font: .75rem var(--mono); color: var(--strong); padding: .5rem .9rem .4rem; border-bottom: 2px solid var(--accent); white-space: nowrap; }
+.lexdoc-section { padding: 0 1.5rem 1.5rem; }
+.lexdoc-section .frame { height: max(30rem, calc(100vh - 5rem)); height: max(30rem, calc(100dvh - 5rem)); }
+.doc-empty { margin: 0; padding: 1.25rem 1rem; color: var(--muted); font-size: .85rem; }
+.doc-tools { margin-left: auto; }
+@media (max-width: 860px) {
+  .workbench { grid-template-columns: minmax(0, 1fr); height: auto; }
+  .pane .frame { height: 75vh; height: 75dvh; flex: none; }
+  .lexdoc-section .frame { height: 80vh; height: 80dvh; }
+  .button.primary { margin-left: 0; }
+}
+
+/* While Lex runs: a spinner in the status line and a bar sliding along the
+   top of the output. Lex blocks the page's thread, so both animate only
+   transform, which the browser runs off that thread. */
+.status.running::before {
+  content: ""; display: inline-block; width: .7rem; height: .7rem; margin-right: .5rem; vertical-align: -.08rem;
+  border: 2px solid var(--line); border-top-color: var(--accent); border-radius: 50%;
+  animation: lex-spin .8s linear infinite;
+}
+.pane.output .frame { position: relative; }
+body.running .pane.output .frame::before {
+  content: ""; position: absolute; top: 0; left: 0; width: 35%; height: 2px; z-index: 1;
+  background: var(--accent); border-radius: 2px;
+  animation: lex-slide 1.2s ease-in-out infinite;
+}
+body.running pre#output, body.running .trace { opacity: .45; transition: opacity .2s; }
+body.running #run { cursor: progress; }
+@keyframes lex-spin { to { transform: rotate(360deg); } }
+@keyframes lex-slide { from { transform: translateX(-100%); } to { transform: translateX(290%); } }
+@media (prefers-reduced-motion: reduce) {
+  .status.running::before { animation-duration: 2.4s; }
+  body.running .pane.output .frame::before { animation: none; width: 100%; opacity: .6; }
+}
+
+/* The Run button spins while Lex runs, wherever it is on screen. */
+body.running .button.primary .icon { display: none; }
+body.running .button.primary::before {
+  content: ""; width: .8em; height: .8em; margin-right: .4em; border-radius: 50%;
+  border: 2px solid color-mix(in srgb, currentColor 30%, transparent); border-top-color: currentColor;
+  animation: lex-spin .8s linear infinite;
+}
+
+/* ---- Phones: section bar ---- */
+.jump { display: none; }
+@media (max-width: 860px) {
+  .jump {
+    display: flex; align-items: center; gap: .25rem; position: sticky; top: 0; z-index: 10;
+    padding: .45rem 1rem; background: color-mix(in srgb, var(--bg) 88%, transparent);
+    -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px); border-bottom: 1px solid var(--line);
+  }
+  .jump a {
+    position: relative; font: .78rem var(--mono); color: var(--muted); padding: .35rem .7rem; border-radius: 999px;
+    text-decoration: none; white-space: nowrap;
+  }
+  .jump a:hover { text-decoration: none; color: var(--text); }
+  .jump a.current { color: var(--strong); background: var(--panel); }
+  .jump-state { position: absolute; top: .3rem; right: .25rem; width: .4rem; height: .4rem; border-radius: 50%; }
+  .jump a.fresh .jump-state { background: var(--accent); }
+  body.running .jump a[data-for="output-pane"] .jump-state {
+    top: .2rem; right: .1rem; width: .55rem; height: .55rem; background: none;
+    border: 1.5px solid var(--line); border-top-color: var(--accent); animation: lex-spin .8s linear infinite;
+  }
+  .jump .button.primary { margin-left: auto; padding: .3rem .85rem; font-size: .8rem; }
+  /* The editor's own Run stays; sections stop below the bar when jumped to. */
+  #source-pane, #output-pane, #lexdoc { scroll-margin-top: 3.4rem; }
+  .intro { padding-bottom: .25rem; }
+}
+/* On phones the section bar's Run is always in reach: one Run is enough. */
+@media (max-width: 860px) { .pane.editor #run { display: none; } }
+
+.site-footer .proto a.here { color: var(--accent); text-decoration-color: var(--accent); }
+@media (max-width: 860px) {
+  /* Tabs: one section at a time, the bar at the bottom. */
+  body.layout-tabbed .off-view { display: none !important; }
+  body.layout-tabbed .jump {
+    position: fixed; top: auto; bottom: 0; left: 0; right: 0;
+    border-bottom: 0; border-top: 1px solid var(--line);
+    padding-bottom: calc(.45rem + env(safe-area-inset-bottom));
+  }
+  body.layout-tabbed { padding-bottom: calc(3.4rem + env(safe-area-inset-bottom)); }
+  body.layout-tabbed .workbench { padding-top: .75rem; }
+  /* Lexdoc alone: the empty workbench would leave a gap above it. */
+  body.layout-tabbed .workbench:not(:has(> .pane:not(.off-view))) { display: none; }
+  body.layout-tabbed #output-pane .frame { height: calc(100dvh - 13rem); }
+  body.layout-tabbed .lexdoc-section { padding-top: 1rem; }
+  body.layout-tabbed .lexdoc-section .frame { height: calc(100dvh - 9rem); }
+  body.layout-tabbed:not(:has(#source-pane:not(.off-view))) .intro { display: none; }
+}
+
+@media (max-width: 860px) {
+  /* Flow (flow, top, two): no box scrolls inside the page. The panes run
+     edge to edge and grow with their content; only the editor scrolls
+     sideways for long lines. */
+  body.flow .workbench, body.flow .lexdoc-section { padding-left: 0; padding-right: 0; }
+  body.flow .pane > .bar, body.flow #warnings, body.flow details { margin-left: 1rem; margin-right: 1rem; }
+  body.flow .frame { border-radius: 0; overflow: visible; } /* visible, so sticky headers inside can stick */
+  body.flow .pane .frame, body.flow #output-pane .frame, body.flow .lexdoc-section .frame { height: auto !important; min-height: 0; flex: none; }
+  body.flow .source { flex: none; }
+  body.flow #source .cm-editor { height: auto !important; min-height: 50dvh; }
+  /* The editor only scrolls sideways here; a vertical swipe on it must move
+     the page, so no overscroll-behavior: none (that stops the hand-off). */
+  body.flow #source .cm-scroller { overflow-y: visible; overflow-x: auto; overscroll-behavior: auto; overscroll-behavior-x: none; touch-action: pan-x pan-y; }
+  body.flow pre#output, body.flow .trace, body.flow .tabs { overscroll-behavior: auto; }
+  body.flow pre#output, body.flow .trace { overflow: visible; flex: none; }
+  body.flow #output-pane .frame { min-height: 40dvh; }
+  body.flow #doc { flex: none; min-height: 60dvh; }
+  body.flow .workbench { gap: 0; }
+
+  /* Top: the tabs sit under the site bar; Run is a round button. */
+  body.toptabs .jump {
+    position: sticky; top: 0; bottom: auto; border-top: 0; border-bottom: 1px solid var(--line);
+    padding: 0 .5rem; gap: 0;
+    /* no backdrop filter: it would make the bar the box the fixed Run sits in */
+    -webkit-backdrop-filter: none; backdrop-filter: none; background: var(--bg);
+  }
+  body.toptabs, body.layout-strip { padding-bottom: 0; }
+  body.toptabs .jump a { flex: 1; text-align: center; border-radius: 0; padding: .8rem .5rem .7rem; border-bottom: 2px solid transparent; }
+  body.toptabs .jump a.current { background: none; border-bottom-color: var(--accent); }
+  body.toptabs .jump .jump-state { top: .6rem; right: calc(50% - 2.6rem); }
+  body.fab #run-mini {
+    position: fixed; right: 1.1rem; bottom: calc(1.1rem + env(safe-area-inset-bottom)); z-index: 12;
+    width: 3.6rem; height: 3.6rem; border-radius: 50%; padding: 0; justify-content: center; font-size: 0;
+    box-shadow: 0 6px 18px rgb(0 0 0 / .3);
+  }
+  body.fab #run-mini .icon { width: 1.3rem; height: 1.3rem; margin: 0; }
+  body.fab.running #run-mini::before { width: 1.3rem; height: 1.3rem; margin: 0; }
+  body.fab .site-footer { padding-bottom: 5.5rem; }
+
+  /* Two: Source and Result; Lexdoc is one of Result's file tabs. */
+  body.layout-two .jump a[data-for="lexdoc"] { display: none; }
+  body.layout-two:not([data-outtab="lexdoc"]) #lexdoc { display: none !important; }
+  body.layout-two[data-outtab="lexdoc"] #output-pane details { display: none; }
+  body.layout-two[data-outtab="lexdoc"] #output-pane .frame { min-height: 0; }
+  body.layout-two #lexdoc .pane-title { display: none; }
+  body.layout-two .lexdoc-section { padding-top: 0; }
+}
+
+.strip, .file-pick { display: none; }
+@media (max-width: 860px) {
+  /* Strip: no section tabs; one row of every file, sources then outputs. */
+  body.layout-strip .jump { position: static; padding: 0; border: 0; background: none; height: 0; -webkit-backdrop-filter: none; backdrop-filter: none; }
+  body.layout-strip .jump a { display: none; }
+  body.layout-strip .strip {
+    display: flex; align-items: stretch; gap: 0; position: sticky; top: 0; z-index: 10; overflow-x: auto;
+    background: var(--bg); border-bottom: 1px solid var(--line); padding: 0 .5rem; scrollbar-width: none;
+  }
+  body.layout-strip .strip::-webkit-scrollbar { display: none; }
+  .strip button {
+    position: relative; font: .76rem var(--mono); color: var(--muted); background: none; border: 0; white-space: nowrap;
+    border-bottom: 2px solid transparent; padding: .85rem .75rem .7rem; cursor: pointer;
+  }
+  .strip button.active { color: var(--strong); border-bottom-color: var(--accent); }
+  .strip button.out { color: var(--faint); }
+  .strip button.out.active { color: var(--strong); }
+  .strip .sep { flex: none; width: 1px; margin: .7rem .35rem; background: var(--line); }
+  .strip .run-state { display: inline-block; width: .5rem; height: .5rem; margin-left: .35rem; border-radius: 50%; vertical-align: .05rem; }
+  body.running .strip .run-state { border: 1.5px solid var(--line); border-top-color: var(--accent); animation: lex-spin .8s linear infinite; }
+  body.layout-strip #tabs, body.layout-strip #out-tabs, body.layout-strip #lexdoc .tabs { display: none; }
+  body.layout-strip .tabs-row { justify-content: flex-end; min-height: 2.2rem; }
+
+  /* Picker: section tabs on top; inside a section, files are a menu. */
+  body.layout-picker #tabs, body.layout-picker #out-tabs { display: none; }
+  body.layout-picker .file-pick {
+    display: block; margin: .35rem auto .35rem .6rem; font: .76rem var(--mono); padding: .25rem 1.7rem .25rem .7rem;
+  }
+}
+
+.stack[hidden] { display: none; }
+@media (max-width: 860px) {
+  /* Stack: no file tabs. Each section lists its files one after another,
+     each under a header that sticks below the section tabs. */
+  body.layout-stack #tabs, body.layout-stack #out-tabs, body.layout-stack #source,
+  body.layout-stack pre#output, body.layout-stack #trace, body.layout-stack #out-tools { display: none !important; }
+  body.layout-stack .stack { display: block !important; }
+  body.layout-stack .tabs-row { justify-content: flex-end; }
+  body.layout-stack #output-pane .tabs-row { display: none; }
+  .stack-file + .stack-file { border-top: 1px solid var(--line); }
+  .stack-head {
+    position: sticky; top: 2.85rem; z-index: 5; display: flex; align-items: center; gap: .2rem; margin: 0;
+    padding: .55rem .5rem .55rem .7rem; font: 600 .76rem var(--mono); color: var(--strong);
+    background: color-mix(in srgb, var(--panel) 92%, var(--text) 8%); border-bottom: 1px solid var(--line);
+  }
+  .stack-head > span:first-child { margin-right: auto; }
+  .stack-head .fold { all: unset; cursor: pointer; display: flex; align-items: center; gap: .35rem; margin-right: auto; min-height: 2rem; -webkit-tap-highlight-color: transparent; }
+  .stack-head .fold:focus-visible { outline: 2px solid var(--accent, currentColor); outline-offset: 2px; border-radius: 4px; }
+  .stack-head .fold svg { width: .9rem; height: .9rem; fill: none; stroke: currentColor; stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; color: var(--faint); transform: rotate(90deg); transition: transform .15s; }
+  .stack-file.folded .fold svg { transform: none; }
+  .stack-file.folded > :not(.stack-head) { display: none; }
+  .stack-head .main { color: var(--faint); font-weight: 400; margin-left: .4em; margin-right: auto; }
+  .stack-ed .cm-editor { height: auto !important; }
+  .stack-ed .cm-scroller { overflow-y: visible; overflow-x: auto; overscroll-behavior: auto; overscroll-behavior-x: none; }
+  .stack-pre { margin: 0; padding: .75rem 1rem; font: .8rem/1.55 var(--mono); white-space: pre-wrap; overflow-wrap: anywhere; }
+  .stack .trace { overflow: visible; }
+
+  /* Chips: a section's files as a small segmented switch of fixed size. */
+  body.layout-chips #tabs, body.layout-chips #out-tabs {
+    flex: 0 1 auto; margin: .4rem auto .4rem .6rem; padding: 2px; gap: 2px; border-radius: 999px;
+    background: color-mix(in srgb, var(--text) 7%, transparent);
+  }
+  body.layout-chips #tabs button, body.layout-chips #out-tabs button {
+    border: 0; border-radius: 999px; padding: .28rem .7rem; font-size: .72rem; max-width: 9.5rem; overflow: hidden; text-overflow: ellipsis;
+  }
+  body.layout-chips #tabs button.active, body.layout-chips #out-tabs button.active { background: var(--bg); color: var(--strong); box-shadow: 0 1px 2px rgb(0 0 0 / .25); }
+  body.layout-chips #tabs button .main { display: none; }
+  body.layout-chips .tabs-row { border-bottom: 1px solid var(--line); align-items: center; }
+}

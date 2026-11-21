@@ -1,0 +1,57 @@
+/* Lexdoc as a printed statute: a serif text column on paper, the law's
+   structure set like an official journal, readings as notes in the margin.
+   Light paper, or dark paper with the page's dark theme (screen only: print
+   is always light). Loaded after Lex's own lexdoc.css and Bootstrap. */
+:root {
+  color-scheme: light;
+  --st-paper: #fbfaf6; --st-ink: #1b1a17; --st-soft: #55524a; --st-faint: #8a867c;
+  --st-name: #7a1f12; --st-type: #2c4a6b; --st-rule: #c9c3b4; --st-note: #3d3a33;
+  --st-doc: #6b675d; --st-mark: #f3e7b9;
+}
+@media screen {
+  :root[data-theme="dark"] {
+    color-scheme: dark;
+    --st-paper: #1a1916; --st-ink: #e6e1d5; --st-soft: #b3ad9f; --st-faint: #847f73;
+    --st-name: #e7a08a; --st-type: #9fbad8; --st-rule: #4a463e; --st-note: #d2ccbf;
+    --st-doc: #a39d90; --st-mark: #4b4224;
+  }
+}
+@media screen and (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    color-scheme: dark;
+    --st-paper: #1a1916; --st-ink: #e6e1d5; --st-soft: #b3ad9f; --st-faint: #847f73;
+    --st-name: #e7a08a; --st-type: #9fbad8; --st-rule: #4a463e; --st-note: #d2ccbf;
+    --st-doc: #a39d90; --st-mark: #4b4224;
+  }
+}
+html, body { background: var(--st-paper); color: var(--st-ink); }
+body.container { font: 400 1rem/1.6 Charter, "Bitstream Charter", "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, serif; max-width: 58rem; padding: 2rem 2rem 4rem; }
+.lex-program { padding: 0; }
+
+.title-row { background: none; text-align: center; margin: 2rem 0 .75rem; }
+.lex-stmt-section-law { font-size: 1.9rem; font-variant: small-caps; letter-spacing: .06em; margin: .5rem 0 1rem; border-top: 3px double var(--st-ink); border-bottom: 3px double var(--st-ink); padding: .6rem 0; }
+.lex-stmt-section-title, .lex-stmt-section-chapter { font-size: 1.3rem; font-variant: small-caps; letter-spacing: .05em; }
+.lex-stmt-section-section { font-size: 1.15rem; font-style: italic; }
+.lex-stmt-section-article { font-size: 1.05rem; font-weight: 700; }
+.lex-section-kind { color: inherit; text-transform: capitalize; }
+.lex-section-title { font-weight: 400; font-style: italic; color: var(--st-soft); }
+.lex-section-links { float: none; display: block; font-size: .75rem; color: var(--st-faint); }
+.lex-section-links a, .lex-section-link, .lex-section-links a:hover, .lex-section-link:hover { color: var(--st-faint); }
+
+/* Declarations and rules: keywords in small capitals, names in italics */
+.lex-keyword { color: var(--st-ink); font-weight: 400; font-variant: small-caps; letter-spacing: .04em; padding-left: .25em; padding-right: .25em; }
+.lex-ident, .lex-formula-term, .lex-event-link { color: var(--st-name); font-style: italic; }
+.lex-typ, .lex-const { color: var(--st-type); }
+.lex-string { color: var(--st-soft); }
+.lex-interval { color: var(--st-soft); font-size: .9em; }
+.lex-stmt { padding: .35rem 0; }
+
+/* Readings: margin notes */
+.lex-reading.card { background: none; border: 0; border-left: 2px solid var(--st-rule); border-radius: 0; font-size: .88rem; color: var(--st-note); margin: .2rem 0 .5rem; }
+.lex-reading .card-header { background: none; border: 0; font-size: .68rem; font-variant: small-caps; letter-spacing: .12em; text-transform: lowercase; color: var(--st-faint); padding: 0 .8rem; }
+.lex-reading .card-body { padding: .1rem .8rem .3rem; }
+.lex-reading .list-group-item { background: none; border: 0; padding: .1rem .8rem .3rem; color: inherit; }
+.lex-docstring-body { color: var(--st-doc); }
+
+.lex-subformula-active, .lex-subformula-reading-active { background: var(--st-mark); border-color: transparent; }
+.badge { background: none; border: 1px solid var(--st-rule); color: var(--st-soft); font-weight: 400; }

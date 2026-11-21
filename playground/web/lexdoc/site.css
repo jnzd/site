@@ -1,0 +1,43 @@
+/* Lexdoc in the site's look: IBM Plex, the theme's colours (from theme.css,
+   loaded before this file), light or dark like the page around it.
+   Loaded after Lex's own lexdoc.css and Bootstrap, so it only overrides. */
+html, body { background: var(--panel); color: var(--text); }
+body.container { font: 400 .95rem/1.6 var(--sans); max-width: 60rem; padding: 1.25rem 1.5rem 3rem; -webkit-font-smoothing: antialiased; }
+.lex-program { padding: 0; }
+.row { --bs-gutter-x: 1.5rem; }
+
+/* Headings of the law's structure */
+.title-row { background: none; border-bottom: 1px solid var(--line); margin-top: 1.5rem; }
+.lex-stmt-section-law { font-size: 2.1rem; font-weight: 600; letter-spacing: -.02em; color: var(--strong); margin-top: 0; }
+.lex-stmt-section-title { font-size: 1.7rem; font-weight: 600; }
+.lex-stmt-section-chapter { font-size: 1.45rem; font-weight: 600; }
+.lex-stmt-section-section { font-size: 1.25rem; font-weight: 600; }
+.lex-stmt-section-article { font-size: 1.1rem; font-weight: 600; }
+.lex-section-kind { color: var(--muted); font-weight: 400; text-transform: lowercase; }
+.lex-stmt-section-law .lex-section-kind { font-family: var(--mono); font-size: .45em; letter-spacing: .12em; text-transform: uppercase; vertical-align: .45em; }
+.lex-section-title { color: var(--muted); }
+.lex-section-links a, .lex-section-link { color: var(--muted); }
+.lex-section-links a:hover, .lex-section-link:hover { color: var(--accent); }
+
+/* Code-like parts, coloured as in the thesis listings */
+.lex-stmt-type, .lex-stmt-event, .lex-stmt-rule, .lex-stmt-import { font-size: .92rem; }
+.lex-keyword, .lex-section-kind + .lex-keyword { color: var(--tok-kw); font-weight: 600; padding-left: .3em; padding-right: .3em; }
+.lex-ident, .lex-formula-term, .lex-event-link { color: var(--tok-fn); }
+.lex-typ { color: var(--tok-op); }
+.lex-const { color: var(--accent); }
+.lex-string { color: var(--tok-str); }
+.lex-interval { color: var(--tok-com); font-family: var(--mono); font-size: .9em; }
+.lex-event-link:hover { color: var(--accent); }
+
+/* Readings: plain panels instead of Bootstrap cards */
+.lex-reading.card { background: var(--bg); border: 0; border-radius: 8px; margin: .3rem 0 .6rem; color: var(--text); }
+.lex-reading .card-header { background: none; border: 0; font: .66rem var(--mono); letter-spacing: .12em; text-transform: uppercase; color: var(--muted); padding: .6rem .9rem 0; }
+.lex-reading .card-body { padding: .35rem .9rem .7rem; }
+.lex-reading .list-group-item { background: none; color: var(--text); border-color: var(--line); padding: .35rem .9rem .6rem; }
+.lex-docstring-body { color: var(--muted); }
+
+/* Hovering a formula highlights its reading, and back */
+.lex-subformula-active, .lex-subformula-reading-active {
+  background: color-mix(in srgb, var(--accent) 14%, transparent); border-color: color-mix(in srgb, var(--accent) 45%, transparent); border-radius: 3px;
+}
+.badge { background: color-mix(in srgb, var(--accent) 18%, transparent); color: var(--strong); font: .68rem var(--mono); }

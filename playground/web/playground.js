@@ -147,7 +147,7 @@ async function runLex(mode, main, files) {
     guessed = [];
     await new Promise((r) => setTimeout(r, 0)); // let the status line paint
     const r = self.lexRun(mode, main, Object.keys(all), Object.values(all), '5000');
-    const res = { ok: r.ok, output: r.output, log: r.log || '', smt: Array.from(r.smt, (q) => [q[0], q[1]]), passes: pass };
+    const res = { ok: r.ok, output: r.output, sig: r.sig || '', mfotl: r.mfotl || '', log: r.log || '', smt: Array.from(r.smt, (q) => [q[0], q[1]]), passes: pass };
     if (!guessed.length) return res;
     let wrong = false;
     for (const [i, s] of guessed.entries()) {
@@ -187,7 +187,8 @@ function splitOutput(text) {
 
 function renderOutput(r) {
   const base = (main || 'lex').split('/').pop().replace(/\.\w+$/, '');
-  const split = r.ok ? splitOutput(r.output) : null;
+  // The two files `lex -o name` writes; older builds only had the printed text.
+  const split = !r.ok ? null : (r.sig || r.mfotl) ? { sig: r.sig, mfotl: r.mfotl } : splitOutput(r.output);
   outFiles = split
     ? [{ id: 'sig', name: base + '.sig', text: split.sig }, { id: 'mfotl', name: base + '.mfotl', text: split.mfotl }]
     : [{ id: 'errors', name: r.ok ? 'output' : 'errors', text: r.output.trim() }];

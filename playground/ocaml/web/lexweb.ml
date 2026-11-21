@@ -2,9 +2,11 @@
 
      lexRun(mode, mainFile, names, contents, timeoutMs)
 
-   with mode "mfotl" or "doc", and gets back { ok, output, log, smt }. On
+   with mode "mfotl" or "doc", and gets back { ok, output, sig, mfotl, log, smt }.
    output is the result or the errors, and log is what Lex printed on the
-   way (warnings and debug lines).
+   way (warnings and debug lines). In mfotl mode, sig and mfotl are the
+   contents of the two files `lex -o name` writes (see Clex.to_files);
+   otherwise they are empty.
    smt is the list of [script, answer] pairs that went to Z3. Files live in
    the in-memory file system (see [root] below). *)
 
@@ -49,7 +51,7 @@ let write_file name content =
 let run mode main names contents timeout =
   Buffer.clear out;
   capture true;
-  let log = ref "" in
+  let log = ref "" and sig_out = ref "" and mfotl_out = ref "" in
   let take_log () = log := !log ^ Buffer.contents out; Buffer.clear out in
   Z3.shim_log := [];
   let filepath =
@@ -79,7 +81,10 @@ let run mode main names contents timeout =
              Format.pp_print_flush Format.std_formatter ();
              flush stdout; flush stderr;
              take_log ();
-             Buffer.add_string out (Clex.to_string cprog));
+             Buffer.add_string out (Clex.to_string cprog);
+             (* What Clex.to_files writes to name.sig and name.mfotl. *)
+             sig_out := Clex.string_of_signatures cprog.Clex.signature;
+             mfotl_out := Formula.to_string (Eformula.to_formula cprog.Clex.phi));
          true
     with e ->
       Format.pp_print_flush Format.std_formatter ();
@@ -107,6 +112,8 @@ let run mode main names contents timeout =
   Js.Unsafe.obj [|
       "ok", Js.Unsafe.inject (Js.bool ok);
       "output", Js.Unsafe.inject (Js.string (unroot (Buffer.contents out)));
+      "sig", Js.Unsafe.inject (Js.string !sig_out);
+      "mfotl", Js.Unsafe.inject (Js.string !mfotl_out);
       "log", Js.Unsafe.inject (Js.string (unroot !log));
       "smt", Js.Unsafe.inject (Js.array (Array.of_list smt));
     |]
@@ -124,6 +131,8 @@ let () =
            Js.Unsafe.obj [|
                "ok", Js.Unsafe.inject Js._false;
                "output", Js.Unsafe.inject (Js.string ("lexRun failed: " ^ Printexc.to_string e));
+               "sig", Js.Unsafe.inject (Js.string "");
+               "mfotl", Js.Unsafe.inject (Js.string "");
                "log", Js.Unsafe.inject (Js.string (Buffer.contents out));
                "smt", Js.Unsafe.inject (Js.array [||]);
              |]))

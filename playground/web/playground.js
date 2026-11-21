@@ -139,8 +139,10 @@ let lastResult = null, outFiles = [], outTab = null;
 const esc = (s) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;');
 const hl = (s) => LexEditor.highlightMfotl(s);
 
-function showWarnings(r) {
-  const ws = r.log.split('\n').filter((l) => WARNING.test(l)).map((l) => l.replace(/^Warning( at [^:]*)?:\s*/, (m, at) => (at ? at.slice(4) + ': ' : '')));
+function showWarnings(r, d) {
+  // Lexdoc's run can warn too (say, about a docstring); each warning once.
+  const log = r.log + (d ? '\n' + d.log : '');
+  const ws = [...new Set(log.split('\n'))].filter((l) => WARNING.test(l)).map((l) => l.replace(/^Warning( at [^:]*)?:\s*/, (m, at) => (at ? at.slice(4) + ': ' : '')));
   $('warnings').hidden = ws.length === 0;
   $('warnings').replaceChildren(...ws.map((w) => Object.assign(document.createElement('li'), { textContent: w })));
 }
@@ -351,7 +353,7 @@ function showResult(r, d) {
   lastDocResult = d;
   lastDoc = d && d.ok ? d.output : null;
   if (lastDoc !== null) renderDoc();
-  showWarnings(r);
+  showWarnings(r, d);
   $('run').disabled = false;
   const n = r.smt.length;
   $('status').className = 'status ' + (r.ok ? 'ok' : 'bad');

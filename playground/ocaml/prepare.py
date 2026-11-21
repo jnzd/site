@@ -46,6 +46,24 @@ patch("src/modules.ml",
       "Stdlib.Sys.file_exists (Filename.concat prefix filename)")
 patch("src/doc.ml", "Filename.dirname ((Sys.get_argv ()).(0))", '"."', count=2)
 
+# Lexdoc readings fill a docstring's {placeholders} with the event's
+# arguments, and Lex stops with Not_found_s (List.Assoc.find_exn) when a
+# placeholder names no argument, as three docstrings in the MiniTwit example
+# do ({d} for data, {data} for file, {c} with no c). Native Lex fails the same
+# way. Here the placeholder stays as written and Lex warns instead.
+patch("src/reading.ml",
+      """    let f group =
+      List.Assoc.find_exn names_trms ~equal:String.equal (Re.Group.get group 1) in""",
+      """    let f group =
+      let p = Re.Group.get group 1 in
+      match List.Assoc.find names_trms ~equal:String.equal p with
+      | Some t -> t
+      | None ->
+         let s1 = String.strip s in
+         let short = if String.length s1 > 70 then String.prefix s1 67 ^ "..." else s1 in
+         Errors.warn (Printf.sprintf "Lexdoc: {%s} in the docstring \"%s\" is not one of the event's arguments" p short) None;
+         "{" ^ p ^ "}" in""")
+
 # Ontology diagrams pipe through Graphviz: not available in the browser.
 p = os.path.join(out, "src/owl.ml")
 s = open(p).read()

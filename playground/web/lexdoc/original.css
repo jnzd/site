@@ -1,0 +1,39 @@
+/* Lex's own Lexdoc style (its lexdoc.css on Bootstrap) is light. This adds
+   a dark version for the page's dark theme, on screen only (print stays
+   light), keeping Lex's colours in lighter shades that read on dark. */
+@media screen {
+  :root[data-theme="dark"] {
+  color-scheme: dark; background-color: #15171a;
+}
+:root[data-theme="dark"] body, :root[data-theme="dark"] .card, :root[data-theme="dark"] .list-group-item { background-color: #15171a; color: #dde1e6; }
+:root[data-theme="dark"] .lex-reading.card { border-color: rgba(255,255,255,.14); }
+:root[data-theme="dark"] .card-header { background-color: rgba(255,255,255,.04); border-color: rgba(255,255,255,.14); color: #aab1ba; }
+:root[data-theme="dark"] .list-group-item { border-color: rgba(255,255,255,.1); }
+:root[data-theme="dark"] .title-row { background-color: rgba(255,255,255,.05); }
+:root[data-theme="dark"] .lex-section-links a, :root[data-theme="dark"] .lex-section-link { color: #c9ced6; }
+:root[data-theme="dark"] .lex-section-links a:hover, :root[data-theme="dark"] .lex-section-link:hover { color: #fff; }
+:root[data-theme="dark"] .lex-formula-term, :root[data-theme="dark"] .lex-ident, :root[data-theme="dark"] .lex-event-link { color: #f27eb4; }
+:root[data-theme="dark"] .lex-keyword, :root[data-theme="dark"] .lex-section-kind { color: #b98af2; }
+:root[data-theme="dark"] .lex-const { color: #5cb8e8; }
+:root[data-theme="dark"] .lex-typ { color: #3fd68f; }
+:root[data-theme="dark"] .badge { background-color: #6b5b1f; color: #fbeec3; }
+:root[data-theme="dark"] .lex-subformula-active, :root[data-theme="dark"] .lex-subformula-reading-active { background-color: rgba(252,209,38,.16); }
+}
+@media screen and (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+  color-scheme: dark; background-color: #15171a;
+}
+:root:not([data-theme="light"]) body, :root:not([data-theme="light"]) .card, :root:not([data-theme="light"]) .list-group-item { background-color: #15171a; color: #dde1e6; }
+:root:not([data-theme="light"]) .lex-reading.card { border-color: rgba(255,255,255,.14); }
+:root:not([data-theme="light"]) .card-header { background-color: rgba(255,255,255,.04); border-color: rgba(255,255,255,.14); color: #aab1ba; }
+:root:not([data-theme="light"]) .list-group-item { border-color: rgba(255,255,255,.1); }
+:root:not([data-theme="light"]) .title-row { background-color: rgba(255,255,255,.05); }
+:root:not([data-theme="light"]) .lex-section-links a, :root:not([data-theme="light"]) .lex-section-link { color: #c9ced6; }
+:root:not([data-theme="light"]) .lex-section-links a:hover, :root:not([data-theme="light"]) .lex-section-link:hover { color: #fff; }
+:root:not([data-theme="light"]) .lex-formula-term, :root:not([data-theme="light"]) .lex-ident, :root:not([data-theme="light"]) .lex-event-link { color: #f27eb4; }
+:root:not([data-theme="light"]) .lex-keyword, :root:not([data-theme="light"]) .lex-section-kind { color: #b98af2; }
+:root:not([data-theme="light"]) .lex-const { color: #5cb8e8; }
+:root:not([data-theme="light"]) .lex-typ { color: #3fd68f; }
+:root:not([data-theme="light"]) .badge { background-color: #6b5b1f; color: #fbeec3; }
+:root:not([data-theme="light"]) .lex-subformula-active, :root:not([data-theme="light"]) .lex-subformula-reading-active { background-color: rgba(252,209,38,.16); }
+}

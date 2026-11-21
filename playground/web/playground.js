@@ -257,8 +257,10 @@ function flash(button, text) {
 // base.css (layout fixes) and print.css (paper) apply to every style.
 // Bootstrap and jQuery, which Lexdoc pages load from a CDN, come from the
 // playground itself (vendor/), so nothing depends on a third-party server.
-const DOC_STYLES = { lexdoc: [], site: ['theme.css', 'lexdoc/site.css'], statute: ['lexdoc/statute.css'] };
-const DOC_BACKGROUND = { lexdoc: 'white', site: 'var(--panel)', statute: '#fbfaf6' };
+// Every style has a light and a dark version and follows the page's theme.
+const DOC_STYLES = { lexdoc: ['lexdoc/original.css'], site: ['theme.css', 'lexdoc/site.css'], statute: ['lexdoc/statute.css'] };
+const DOC_BACKGROUND = { lexdoc: ['#fff', '#15171a'], site: ['var(--panel)', 'var(--panel)'], statute: ['#fbfaf6', '#1a1916'] };
+const pageDark = () => { const t = document.documentElement.dataset.theme; return t ? t === 'dark' : matchMedia('(prefers-color-scheme: dark)').matches; };
 const BOOTSTRAP = /<link href="https:\/\/cdn\.jsdelivr\.net\/npm\/bootstrap@[^"]*"[^>]*>/;
 const JQUERY = /<script src="https:\/\/cdn\.jsdelivr\.net\/npm\/jquery@[^"]*"><\/script>/;
 let lastDoc = null;
@@ -271,7 +273,7 @@ function renderDoc() {
   if (lastDoc === null) return;
   const style = $('docstyle').value;
   const links = ['lexdoc/base.css', ...DOC_STYLES[style], 'lexdoc/print.css'].map((h) => `<link rel="stylesheet" href="${h}">`).join('');
-  $('doc').style.background = DOC_BACKGROUND[style];
+  $('doc').style.background = DOC_BACKGROUND[style][pageDark() ? 1 : 0];
   $('doc').srcdoc = withTheme(lastDoc)
     .replace(BOOTSTRAP, '<link rel="stylesheet" href="vendor/bootstrap.min.css">')
     .replace(JQUERY, '<script src="vendor/jquery.min.js"></script>')
@@ -281,8 +283,8 @@ $('docstyle').onchange = () => {
   try { localStorage.setItem('lexdoc-style', $('docstyle').value); } catch {}
   renderDoc();
 };
-// The site style follows the light/dark toggle.
-new MutationObserver(() => { if ($('docstyle').value === 'site') renderDoc(); })
+// Lexdoc follows the light/dark toggle.
+new MutationObserver(() => renderDoc())
   .observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
 
 // ---- Lexdoc full-size, print and download --------------------------------
@@ -315,7 +317,11 @@ async function standaloneDoc({ print = false } = {}) {
   const title = (lastDoc.match(/<title>([^<]*)<\/title>/) || [, 'Lexdoc'])[1];
   const bar = `<div class="lex-viewer-bar" data-file="${docName()}"><span class="t">${title}</span>`
     + `<select aria-label="Style"><option value="site">Site style</option><option value="statute">Statute style</option><option value="lexdoc">Original style</option></select>`
-    + `<button type="button" data-act="theme">Dark</button><button type="button" data-act="print">Print / PDF</button><button type="button" data-act="download">Download</button></div>`;
+    + `<button type="button" data-act="theme" title="Dark" aria-label="Dark"><svg class="moon" viewBox="0 0 16 16" aria-hidden="true"><path d="M13.5 9.8A5.8 5.8 0 0 1 6.2 2.5a5.8 5.8 0 1 0 7.3 7.3z"/></svg>`
+    + `<svg class="sun" viewBox="0 0 16 16" aria-hidden="true"><circle cx="8" cy="8" r="3"/><path d="M8 1v1.6M8 13.4V15M1 8h1.6M13.4 8H15M3 3l1.1 1.1M11.9 11.9 13 13M3 13l1.1-1.1M11.9 4.1 13 3"/></svg></button>`
+    + `<button type="button" data-act="print" title="Print"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M4 6V1.5h8V6M4 12H2V6h12v6h-2M4 9.5h8v5H4z"/></svg><span>Print</span></button>`
+    + `<button type="button" data-act="pdf" title="Save as PDF (in the print dialog, choose Save as PDF)"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M9.5 1.5H3.5v13h9v-10zM9.5 1.5v3h3"/><path d="M5.5 9.5h5M5.5 12h3.5" /></svg><span>PDF</span></button>`
+    + `<button type="button" data-act="download" title="Download as HTML"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 1.5v9M4.5 7 8 10.5 11.5 7M2 12.5V14.5h12v-2"/></svg><span>HTML</span></button></div>`;
   return withTheme(lastDoc, ` data-style="${$('docstyle').value}"${print ? ' data-print' : ''}`)
     .replace(BOOTSTRAP, () => p.bootstrap)
     .replace(JQUERY, () => p.jquery)

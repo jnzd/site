@@ -1,5 +1,5 @@
-// The bar on top of the full-size Lexdoc page: style, light/dark (site
-// style), print and download. Every style sheet is in the page, as
+// The bar on top of the full-size Lexdoc page: style, light/dark, print,
+// PDF (the print dialog's Save as PDF) and download. Every style sheet is in the page, as
 // <style data-style="…">; the chosen one is switched on by its media.
 (() => {
   const root = document.documentElement;
@@ -11,15 +11,16 @@
   function apply() {
     const s = pick.value;
     for (const el of sheets) el.media = el.dataset.style === s || el.dataset.style.split(' ').includes(s) ? 'all' : 'not all';
-    themeBtn.hidden = s !== 'site';
-    themeBtn.textContent = dark() ? 'Light' : 'Dark';
-    if (s === 'site' && dark()) root.setAttribute('data-viewer-dark', ''); else root.removeAttribute('data-viewer-dark');
+    themeBtn.title = dark() ? 'Light' : 'Dark';
+    themeBtn.setAttribute('aria-label', themeBtn.title);
+    if (dark()) root.setAttribute('data-viewer-dark', ''); else root.removeAttribute('data-viewer-dark');
     root.dataset.style = s;
   }
   pick.value = root.dataset.style || 'site';
   pick.onchange = apply;
   themeBtn.onclick = () => { root.dataset.theme = dark() ? 'light' : 'dark'; apply(); };
   bar.querySelector('[data-act="print"]').onclick = () => print();
+  bar.querySelector('[data-act="pdf"]').onclick = () => print();
   bar.querySelector('[data-act="download"]').onclick = () =>
     lexSaveHtml('<!DOCTYPE html>\n' + root.outerHTML, bar.dataset.file || 'lexdoc.html');
   apply();

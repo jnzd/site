@@ -16,7 +16,7 @@
 <script src="theme.js" defer></script>
 </head>
 <body>
-<script>/* phone layout prototype, set before the first paint (see playground.js) */document.body.classList.add("layout-"+({tabs:1,sheet:1}[new URLSearchParams(location.search).get("layout")]?new URLSearchParams(location.search).get("layout"):"scroll"))</script>
+<script>/* phone layout prototype (see playground.js), set before the first paint */(function(){var l=new URLSearchParams(location.search).get("layout"),c=document.body.classList;if(["tabs","flow","top","two"].indexOf(l)<0)l="scroll";c.add("layout-"+l);if(l!=="scroll")c.add("layout-tabbed");if(l==="flow"||l==="top"||l==="two")c.add("flow")})()</script>
 <nav class="site-nav" aria-label="Site"><a class="site-name" href="https://degelo.dev/">degelo.dev</a><span class="crumb">Lex playground</span></nav>
 
 <header class="intro">
@@ -92,10 +92,8 @@
   </div>
 </section>
 
-<div id="sheet-backdrop" class="sheet-backdrop"></div>
-
 <footer class="site-footer">
-  <span class="proto">Phone layout prototype: <a href="?layout=scroll">Scroll</a> · <a href="?layout=tabs">Tabs</a> · <a href="?layout=sheet">Sheet</a></span>
+  <span class="proto">Phone layout prototype: <a href="?layout=scroll">Scroll</a> · <a href="?layout=tabs">Tabs</a> · <a href="?layout=flow">Flow</a> · <a href="?layout=top">Top</a> · <a href="?layout=two">Two</a></span>
   <span><a href="https://github.com/francois-hublet/lex">Lex source</a>, compiled for the browser with js_of_ocaml and wasm_of_ocaml</span>
   <span class="shortcut"><kbd class="mod">Ctrl</kbd>&thinsp;+&thinsp;<kbd>Enter</kbd> runs</span>
 </footer>

@@ -213,42 +213,63 @@ body.running .button.primary::before {
 @media (max-width: 860px) { .pane.editor #run { display: none; } }
 
 .site-footer .proto a.here { color: var(--accent); text-decoration-color: var(--accent); }
-.sheet-backdrop { display: none; }
 @media (max-width: 860px) {
   /* Tabs: one section at a time, the bar at the bottom. */
-  body.layout-tabs .off-view { display: none !important; }
-  body.layout-tabs .jump {
+  body.layout-tabbed .off-view { display: none !important; }
+  body.layout-tabbed .jump {
     position: fixed; top: auto; bottom: 0; left: 0; right: 0;
     border-bottom: 0; border-top: 1px solid var(--line);
     padding-bottom: calc(.45rem + env(safe-area-inset-bottom));
   }
-  body.layout-tabs { padding-bottom: calc(3.4rem + env(safe-area-inset-bottom)); }
-  body.layout-tabs .workbench { padding-top: .75rem; }
-  body.layout-tabs #output-pane .frame { height: calc(100dvh - 13rem); }
-  body.layout-tabs .lexdoc-section { padding-top: 1rem; }
-  body.layout-tabs .lexdoc-section .frame { height: calc(100dvh - 9rem); }
-  body.layout-tabs:not(:has(#source-pane:not(.off-view))) .intro { display: none; }
+  body.layout-tabbed { padding-bottom: calc(3.4rem + env(safe-area-inset-bottom)); }
+  body.layout-tabbed .workbench { padding-top: .75rem; }
+  body.layout-tabbed #output-pane .frame { height: calc(100dvh - 13rem); }
+  body.layout-tabbed .lexdoc-section { padding-top: 1rem; }
+  body.layout-tabbed .lexdoc-section .frame { height: calc(100dvh - 9rem); }
+  body.layout-tabbed:not(:has(#source-pane:not(.off-view))) .intro { display: none; }
+}
 
-  /* Sheet: the output is a panel that peeks from the bottom and slides up. */
-  body.layout-sheet { padding-bottom: calc(4rem + env(safe-area-inset-bottom)); }
-  body.layout-sheet #output-pane {
-    position: fixed; left: 0; right: 0; bottom: 0; z-index: 20; height: 84dvh;
-    padding: .45rem 1rem calc(.8rem + env(safe-area-inset-bottom));
-    background: var(--bg); border-top: 1px solid var(--line); border-radius: 16px 16px 0 0;
-    box-shadow: 0 -10px 30px rgb(0 0 0 / .25);
-    transform: translateY(calc(100% - 3.7rem - env(safe-area-inset-bottom))); transition: transform .3s ease;
+@media (max-width: 860px) {
+  /* Flow (flow, top, two): no box scrolls inside the page. The panes run
+     edge to edge and grow with their content; only the editor scrolls
+     sideways for long lines. */
+  body.flow .workbench, body.flow .lexdoc-section { padding-left: 0; padding-right: 0; }
+  body.flow .pane > .bar, body.flow #warnings, body.flow details { margin-left: 1rem; margin-right: 1rem; }
+  body.flow .frame { border-radius: 0; }
+  body.flow .pane .frame, body.flow #output-pane .frame, body.flow .lexdoc-section .frame { height: auto !important; min-height: 0; flex: none; }
+  body.flow .source { flex: none; }
+  body.flow #source .cm-editor { height: auto !important; min-height: 50dvh; }
+  body.flow #source .cm-scroller { overflow-y: visible; overflow-x: auto; }
+  body.flow pre#output, body.flow .trace { overflow: visible; flex: none; }
+  body.flow #output-pane .frame { min-height: 40dvh; }
+  body.flow #doc { flex: none; min-height: 60dvh; }
+  body.flow .workbench { gap: 0; }
+
+  /* Top: the tabs sit under the site bar; Run is a round button. */
+  body.layout-top .jump {
+    position: sticky; top: 0; bottom: auto; border-top: 0; border-bottom: 1px solid var(--line);
+    padding: 0 .5rem; gap: 0;
+    /* no backdrop filter: it would make the bar the box the fixed Run sits in */
+    -webkit-backdrop-filter: none; backdrop-filter: none; background: var(--bg);
   }
-  body.layout-sheet.sheet-open #output-pane { transform: none; }
-  body.layout-sheet #output-pane::before {
-    content: ""; display: block; flex: none; width: 2.6rem; height: 4px; margin: 0 auto .4rem;
-    border-radius: 2px; background: var(--faint);
+  body.layout-top { padding-bottom: 0; }
+  body.layout-top .jump a { flex: 1; text-align: center; border-radius: 0; padding: .8rem .5rem .7rem; border-bottom: 2px solid transparent; }
+  body.layout-top .jump a.current { background: none; border-bottom-color: var(--accent); }
+  body.layout-top .jump .jump-state { top: .6rem; right: calc(50% - 2.6rem); }
+  body.layout-top #run-mini {
+    position: fixed; right: 1.1rem; bottom: calc(1.1rem + env(safe-area-inset-bottom)); z-index: 12;
+    width: 3.6rem; height: 3.6rem; border-radius: 50%; padding: 0; justify-content: center; font-size: 0;
+    box-shadow: 0 6px 18px rgb(0 0 0 / .3);
   }
-  body.layout-sheet #output-pane > .bar { cursor: pointer; }
-  body.layout-sheet #output-pane .frame { height: auto; flex: 1; }
-  body.layout-sheet .sheet-backdrop {
-    display: block; position: fixed; inset: 0; z-index: 15; background: rgb(0 0 0 / .35);
-    opacity: 0; pointer-events: none; transition: opacity .3s;
-  }
-  body.layout-sheet.sheet-open .sheet-backdrop { opacity: 1; pointer-events: auto; }
-  body.layout-sheet.sheet-open { overflow: hidden; }
+  body.layout-top #run-mini .icon { width: 1.3rem; height: 1.3rem; margin: 0; }
+  body.layout-top.running #run-mini::before { width: 1.3rem; height: 1.3rem; margin: 0; }
+  body.layout-top .site-footer { padding-bottom: 5.5rem; }
+
+  /* Two: Source and Result; Lexdoc is one of Result's file tabs. */
+  body.layout-two .jump a[data-for="lexdoc"] { display: none; }
+  body.layout-two:not([data-outtab="lexdoc"]) #lexdoc { display: none !important; }
+  body.layout-two[data-outtab="lexdoc"] #output-pane details { display: none; }
+  body.layout-two[data-outtab="lexdoc"] #output-pane .frame { min-height: 0; }
+  body.layout-two #lexdoc .pane-title { display: none; }
+  body.layout-two .lexdoc-section { padding-top: 0; }
 }

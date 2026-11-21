@@ -214,6 +214,7 @@ function renderOutput(r) {
   outFiles = split
     ? [{ id: 'sig', name: base + '.sig', text: split.sig }, { id: 'mfotl', name: base + '.mfotl', text: split.mfotl }]
     : [{ id: 'errors', name: r.ok ? 'output' : 'errors', text: r.output.trim() }];
+  if (document.body.classList.contains('layout-two')) outFiles.push({ id: 'lexdoc', name: 'Lexdoc', text: '' });
   outFiles.push({ id: 'trace', name: 'trace', text: r.log.split('\n').filter((l) => l.trim() !== '' && !WARNING.test(l)).join('\n'), html: renderTrace(r) });
   if (!outFiles.some((f) => f.id === outTab)) outTab = outFiles[split ? 1 : 0].id;
   showOutTab(outTab);
@@ -230,7 +231,9 @@ function showOutTab(id) {
     b.onclick = () => showOutTab(x.id);
     return b;
   }));
-  $('out-tools').hidden = false;
+  $('out-tools').hidden = id === 'lexdoc';
+  document.body.dataset.outtab = id;
+  if (id === 'lexdoc') { $('output').hidden = true; $('trace').hidden = true; fitDoc(); return; }
   $('trace').hidden = id !== 'trace';
   $('output').hidden = id === 'trace';
   if (id === 'trace') { $('trace').innerHTML = f.html; return; }
@@ -428,7 +431,7 @@ $('run-mini').onclick = () => $('run').click();
 const jumpLinks = [...document.querySelectorAll('#jump a')];
 const inView = new Map();
 const sectionObserver = new IntersectionObserver((entries) => {
-  if (document.body.classList.contains('layout-tabs') && phone.matches) return;
+  if (document.body.classList.contains('layout-tabbed') && phone.matches) return;
   for (const e of entries) inView.set(e.target.id, e.isIntersecting ? e.intersectionRect.height : 0);
   const [best, seen] = [...inView].sort((x, y) => y[1] - x[1])[0] || [];
   for (const l of jumpLinks) l.classList.toggle('current', seen > 0 && l.dataset.for === best);
@@ -438,39 +441,54 @@ const sectionObserver = new IntersectionObserver((entries) => {
 for (const id of ['source-pane', 'output-pane', 'lexdoc']) sectionObserver.observe($(id));
 // On a phone the output is below the editor: bring it into view on Run, so
 // the progress shows, and wait for the scroll before Lex blocks the page.
-// Phone layouts, prototypes for now (?layout=…, links in the footer):
+// Phone layouts, prototypes for now (?layout=…, links in the footer; the
+// classes are set by a script at the top of <body>, before the first paint):
 //   scroll  panes stacked, the section bar on top jumps between them
-//   tabs    one section at a time, the section bar at the bottom like an app
-//   sheet   the editor fills the screen, the output slides up from below
-const layout = ['scroll', 'tabs', 'sheet'].includes(new URLSearchParams(location.search).get('layout'))
-  ? new URLSearchParams(location.search).get('layout') : 'scroll';
+//   tabs    one section at a time, bar at the bottom, panes as boxes
+//   flow    as tabs, but each tab scrolls with the page: no boxes in boxes
+//   top     as flow, tabs on top, Run as a round button at the bottom
+//   two     as flow, two tabs: Source and Result (files and Lexdoc as tabs)
+const LAYOUTS = ['scroll', 'tabs', 'flow', 'top', 'two'];
+const layout = LAYOUTS.find((l) => document.body.classList.contains('layout-' + l)) || 'scroll';
+const tabbed = layout !== 'scroll';
+const flow = document.body.classList.contains('flow');
 for (const a of document.querySelectorAll('.proto a')) if (a.search === '?layout=' + layout) a.classList.add('here');
 const SECTIONS = ['source-pane', 'output-pane', 'lexdoc'];
+// What each tab shows. In "two", Result holds both (Lexdoc is a file tab).
+const VIEW = layout === 'two' ? { 'source-pane': ['source-pane'], 'output-pane': ['output-pane', 'lexdoc'] } : null;
 function setView(id) {
-  for (const s of SECTIONS) $(s).classList.toggle('off-view', s !== id);
+  const show = VIEW ? VIEW[id] : [id];
+  for (const s of SECTIONS) $(s).classList.toggle('off-view', !show.includes(s));
   for (const l of jumpLinks) l.classList.toggle('current', l.dataset.for === id);
   for (const l of jumpLinks) if (l.dataset.for === id) l.classList.remove('fresh');
   scrollTo(0, 0);
+  requestAnimationFrame(fitDoc);
 }
-const setSheet = (open) => document.body.classList.toggle('sheet-open', open);
-if (layout === 'tabs') setView('source-pane');
+if (layout === 'two') document.querySelector('#jump a[data-for="output-pane"]').firstChild.textContent = 'Result';
+if (tabbed) setView('source-pane');
 for (const l of jumpLinks) l.addEventListener('click', (e) => {
-  if (!phone.matches) return;
-  if (layout === 'tabs') { e.preventDefault(); setView(l.dataset.for); }
-  else if (layout === 'sheet' && l.dataset.for === 'output-pane') { e.preventDefault(); setSheet(!document.body.classList.contains('sheet-open')); }
-  else if (layout === 'sheet') setSheet(false);
+  if (phone.matches && tabbed) { e.preventDefault(); setView(l.dataset.for); }
 });
-$('sheet-backdrop').onclick = () => setSheet(false);
-document.querySelector('#output-pane > .bar').addEventListener('click', (e) => {
-  if (layout === 'sheet' && phone.matches && !e.target.closest('input, label, button, select')) setSheet(!document.body.classList.contains('sheet-open'));
+
+// In the flow layouts the Lexdoc frame takes the height of its document, so
+// the page scrolls rather than a box inside it.
+function fitDoc() {
+  const f = $('doc');
+  if (!(flow && phone.matches)) { f.style.height = ''; return; }
+  const d = f.contentDocument;
+  if (d && d.documentElement) f.style.height = d.documentElement.scrollHeight + 'px';
+}
+$('doc').addEventListener('load', () => {
+  fitDoc();
+  try { new ResizeObserver(fitDoc).observe($('doc').contentDocument.body); } catch {}
 });
+phone.addEventListener('change', fitDoc);
 
 // On a phone the output is out of sight when Run is pressed: bring it into
 // view, so the progress shows, before Lex blocks the page.
 async function showOutputPane() {
   if (!phone.matches) return;
-  if (layout === 'tabs') { setView('output-pane'); return; }
-  if (layout === 'sheet') { setSheet(true); await new Promise((r) => setTimeout(r, 320)); return; }
+  if (tabbed) { setView('output-pane'); return; }
   const pane = $('output-pane'), top = pane.getBoundingClientRect().top;
   if (top >= 0 && top < innerHeight / 3) return;
   pane.scrollIntoView({ behavior: 'smooth', block: 'start' });

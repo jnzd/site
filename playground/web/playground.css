@@ -239,7 +239,10 @@ body.running .button.primary::before {
   body.flow .pane .frame, body.flow #output-pane .frame, body.flow .lexdoc-section .frame { height: auto !important; min-height: 0; flex: none; }
   body.flow .source { flex: none; }
   body.flow #source .cm-editor { height: auto !important; min-height: 50dvh; }
-  body.flow #source .cm-scroller { overflow-y: visible; overflow-x: auto; }
+  /* The editor only scrolls sideways here; a vertical swipe on it must move
+     the page, so no overscroll-behavior: none (that stops the hand-off). */
+  body.flow #source .cm-scroller { overflow-y: visible; overflow-x: auto; overscroll-behavior: auto; overscroll-behavior-x: none; touch-action: pan-x pan-y; }
+  body.flow pre#output, body.flow .trace, body.flow .tabs { overscroll-behavior: auto; }
   body.flow pre#output, body.flow .trace { overflow: visible; flex: none; }
   body.flow #output-pane .frame { min-height: 40dvh; }
   body.flow #doc { flex: none; min-height: 60dvh; }

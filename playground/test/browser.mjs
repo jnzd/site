@@ -44,11 +44,10 @@ try {
     if (!status.startsWith('Done')) failed++;
     if (/^(g = |\{p = |Signature:)/m.test(out)) { console.log('  FAIL: the .mfotl tab shows more than the formula'); failed++; }
     const tabs = await page.$$eval('#out-tabs button', (bs) => bs.map((b) => b.textContent));
-    if (tabs.length !== 3 || !tabs[0].endsWith('.sig') || !tabs[1].endsWith('.mfotl')) { console.log('  FAIL: output tabs are', tabs); failed++; }
+    if (tabs.length !== 2 || !tabs[0].endsWith('.sig') || !tabs[1].endsWith('.mfotl')) { console.log('  FAIL: output tabs are', tabs); failed++; }
     await page.click('#out-tabs button:nth-child(1)');
     if (/LET|Formula/.test(await page.textContent('#output'))) { console.log('  FAIL: the .sig tab shows the formula'); failed++; }
-    await page.click('#out-tabs button:nth-child(3)');
-    console.log('  trace:', await page.$$eval('#trace .trace-def', (s) => s.length), 'blocks');
+    console.log('  debug output:', (await page.textContent('#lexlog-text')).split('\n').length, 'lines');
     await page.click('#out-tabs button:nth-child(2)');
     await page.screenshot({ path: `screenshot-${examples.indexOf(ex)}.png` });
   }

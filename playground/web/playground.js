@@ -161,11 +161,11 @@ async function runLex(mode, main, files) {
   }
 }
 
-// ---- MFOTL output: one tab per file, plus Lex's own trace ------------------
+// ---- MFOTL output: one tab per file -----------------------------------------
 // Lex writes the signature and the formula as two files (lex -o name gives
 // name.sig and name.mfotl); the playground shows them as two tabs. Warnings go
 // in their own strip above. Everything else Lex prints while compiling is
-// in the "trace" tab, laid out by renderTrace.
+// in "Lex's debug output", collapsed under the output.
 const WARNING = /^Warning\b/;
 let lastResult = null, outFiles = [], outTab = null;
 const esc = (s) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;');
@@ -185,61 +185,6 @@ function splitOutput(text) {
   return m ? { sig: m[1], mfotl: m[2] } : null;
 }
 
-// Splits "a, f(b, c), d" at the commas outside brackets.
-function splitTop(s) {
-  const out = []; let depth = 0, from = 0;
-  for (let i = 0; i < s.length; i++) {
-    const c = s[i];
-    if ('([{'.includes(c)) depth++;
-    else if (')]}'.includes(c)) depth--;
-    else if (c === ',' && depth === 0) { out.push(s.slice(from, i).trim()); from = i + 1; }
-  }
-  if (s.slice(from).trim()) out.push(s.slice(from).trim());
-  return out;
-}
-
-// For each predicate a rule defines, the compiler prints three lines
-// (Compiler.compile_let_rule):
-//   g = Head(x:sort, ...)                   the predicate
-//   {p = <pattern>; fs = [f1, f2, ...]}     its temporal pattern and conditions
-//   -> f1 ∧ f2 ∧ ...                        the formula that defines it
-// and at the end the whole formula, still with each variable's sort.
-function parseTrace(log, ok) {
-  const lines = log.split('\n').filter((l) => l.trim() !== '' && !WARNING.test(l));
-  const defs = [], other = [];
-  let d = null, formula = null;
-  for (const l of lines) {
-    let m;
-    if ((m = l.match(/^g = (.*)$/))) defs.push(d = { head: m[1], pattern: '', parts: [], body: '' });
-    else if (d && (m = l.match(/^\{p = (.*?); fs = \[(.*)\]\}$/))) { d.pattern = m[1].trim(); d.parts = splitTop(m[2]); }
-    else if (d && (m = l.match(/^-> (.*)$/))) { d.body = m[1]; d = null; }
-    else other.push(l);
-  }
-  // Compiler.compile prints the formula last.
-  if (ok && other.length) formula = other.pop();
-  return { defs, formula, other };
-}
-
-function renderTrace(r) {
-  const { defs, formula, other } = parseTrace(r.log, r.ok);
-  const parts = [];
-  if (!defs.length && !formula && !other.length) {
-    parts.push('<p class="trace-intro">Lex printed nothing else for this program.</p>');
-  } else {
-    parts.push('<p class="trace-intro">What Lex prints while it compiles. Each predicate that a rule defines, with the conditions it combines and the formula it becomes; '
-      + 'then the whole formula with the sort of each variable (in the .mfotl file every sort is <code>int</code>).</p>');
-  }
-  for (const d of defs) {
-    parts.push(`<section class="trace-def"><h3>${hl(d.head)}</h3><dl>`
-      + (d.pattern ? `<dt>Pattern</dt><dd>${hl(d.pattern)}</dd>` : '')
-      + `<dt>Conditions</dt><dd><ol>${d.parts.map((p) => `<li>${hl(p)}</li>`).join('')}</ol></dd>`
-      + `<dt>Defined as</dt><dd>${hl(d.body)}</dd></dl></section>`);
-  }
-  if (formula) parts.push(`<section class="trace-def"><h3>Formula, with sorts</h3><div class="trace-formula">${hl(formula)}</div></section>`);
-  if (other.length) parts.push(`<section class="trace-def"><h3>Other output</h3><pre>${esc(other.join('\n'))}</pre></section>`);
-  return parts.join('');
-}
-
 function renderOutput(r) {
   const base = (main || 'lex').split('/').pop().replace(/\.\w+$/, '');
   const split = r.ok ? splitOutput(r.output) : null;
@@ -247,7 +192,6 @@ function renderOutput(r) {
     ? [{ id: 'sig', name: base + '.sig', text: split.sig }, { id: 'mfotl', name: base + '.mfotl', text: split.mfotl }]
     : [{ id: 'errors', name: r.ok ? 'output' : 'errors', text: r.output.trim() }];
   if (document.body.classList.contains('layout-two')) outFiles.push({ id: 'lexdoc', name: 'Lexdoc', text: '' });
-  outFiles.push({ id: 'trace', name: 'trace', text: r.log.split('\n').filter((l) => l.trim() !== '' && !WARNING.test(l)).join('\n'), html: renderTrace(r) });
   if (!outFiles.some((f) => f.id === outTab)) outTab = outFiles[split ? 1 : 0].id;
   showOutTab(outTab);
   renderStackOut();
@@ -433,6 +377,10 @@ function showResult(r, d) {
   renderOutput(r);
   showDoc();
   $('smt').hidden = n === 0;
+  // What else Lex printed while compiling (its compiler's debug lines).
+  const debug = r.log.split('\n').filter((l) => l.trim() !== '' && !WARNING.test(l)).join('\n');
+  $('lexlog').hidden = !debug;
+  $('lexlog-text').textContent = debug;
   $('smt-list').replaceChildren(...r.smt.map(([s, a], i) => {
     const p = document.createElement('pre');
     p.textContent = `; query ${i + 1}: Z3 answered ${a}` +
@@ -465,6 +413,7 @@ $('run').onclick = async () => {
     $('status').className = 'status bad';
     status(String(e));
     lastResult = null;
+    $('lexlog').hidden = true;
     renderOutput({ ok: false, output: String(e), log: '', smt: [] });
   }
 };

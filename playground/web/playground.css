@@ -249,24 +249,24 @@ body.running .button.primary::before {
   body.flow .workbench { gap: 0; }
 
   /* Top: the tabs sit under the site bar; Run is a round button. */
-  body.layout-top .jump {
+  body.toptabs .jump {
     position: sticky; top: 0; bottom: auto; border-top: 0; border-bottom: 1px solid var(--line);
     padding: 0 .5rem; gap: 0;
     /* no backdrop filter: it would make the bar the box the fixed Run sits in */
     -webkit-backdrop-filter: none; backdrop-filter: none; background: var(--bg);
   }
-  body.layout-top { padding-bottom: 0; }
-  body.layout-top .jump a { flex: 1; text-align: center; border-radius: 0; padding: .8rem .5rem .7rem; border-bottom: 2px solid transparent; }
-  body.layout-top .jump a.current { background: none; border-bottom-color: var(--accent); }
-  body.layout-top .jump .jump-state { top: .6rem; right: calc(50% - 2.6rem); }
-  body.layout-top #run-mini {
+  body.toptabs, body.layout-strip { padding-bottom: 0; }
+  body.toptabs .jump a { flex: 1; text-align: center; border-radius: 0; padding: .8rem .5rem .7rem; border-bottom: 2px solid transparent; }
+  body.toptabs .jump a.current { background: none; border-bottom-color: var(--accent); }
+  body.toptabs .jump .jump-state { top: .6rem; right: calc(50% - 2.6rem); }
+  body.fab #run-mini {
     position: fixed; right: 1.1rem; bottom: calc(1.1rem + env(safe-area-inset-bottom)); z-index: 12;
     width: 3.6rem; height: 3.6rem; border-radius: 50%; padding: 0; justify-content: center; font-size: 0;
     box-shadow: 0 6px 18px rgb(0 0 0 / .3);
   }
-  body.layout-top #run-mini .icon { width: 1.3rem; height: 1.3rem; margin: 0; }
-  body.layout-top.running #run-mini::before { width: 1.3rem; height: 1.3rem; margin: 0; }
-  body.layout-top .site-footer { padding-bottom: 5.5rem; }
+  body.fab #run-mini .icon { width: 1.3rem; height: 1.3rem; margin: 0; }
+  body.fab.running #run-mini::before { width: 1.3rem; height: 1.3rem; margin: 0; }
+  body.fab .site-footer { padding-bottom: 5.5rem; }
 
   /* Two: Source and Result; Lexdoc is one of Result's file tabs. */
   body.layout-two .jump a[data-for="lexdoc"] { display: none; }
@@ -275,4 +275,34 @@ body.running .button.primary::before {
   body.layout-two[data-outtab="lexdoc"] #output-pane .frame { min-height: 0; }
   body.layout-two #lexdoc .pane-title { display: none; }
   body.layout-two .lexdoc-section { padding-top: 0; }
+}
+
+.strip, .file-pick { display: none; }
+@media (max-width: 860px) {
+  /* Strip: no section tabs; one row of every file, sources then outputs. */
+  body.layout-strip .jump { position: static; padding: 0; border: 0; background: none; height: 0; -webkit-backdrop-filter: none; backdrop-filter: none; }
+  body.layout-strip .jump a { display: none; }
+  body.layout-strip .strip {
+    display: flex; align-items: stretch; gap: 0; position: sticky; top: 0; z-index: 10; overflow-x: auto;
+    background: var(--bg); border-bottom: 1px solid var(--line); padding: 0 .5rem; scrollbar-width: none;
+  }
+  body.layout-strip .strip::-webkit-scrollbar { display: none; }
+  .strip button {
+    position: relative; font: .76rem var(--mono); color: var(--muted); background: none; border: 0; white-space: nowrap;
+    border-bottom: 2px solid transparent; padding: .85rem .75rem .7rem; cursor: pointer;
+  }
+  .strip button.active { color: var(--strong); border-bottom-color: var(--accent); }
+  .strip button.out { color: var(--faint); }
+  .strip button.out.active { color: var(--strong); }
+  .strip .sep { flex: none; width: 1px; margin: .7rem .35rem; background: var(--line); }
+  .strip .run-state { display: inline-block; width: .5rem; height: .5rem; margin-left: .35rem; border-radius: 50%; vertical-align: .05rem; }
+  body.running .strip .run-state { border: 1.5px solid var(--line); border-top-color: var(--accent); animation: lex-spin .8s linear infinite; }
+  body.layout-strip #tabs, body.layout-strip #out-tabs, body.layout-strip #lexdoc .tabs { display: none; }
+  body.layout-strip .tabs-row { justify-content: flex-end; min-height: 2.2rem; }
+
+  /* Picker: section tabs on top; inside a section, files are a menu. */
+  body.layout-picker #tabs, body.layout-picker #out-tabs { display: none; }
+  body.layout-picker .file-pick {
+    display: block; margin: .35rem auto .35rem .6rem; font: .76rem var(--mono); padding: .25rem 1.7rem .25rem .7rem;
+  }
 }

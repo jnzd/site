@@ -41,6 +41,10 @@ function showTab(name) {
     b.onclick = () => showTab(f);
     return b;
   }));
+  if (typeof renderStrip === 'function') {
+    renderStrip();
+    renderPicker($('tabs').parentNode, Object.keys(files).filter((f) => !f.endsWith('.xml')).map((f) => [f, f.split('/').pop() + (f === main ? '  (main)' : '')]), name, showTab);
+  }
 }
 
 // ---- Z3, loaded on the first query --------------------------------------
@@ -231,6 +235,8 @@ function showOutTab(id) {
     b.onclick = () => showOutTab(x.id);
     return b;
   }));
+  renderStrip();
+  renderPicker($('out-tabs').parentNode, outFiles.map((x) => [x.id, x.name]), id, showOutTab);
   $('out-tools').hidden = id === 'lexdoc';
   document.body.dataset.outtab = id;
   if (id === 'lexdoc') { $('output').hidden = true; $('trace').hidden = true; fitDoc(); return; }
@@ -448,7 +454,9 @@ for (const id of ['source-pane', 'output-pane', 'lexdoc']) sectionObserver.obser
 //   flow    as tabs, but each tab scrolls with the page: no boxes in boxes
 //   top     as flow, tabs on top, Run as a round button at the bottom
 //   two     as flow, two tabs: Source and Result (files and Lexdoc as tabs)
-const LAYOUTS = ['scroll', 'tabs', 'flow', 'top', 'two'];
+//   strip   as flow, no section tabs: one row with every file, in and out
+//   picker  as top, but a section's files are a menu instead of tabs
+const LAYOUTS = ['scroll', 'tabs', 'flow', 'top', 'two', 'strip', 'picker'];
 const layout = LAYOUTS.find((l) => document.body.classList.contains('layout-' + l)) || 'scroll';
 const tabbed = layout !== 'scroll';
 const flow = document.body.classList.contains('flow');
@@ -456,13 +464,45 @@ for (const a of document.querySelectorAll('.proto a')) if (a.search === '?layout
 const SECTIONS = ['source-pane', 'output-pane', 'lexdoc'];
 // What each tab shows. In "two", Result holds both (Lexdoc is a file tab).
 const VIEW = layout === 'two' ? { 'source-pane': ['source-pane'], 'output-pane': ['output-pane', 'lexdoc'] } : null;
+let currentView = 'source-pane';
 function setView(id) {
+  currentView = id;
   const show = VIEW ? VIEW[id] : [id];
   for (const s of SECTIONS) $(s).classList.toggle('off-view', !show.includes(s));
   for (const l of jumpLinks) l.classList.toggle('current', l.dataset.for === id);
   for (const l of jumpLinks) if (l.dataset.for === id) l.classList.remove('fresh');
   scrollTo(0, 0);
   requestAnimationFrame(fitDoc);
+  renderStrip();
+}
+// The strip: every file in one row; picking one shows its section.
+function renderStrip() {
+  if (!document.body.classList.contains('layout-strip')) return;
+  const btn = (label, active, cls, onclick) => {
+    const b = document.createElement('button');
+    b.textContent = label; b.className = (active ? 'active ' : '') + cls; b.onclick = onclick;
+    return b;
+  };
+  const items = Object.keys(files).filter((f) => !f.endsWith('.xml')).map((f) =>
+    btn(f.split('/').pop(), currentView === 'source-pane' && f === current, 'in', () => { setView('source-pane'); showTab(f); }));
+  items.push(Object.assign(document.createElement('span'), { className: 'sep' }));
+  const outs = outFiles.length ? outFiles.filter((x) => x.id !== 'lexdoc') : [{ id: null, name: 'output' }];
+  for (const x of outs) {
+    const b = btn(x.name, currentView === 'output-pane' && (x.id === outTab || !x.id), 'out', () => { setView('output-pane'); if (x.id) showOutTab(x.id); });
+    if (x === outs[0]) b.append(Object.assign(document.createElement('span'), { className: 'run-state' }));
+    items.push(b);
+  }
+  items.push(btn('Lexdoc', currentView === 'lexdoc', 'out', () => setView('lexdoc')));
+  $('strip').replaceChildren(...items);
+  $('strip').querySelector('.active')?.scrollIntoView({ inline: 'nearest', block: 'nearest' });
+}
+// The picker: a menu of a section's files, in place of its tabs.
+function renderPicker(row, entries, active, onpick) {
+  if (!document.body.classList.contains('layout-picker')) return;
+  let sel = row.querySelector('.file-pick');
+  if (!sel) { sel = document.createElement('select'); sel.className = 'file-pick'; sel.setAttribute('aria-label', 'File'); row.prepend(sel); }
+  sel.replaceChildren(...entries.map(([v, label]) => new Option(label, v, false, v === active)));
+  sel.onchange = () => onpick(sel.value);
 }
 if (layout === 'two') document.querySelector('#jump a[data-for="output-pane"]').firstChild.textContent = 'Result';
 if (tabbed) setView('source-pane');

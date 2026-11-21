@@ -20,7 +20,7 @@ async function run(page, example, mode = 'mfotl') {
   await page.selectOption('#example', example);
   await page.click('#run');
   await page.waitForFunction(() => /^(Done|Errors)/.test(document.getElementById('status').textContent), null, { timeout: 120000 });
-  await page.click(mode === 'doc' ? '#view-doc' : '#view-mfotl');
+  if (mode === 'doc') await page.locator('#lexdoc').scrollIntoViewIfNeeded();
   await page.waitForTimeout(300);
 }
 const desktop = { viewport: { width: 1440, height: 900 }, deviceScaleFactor: 2 };

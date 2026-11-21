@@ -3,12 +3,10 @@
    work as on the rest of the site. */
 * { box-sizing: border-box; }
 [hidden] { display: none !important; }
-html, body { height: 100%; }
 body {
   margin: 0; background: var(--bg); color: var(--text);
   font: 400 1rem/1.6 var(--sans);
   -webkit-font-smoothing: antialiased;
-  display: flex; flex-direction: column;
 }
 a { color: var(--accent); text-decoration: none; }
 a:hover { text-decoration: underline; text-underline-offset: .2em; }
@@ -38,7 +36,8 @@ kbd { border: 1px solid var(--line); border-bottom-width: 2px; border-radius: 4p
 
 /* ---- Editor and output side by side ---- */
 .workbench {
-  flex: 1 0 34rem; min-height: 0;
+  /* Editor and MFOTL fill most of the window; Lexdoc follows below. */
+  height: max(34rem, calc(100vh - 6rem)); height: max(34rem, calc(100dvh - 6rem));
   display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 1.25rem;
   padding: 1rem 1.5rem 1.25rem;
 }
@@ -123,16 +122,21 @@ details pre { font: .72rem/1.5 var(--mono); background: var(--panel); border-rad
 .tok-str { color: var(--tok-str); }
 .tok-com { color: var(--tok-com); }
 
-.site-footer {
-  flex: none; border-top: 1px solid var(--line); padding: .9rem 1.5rem;
+.site-footer { border-top: 1px solid var(--line); padding: .9rem 1.5rem;
   display: flex; flex-wrap: wrap; gap: .3rem 2rem; justify-content: space-between;
   font-size: .75rem; color: var(--muted);
 }
 .site-footer a { color: inherit; text-decoration: underline; text-decoration-color: var(--faint); text-underline-offset: .2em; }
 .site-footer a:hover { color: var(--accent); }
 
+.pane-title { font: .75rem var(--mono); color: var(--strong); padding: .5rem .9rem .4rem; border-bottom: 2px solid var(--accent); white-space: nowrap; }
+.lexdoc-section { padding: 0 1.5rem 1.5rem; }
+.lexdoc-section .frame { height: max(30rem, calc(100vh - 5rem)); height: max(30rem, calc(100dvh - 5rem)); }
+.doc-empty { margin: 0; padding: 1.25rem 1rem; color: var(--muted); font-size: .85rem; }
+.doc-tools { margin-left: auto; }
 @media (max-width: 860px) {
-  .workbench { grid-template-columns: minmax(0, 1fr); flex: none; }
-  .frame { height: 26rem; flex: none; }
+  .workbench { grid-template-columns: minmax(0, 1fr); height: auto; }
+  .pane .frame { height: 75vh; height: 75dvh; flex: none; }
+  .lexdoc-section .frame { height: 80vh; height: 80dvh; }
   .button.primary { margin-left: 0; }
 }

@@ -239,29 +239,18 @@ $('doc-download').onclick = async () => {
   setTimeout(() => URL.revokeObjectURL(a.href), 60000);
 };
 
-// ---- Output: MFOTL and Lexdoc, both from every run --------------------------
-let view = 'mfotl';
-try { if (localStorage.getItem('lex-view') === 'doc') view = 'doc'; } catch {}
-function setView(v) {
-  view = v;
-  try { localStorage.setItem('lex-view', v); } catch {}
-  for (const [id, on] of [['view-mfotl', v === 'mfotl'], ['view-doc', v === 'doc']]) {
-    $(id).classList.toggle('active', on);
-    $(id).setAttribute('aria-selected', String(on));
-  }
-  const docShown = v === 'doc' && lastDoc !== null;
-  $('doc-tools').hidden = !docShown;
-  $('doc').hidden = !docShown;
-  $('output').hidden = docShown;
-  if (!lastResult) return;
-  if (v === 'doc' && lastDocResult && !lastDocResult.ok) {
-    // Lexdoc can fail where MFOTL works (Lex's Lexdoc does not handle every refinement).
-    $('output').innerHTML = `<span class="note">Lex could not build Lexdoc for this program.</span>\n\n${esc(lastDocResult.output.trim())}`;
-  } else if (!docShown) renderOutput(lastResult);
-}
-$('view-mfotl').onclick = () => setView('mfotl');
-$('view-doc').onclick = () => setView('doc');
+// ---- Output: MFOTL next to the editor, Lexdoc in its own section below ------
 let lastDocResult = null;
+function showDoc() {
+  const ok = lastDoc !== null;
+  $('doc').hidden = !ok;
+  $('doc-tools').hidden = !ok;
+  $('doc-empty').hidden = ok;
+  if (lastDocResult && !lastDocResult.ok)
+    // Lexdoc can fail where MFOTL works (Lex's Lexdoc does not handle every refinement).
+    $('doc-empty').textContent = 'Lex could not build Lexdoc for this program: ' + lastDocResult.output.trim().replace(/^Uncaught exception:\s*/, '');
+  else if (!ok && lastResult) $('doc-empty').textContent = 'No Lexdoc: fix the errors above first.';
+}
 
 function showResult(r, d) {
   lastResult = r;
@@ -274,7 +263,8 @@ function showResult(r, d) {
   $('status').className = 'status ' + (r.ok ? 'ok' : 'bad');
   status(`${r.ok ? 'Done' : 'Errors'} in ${Math.round(performance.now() - runStart)} ms` +
          (n ? `, ${n} Z3 ${n === 1 ? 'query' : 'queries'}` : '') + (r.passes > 1 ? `, ${r.passes} passes` : ''));
-  setView(view);
+  renderOutput(r);
+  showDoc();
   $('smt').hidden = n === 0;
   $('smt-list').replaceChildren(...r.smt.map(([s, a], i) => {
     const p = document.createElement('pre');
@@ -284,7 +274,7 @@ function showResult(r, d) {
   }));
 }
 
-$('debug').onchange = () => { if (lastResult) setView(view); };
+$('debug').onchange = () => { if (lastResult) renderOutput(lastResult); };
 
 $('run').onclick = async () => {
   if (typeof self.lexRun !== 'function') return;

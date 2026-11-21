@@ -29,6 +29,10 @@ const style = readFileSync(path.join(theme, 'style.css'), 'utf8');
 writeFileSync(path.join(dist, 'theme.css'), style.slice(0, style.indexOf('\n* {')) + '\n');
 cpSync(path.join(theme, 'theme.js'), path.join(dist, 'theme.js'));
 mkdirSync(path.join(dist, 'fonts'));
+// Bootstrap and jQuery for Lexdoc pages, served locally instead of from a CDN.
+mkdirSync(path.join(dist, 'vendor'));
+cpSync(path.join(nm, 'bootstrap/dist/css/bootstrap.min.css'), path.join(dist, 'vendor/bootstrap.min.css'));
+cpSync(path.join(nm, 'jquery/dist/jquery.min.js'), path.join(dist, 'vendor/jquery.min.js'));
 for (const [pkg, files] of [['ibm-plex-sans', ['400-normal', '400-italic', '600-normal', '600-italic']], ['ibm-plex-mono', ['400-normal']]])
   for (const f of files) cpSync(path.join(nm, '@fontsource', pkg, 'files', `${pkg}-latin-${f}.woff2`), path.join(dist, 'fonts', `${pkg}-latin-${f}.woff2`));
 await build({

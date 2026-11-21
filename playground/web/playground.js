@@ -152,19 +152,27 @@ function renderOutput(r) {
 }
 
 // Lexdoc styles: extra style sheets laid over Lex's own (see web/lexdoc/).
-// The page's base URL also applies inside the srcdoc frame, so relative links work.
+// base.css (layout fixes) and print.css (paper) apply to every style.
+// Bootstrap and jQuery, which Lexdoc pages load from a CDN, come from the
+// playground itself (vendor/), so nothing depends on a third-party server.
 const DOC_STYLES = { lexdoc: [], site: ['theme.css', 'lexdoc/site.css'], statute: ['lexdoc/statute.css'] };
 const DOC_BACKGROUND = { lexdoc: 'white', site: 'var(--panel)', statute: '#fbfaf6' };
+const BOOTSTRAP = /<link href="https:\/\/cdn\.jsdelivr\.net\/npm\/bootstrap@[^"]*"[^>]*>/;
+const JQUERY = /<script src="https:\/\/cdn\.jsdelivr\.net\/npm\/jquery@[^"]*"><\/script>/;
 let lastDoc = null;
 try { const s = localStorage.getItem('lexdoc-style'); if (s in DOC_STYLES) $('docstyle').value = s; } catch {}
+const withTheme = (html, extra = '') => {
+  const theme = document.documentElement.dataset.theme;
+  return html.replace('<html lang="en">', `<html lang="en"${theme ? ` data-theme="${theme}"` : ''}${extra}>`);
+};
 function renderDoc() {
   if (lastDoc === null) return;
   const style = $('docstyle').value;
-  const theme = document.documentElement.dataset.theme;
-  const links = ['lexdoc/base.css', ...DOC_STYLES[style]].map((h) => `<link rel="stylesheet" href="${h}">`).join('');
+  const links = ['lexdoc/base.css', ...DOC_STYLES[style], 'lexdoc/print.css'].map((h) => `<link rel="stylesheet" href="${h}">`).join('');
   $('doc').style.background = DOC_BACKGROUND[style];
-  $('doc').srcdoc = lastDoc
-    .replace('<html lang="en">', `<html lang="en"${theme ? ` data-theme="${theme}"` : ''}>`)
+  $('doc').srcdoc = withTheme(lastDoc)
+    .replace(BOOTSTRAP, '<link rel="stylesheet" href="vendor/bootstrap.min.css">')
+    .replace(JQUERY, '<script src="vendor/jquery.min.js"></script>')
     .replace('</head>', links + '</head>');
 }
 $('docstyle').onchange = () => {
@@ -174,27 +182,44 @@ $('docstyle').onchange = () => {
 // The site style follows the light/dark toggle.
 new MutationObserver(() => { if ($('docstyle').value === 'site') renderDoc(); })
   .observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
+
 // ---- Lexdoc full-size, print and download --------------------------------
-// A standalone copy of the Lexdoc page: the style sheets inlined, and for the
-// site style its fonts as data URLs, so the file works anywhere.
-async function standaloneDoc({ print = false } = {}) {
-  const style = $('docstyle').value;
-  const theme = document.documentElement.dataset.theme;
-  let css = '';
-  for (const h of ['lexdoc/base.css', ...DOC_STYLES[style]]) {
-    let text = await (await fetch(h)).text();
-    for (const [m, f] of [...text.matchAll(/url\((fonts\/[^)]+\.woff2)\)/g)]) {
-      const b = new Uint8Array(await (await fetch(f)).arrayBuffer());
-      let bin = ''; for (let i = 0; i < b.length; i += 0x8000) bin += String.fromCharCode(...b.subarray(i, i + 0x8000));
-      text = text.replace(m, `url(data:font/woff2;base64,${btoa(bin)})`);
-    }
-    css += text + '\n';
+// One self-contained page: every style (switchable from a bar on top),
+// Bootstrap, jQuery and the site fonts inlined, so it also works as a
+// downloaded file, offline.
+const fetchText = async (u) => (await fetch(u)).text();
+async function inlineFonts(css) {
+  for (const [m, f] of [...css.matchAll(/url\((fonts\/[^)]+\.woff2)\)/g)]) {
+    const b = new Uint8Array(await (await fetch(f)).arrayBuffer());
+    let bin = ''; for (let i = 0; i < b.length; i += 0x8000) bin += String.fromCharCode(...b.subarray(i, i + 0x8000));
+    css = css.replace(m, `url(data:font/woff2;base64,${btoa(bin)})`);
   }
-  const page = { lexdoc: '', site: 'body.container{max-width:64rem}', statute: '' }[style];
-  return lastDoc
-    .replace('<html lang="en">', `<html lang="en"${theme ? ` data-theme="${theme}"` : ''}>`)
-    .replace('</head>', `<style>${css}${page}</style>` +
-      (print ? '<script>addEventListener("load", () => setTimeout(print, 400))<\/script>' : '') + '</head>');
+  return css;
+}
+let standaloneParts = null;
+async function standaloneDoc({ print = false } = {}) {
+  standaloneParts ||= (async () => {
+    const styleTag = async (name, files) => `<style data-style="${name}">${(await Promise.all(files.map(async (f) => inlineFonts(await fetchText(f))))).join('\n')}</style>`;
+    return {
+      bootstrap: `<style>${await fetchText('vendor/bootstrap.min.css')}</style>`,
+      jquery: `<script>${(await fetchText('vendor/jquery.min.js')).replace(/<\/script/gi, '<\\/script')}</script>`,
+      styles: `<style>${await fetchText('lexdoc/base.css')}</style>`
+        + (await Promise.all(Object.entries(DOC_STYLES).map(([k, fs]) => styleTag(k, fs)))).join('')
+        + `<style>${await fetchText('lexdoc/print.css')}</style><style>${await fetchText('lexdoc/viewer.css')}</style>`,
+      viewer: `<script>${await fetchText('lexdoc/viewer.js')}</script>`,
+    };
+  })();
+  const p = await standaloneParts;
+  const title = (lastDoc.match(/<title>([^<]*)<\/title>/) || [, 'Lexdoc'])[1];
+  const bar = `<div class="lex-viewer-bar" data-file="${docName()}"><span class="t">${title}</span>`
+    + `<select aria-label="Style"><option value="site">Site style</option><option value="statute">Statute style</option><option value="lexdoc">Original style</option></select>`
+    + `<button type="button" data-act="theme">Dark</button><button type="button" data-act="print">Print / PDF</button><button type="button" data-act="download">Download</button></div>`;
+  return withTheme(lastDoc, ` data-style="${$('docstyle').value}"${print ? ' data-print' : ''}`)
+    .replace(BOOTSTRAP, () => p.bootstrap)
+    .replace(JQUERY, () => p.jquery)
+    .replace('</head>', () => p.styles + '</head>')
+    .replace(/(<body[^>]*>)/, (m) => m + bar)
+    .replace(/<\/html>\s*$/, () => p.viewer + '</html>');
 }
 const docName = () => (main || 'lex').split('/').pop().replace(/\.\w+$/, '') + '-lexdoc.html';
 async function openDoc(print) {

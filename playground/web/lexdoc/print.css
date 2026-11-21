@@ -1,0 +1,28 @@
+/* Printing (and saving as PDF), for every Lexdoc style: black on white paper,
+   no coloured panels, text sized in points, the page's own margins, and no
+   statement or reading split across two pages. */
+@page { size: auto; margin: 16mm 15mm 18mm; }
+@media print {
+  :root {
+    --bg: #fff !important; --panel: #fff !important; --text: #111 !important; --strong: #000 !important;
+    --muted: #555 !important; --faint: #999 !important; --line: #ccc !important; --accent: #b3300b !important;
+    --tok-kw: #8a1a57 !important; --tok-op: #1c6b2a !important; --tok-str: #5f2496 !important;
+    --tok-com: #555 !important; --tok-fn: #1a3f9e !important;
+    color-scheme: light;
+  }
+  html, body { background: #fff !important; color: #111 !important; }
+  body.container { max-width: none !important; width: auto !important; margin: 0 !important; padding: 0 !important; font-size: 10.5pt !important; line-height: 1.45 !important; }
+  .lex-viewer-bar { display: none !important; }
+  .lex-reading.card { background: none !important; border: 0 !important; border-left: 1.5pt solid #bbb !important; border-radius: 0 !important; }
+  .lex-reading .card-header, .lex-reading .card-body, .lex-reading .list-group-item { background: none !important; }
+  .title-row { background: none !important; }
+  .lex-stmt, .lex-reading, .lex-stmt .row { break-inside: avoid; page-break-inside: avoid; }
+  .title-row, .lex-stmt-section { break-after: avoid; page-break-after: avoid; }
+  .lex-stmt-section-law { font-size: 20pt !important; }
+  .lex-stmt-section-title, .lex-stmt-section-chapter { font-size: 15pt !important; }
+  .lex-stmt-section-section { font-size: 13pt !important; }
+  .lex-stmt-section-article { font-size: 11.5pt !important; }
+  .lex-subformula-active, .lex-subformula-reading-active { background: none !important; border-color: transparent !important; }
+  a { color: inherit !important; text-decoration: none !important; }
+  .badge { border: 0.75pt solid #999 !important; background: none !important; }
+}

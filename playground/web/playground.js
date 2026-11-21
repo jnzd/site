@@ -199,15 +199,25 @@ function renderOutput(r) {
 }
 // Stack: every output file one after another, each under its name with its
 // own copy and download buttons.
+// Folded output files, kept across runs (by id: sig, mfotl, errors).
+const stackFolded = new Set();
 function renderStackOut() {
   if (!document.body.classList.contains('layout-stack')) return;
   $('stack-out').replaceChildren(...outFiles.filter((f) => f.id !== 'lexdoc').map((f) => {
     const sec = document.createElement('section');
     sec.className = 'stack-file';
-    sec.innerHTML = `<h3 class="stack-head"><span></span><button class="icon-button" title="Copy" aria-label="Copy"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M5.5 5.5h8v8h-8zM10.5 5.5v-3h-8v8h3"/></svg></button>`
+    sec.innerHTML = `<h3 class="stack-head"><button class="fold" aria-expanded="true"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M6 3.5 10.5 8 6 12.5"/></svg><span></span></button><button class="icon-button" title="Copy" aria-label="Copy"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M5.5 5.5h8v8h-8zM10.5 5.5v-3h-8v8h3"/></svg></button>`
       + `<button class="icon-button" title="Download" aria-label="Download"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 1.5v9M4.5 7 8 10.5 11.5 7M2 12.5V14.5h12v-2"/></svg></button></h3>`;
     sec.querySelector('span').textContent = f.name;
-    const [copy, dl] = sec.querySelectorAll('button');
+    const [fold, copy, dl] = sec.querySelectorAll('button');
+    const setFold = (folded) => {
+      sec.classList.toggle('folded', folded);
+      fold.setAttribute('aria-expanded', String(!folded));
+      fold.title = (folded ? 'Expand ' : 'Collapse ') + f.name;
+      if (folded) stackFolded.add(f.id); else stackFolded.delete(f.id);
+    };
+    setFold(stackFolded.has(f.id));
+    fold.onclick = () => setFold(!sec.classList.contains('folded'));
     copy.onclick = async () => { try { await navigator.clipboard.writeText(f.text); flash(copy, 'Copied'); } catch { flash(copy, 'Copy failed'); } };
     dl.onclick = () => lexSaveHtml(f.text + '\n', f.id === 'trace' || f.id === 'errors' ? f.name + '.txt' : f.name, 'text/plain');
     if (f.id === 'trace') sec.insertAdjacentHTML('beforeend', `<div class="trace">${f.html}</div>`);

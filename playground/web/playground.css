@@ -319,10 +319,15 @@ body.running .button.primary::before {
   .stack-file + .stack-file { border-top: 1px solid var(--line); }
   .stack-head {
     position: sticky; top: 2.85rem; z-index: 5; display: flex; align-items: center; gap: .2rem; margin: 0;
-    padding: .55rem .5rem .55rem 1rem; font: 600 .76rem var(--mono); color: var(--strong);
+    padding: .55rem .5rem .55rem .7rem; font: 600 .76rem var(--mono); color: var(--strong);
     background: color-mix(in srgb, var(--panel) 92%, var(--text) 8%); border-bottom: 1px solid var(--line);
   }
   .stack-head > span:first-child { margin-right: auto; }
+  .stack-head .fold { all: unset; cursor: pointer; display: flex; align-items: center; gap: .35rem; margin-right: auto; min-height: 2rem; -webkit-tap-highlight-color: transparent; }
+  .stack-head .fold:focus-visible { outline: 2px solid var(--accent, currentColor); outline-offset: 2px; border-radius: 4px; }
+  .stack-head .fold svg { width: .9rem; height: .9rem; fill: none; stroke: currentColor; stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; color: var(--faint); transform: rotate(90deg); transition: transform .15s; }
+  .stack-file.folded .fold svg { transform: none; }
+  .stack-file.folded > :not(.stack-head) { display: none; }
   .stack-head .main { color: var(--faint); font-weight: 400; margin-left: .4em; margin-right: auto; }
   .stack-ed .cm-editor { height: auto !important; }
   .stack-ed .cm-scroller { overflow-y: visible; overflow-x: auto; overscroll-behavior: auto; overscroll-behavior-x: none; }

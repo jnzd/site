@@ -18,16 +18,44 @@ $('vim').checked = vimOn;
 $('vim').onchange = () => {
   try { localStorage.setItem('lex-vim', $('vim').checked ? '1' : '0'); } catch {}
   editor.setVim($('vim').checked);
+  for (const ed of stackEditors.values()) ed.setVim($('vim').checked);
 };
 
+const stackMode = () => document.body.classList.contains('layout-stack') && matchMedia('(max-width: 860px)').matches;
+let stackEditors = new Map();
 function setFiles(ex) {
   files = { ...ex.files };
   main = ex.main;
   editor.reset();
   showTab(main);
+  buildStack();
+}
+// Stack: one editor per source file, main first, each under its name.
+function buildStack() {
+  if (!document.body.classList.contains('layout-stack')) return;
+  const box = $('stack-src');
+  box.replaceChildren();
+  stackEditors = new Map();
+  const names = Object.keys(files).filter((f) => !f.endsWith('.xml')).sort((a, b) => (b === main) - (a === main));
+  for (const f of names) {
+    const sec = document.createElement('section');
+    sec.className = 'stack-file';
+    sec.innerHTML = `<h3 class="stack-head"></h3><div class="stack-ed"></div>`;
+    sec.firstChild.textContent = f.split('/').pop();
+    if (f === main) sec.firstChild.append(Object.assign(document.createElement('span'), { className: 'main', textContent: 'main' }));
+    box.append(sec);
+    const ed = LexEditor.createEditor(sec.lastChild, () => $('run').click(), { vimMode: $('vim').checked });
+    ed.show(f, files[f]);
+    stackEditors.set(f, ed);
+  }
+}
+// The files as the editors have them.
+function syncFiles() {
+  if (stackMode()) for (const [f, ed] of stackEditors) files[f] = ed.value;
+  else files[current] = editor.value;
 }
 function showTab(name) {
-  if (current) files[current] = editor.value;
+  if (current && !stackMode()) files[current] = editor.value;
   current = name;
   editor.show(name, files[name]);
   // Large legal-text sources (formex / Akoma Ntoso XML) are sent along but not shown.
@@ -222,13 +250,38 @@ function renderOutput(r) {
   outFiles.push({ id: 'trace', name: 'trace', text: r.log.split('\n').filter((l) => l.trim() !== '' && !WARNING.test(l)).join('\n'), html: renderTrace(r) });
   if (!outFiles.some((f) => f.id === outTab)) outTab = outFiles[split ? 1 : 0].id;
   showOutTab(outTab);
+  renderStackOut();
+}
+// Stack: every output file one after another, each under its name with its
+// own copy and download buttons.
+function renderStackOut() {
+  if (!document.body.classList.contains('layout-stack')) return;
+  $('stack-out').replaceChildren(...outFiles.filter((f) => f.id !== 'lexdoc').map((f) => {
+    const sec = document.createElement('section');
+    sec.className = 'stack-file';
+    sec.innerHTML = `<h3 class="stack-head"><span></span><button class="icon-button" title="Copy" aria-label="Copy"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M5.5 5.5h8v8h-8zM10.5 5.5v-3h-8v8h3"/></svg></button>`
+      + `<button class="icon-button" title="Download" aria-label="Download"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 1.5v9M4.5 7 8 10.5 11.5 7M2 12.5V14.5h12v-2"/></svg></button></h3>`;
+    sec.querySelector('span').textContent = f.name;
+    const [copy, dl] = sec.querySelectorAll('button');
+    copy.onclick = async () => { try { await navigator.clipboard.writeText(f.text); flash(copy, 'Copied'); } catch { flash(copy, 'Copy failed'); } };
+    dl.onclick = () => lexSaveHtml(f.text + '\n', f.id === 'trace' || f.id === 'errors' ? f.name + '.txt' : f.name, 'text/plain');
+    if (f.id === 'trace') sec.insertAdjacentHTML('beforeend', `<div class="trace">${f.html}</div>`);
+    else {
+      const pre = document.createElement('pre');
+      pre.className = 'stack-pre' + (f.id === 'errors' ? ' error' : '');
+      pre.innerHTML = f.id === 'errors' ? esc(f.text) : hl(f.text);
+      sec.append(pre);
+    }
+    return sec;
+  }));
 }
 function showOutTab(id) {
   outTab = id;
   const f = outFiles.find((x) => x.id === id);
   $('out-tabs').replaceChildren(...outFiles.map((x) => {
     const b = document.createElement('button');
-    b.textContent = x.name;
+    b.textContent = document.body.classList.contains('layout-chips') && /\.(sig|mfotl)$/.test(x.name) ? x.name.replace(/^.*\./, '.') : x.name;
+    b.title = x.name;
     b.className = x.id === id ? 'active' : '';
     b.setAttribute('role', 'tab');
     b.setAttribute('aria-selected', String(x.id === id));
@@ -390,7 +443,7 @@ function showResult(r, d) {
 
 $('run').onclick = async () => {
   if (typeof self.lexRun !== 'function') return;
-  files[current] = editor.value;
+  syncFiles();
   $('run').disabled = true;
   $('status').className = 'status running';
   document.body.classList.add('running');
@@ -456,7 +509,10 @@ for (const id of ['source-pane', 'output-pane', 'lexdoc']) sectionObserver.obser
 //   two     as flow, two tabs: Source and Result (files and Lexdoc as tabs)
 //   strip   as flow, no section tabs: one row with every file, in and out
 //   picker  as top, but a section's files are a menu instead of tabs
-const LAYOUTS = ['scroll', 'tabs', 'flow', 'top', 'two', 'strip', 'picker'];
+//   stack   as top, no file tabs: a section's files one after another, each
+//           under its name (an editor per source file)
+//   chips   as top, a section's files as a small switch of fixed size
+const LAYOUTS = ['scroll', 'tabs', 'flow', 'top', 'two', 'strip', 'picker', 'stack', 'chips'];
 const layout = LAYOUTS.find((l) => document.body.classList.contains('layout-' + l)) || 'scroll';
 const tabbed = layout !== 'scroll';
 const flow = document.body.classList.contains('flow');

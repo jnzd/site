@@ -16,7 +16,7 @@
 <script src="theme.js" defer></script>
 </head>
 <body>
-<script>/* phone layout prototype (see playground.js), set before the first paint */(function(){var l=new URLSearchParams(location.search).get("layout"),c=document.body.classList,all=["tabs","flow","top","two","strip","picker"];if(all.indexOf(l)<0)l="scroll";c.add("layout-"+l);if(l!=="scroll")c.add("layout-tabbed");if(l!=="scroll"&&l!=="tabs")c.add("flow");if(l==="top"||l==="strip"||l==="picker")c.add("fab");if(l==="top"||l==="picker")c.add("toptabs")})()</script>
+<script>/* phone layout prototype (see playground.js), set before the first paint */(function(){var l=new URLSearchParams(location.search).get("layout"),c=document.body.classList,all=["tabs","flow","top","two","strip","picker","stack","chips"];if(all.indexOf(l)<0)l="scroll";c.add("layout-"+l);if(l!=="scroll")c.add("layout-tabbed");if(l!=="scroll"&&l!=="tabs")c.add("flow");if(["top","strip","picker","stack","chips"].indexOf(l)>=0)c.add("fab");if(["top","picker","stack","chips"].indexOf(l)>=0)c.add("toptabs")})()</script>
 <nav class="site-nav" aria-label="Site"><a class="site-name" href="https://degelo.dev/">degelo.dev</a><span class="crumb">Lex playground</span></nav>
 
 <header class="intro">
@@ -51,6 +51,7 @@
       <div class="tabs-row"><div class="tabs" id="tabs" role="tablist"></div>
         <label class="vim-toggle" title="Vim key bindings (:w runs Lex)"><input type="checkbox" id="vim"> Vim</label></div>
       <div id="source" class="source"></div>
+      <div id="stack-src" class="stack" hidden></div>
     </div>
   </section>
   <section class="pane output" id="output-pane">
@@ -70,6 +71,7 @@
         </div></div>
       <pre id="output"></pre>
       <div id="trace" class="trace" hidden></div>
+      <div id="stack-out" class="stack" hidden></div>
     </div>
     <details id="smt" hidden><summary>SMT-LIB queries sent to Z3</summary><div id="smt-list"></div></details>
   </section>
@@ -95,7 +97,7 @@
 </section>
 
 <footer class="site-footer">
-  <span class="proto">Phone layout prototype: <a href="?layout=scroll">Scroll</a> · <a href="?layout=tabs">Tabs</a> · <a href="?layout=flow">Flow</a> · <a href="?layout=top">Top</a> · <a href="?layout=two">Two</a> · <a href="?layout=strip">Strip</a> · <a href="?layout=picker">Picker</a></span>
+  <span class="proto">Phone layout prototype: <a href="?layout=scroll">Scroll</a> · <a href="?layout=tabs">Tabs</a> · <a href="?layout=flow">Flow</a> · <a href="?layout=top">Top</a> · <a href="?layout=two">Two</a> · <a href="?layout=strip">Strip</a> · <a href="?layout=picker">Picker</a> · <a href="?layout=stack">Stack</a> · <a href="?layout=chips">Chips</a></span>
   <span><a href="https://github.com/francois-hublet/lex">Lex source</a>, compiled for the browser with js_of_ocaml and wasm_of_ocaml</span>
   <span class="shortcut"><kbd class="mod">Ctrl</kbd>&thinsp;+&thinsp;<kbd>Enter</kbd> runs</span>
 </footer>

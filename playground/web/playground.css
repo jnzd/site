@@ -235,7 +235,7 @@ body.running .button.primary::before {
      sideways for long lines. */
   body.flow .workbench, body.flow .lexdoc-section { padding-left: 0; padding-right: 0; }
   body.flow .pane > .bar, body.flow #warnings, body.flow details { margin-left: 1rem; margin-right: 1rem; }
-  body.flow .frame { border-radius: 0; }
+  body.flow .frame { border-radius: 0; overflow: visible; } /* visible, so sticky headers inside can stick */
   body.flow .pane .frame, body.flow #output-pane .frame, body.flow .lexdoc-section .frame { height: auto !important; min-height: 0; flex: none; }
   body.flow .source { flex: none; }
   body.flow #source .cm-editor { height: auto !important; min-height: 50dvh; }
@@ -305,4 +305,39 @@ body.running .button.primary::before {
   body.layout-picker .file-pick {
     display: block; margin: .35rem auto .35rem .6rem; font: .76rem var(--mono); padding: .25rem 1.7rem .25rem .7rem;
   }
+}
+
+.stack[hidden] { display: none; }
+@media (max-width: 860px) {
+  /* Stack: no file tabs. Each section lists its files one after another,
+     each under a header that sticks below the section tabs. */
+  body.layout-stack #tabs, body.layout-stack #out-tabs, body.layout-stack #source,
+  body.layout-stack pre#output, body.layout-stack #trace, body.layout-stack #out-tools { display: none !important; }
+  body.layout-stack .stack { display: block !important; }
+  body.layout-stack .tabs-row { justify-content: flex-end; }
+  body.layout-stack #output-pane .tabs-row { display: none; }
+  .stack-file + .stack-file { border-top: 1px solid var(--line); }
+  .stack-head {
+    position: sticky; top: 2.85rem; z-index: 5; display: flex; align-items: center; gap: .2rem; margin: 0;
+    padding: .55rem .5rem .55rem 1rem; font: 600 .76rem var(--mono); color: var(--strong);
+    background: color-mix(in srgb, var(--panel) 92%, var(--text) 8%); border-bottom: 1px solid var(--line);
+  }
+  .stack-head > span:first-child { margin-right: auto; }
+  .stack-head .main { color: var(--faint); font-weight: 400; margin-left: .4em; margin-right: auto; }
+  .stack-ed .cm-editor { height: auto !important; }
+  .stack-ed .cm-scroller { overflow-y: visible; overflow-x: auto; overscroll-behavior: auto; overscroll-behavior-x: none; }
+  .stack-pre { margin: 0; padding: .75rem 1rem; font: .8rem/1.55 var(--mono); white-space: pre-wrap; overflow-wrap: anywhere; }
+  .stack .trace { overflow: visible; }
+
+  /* Chips: a section's files as a small segmented switch of fixed size. */
+  body.layout-chips #tabs, body.layout-chips #out-tabs {
+    flex: 0 1 auto; margin: .4rem auto .4rem .6rem; padding: 2px; gap: 2px; border-radius: 999px;
+    background: color-mix(in srgb, var(--text) 7%, transparent);
+  }
+  body.layout-chips #tabs button, body.layout-chips #out-tabs button {
+    border: 0; border-radius: 999px; padding: .28rem .7rem; font-size: .72rem; max-width: 9.5rem; overflow: hidden; text-overflow: ellipsis;
+  }
+  body.layout-chips #tabs button.active, body.layout-chips #out-tabs button.active { background: var(--bg); color: var(--strong); box-shadow: 0 1px 2px rgb(0 0 0 / .25); }
+  body.layout-chips #tabs button .main { display: none; }
+  body.layout-chips .tabs-row { border-bottom: 1px solid var(--line); align-items: center; }
 }

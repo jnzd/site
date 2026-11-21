@@ -20,13 +20,8 @@
   pick.onchange = apply;
   themeBtn.onclick = () => { root.dataset.theme = dark() ? 'light' : 'dark'; apply(); };
   bar.querySelector('[data-act="print"]').onclick = () => print();
-  bar.querySelector('[data-act="download"]').onclick = () => {
-    const a = document.createElement('a');
-    a.href = URL.createObjectURL(new Blob(['<!DOCTYPE html>\n' + root.outerHTML], { type: 'text/html' }));
-    a.download = bar.dataset.file || 'lexdoc.html';
-    a.click();
-    setTimeout(() => URL.revokeObjectURL(a.href), 60000);
-  };
+  bar.querySelector('[data-act="download"]').onclick = () =>
+    lexSaveHtml('<!DOCTYPE html>\n' + root.outerHTML, bar.dataset.file || 'lexdoc.html');
   apply();
   if (root.hasAttribute('data-print')) { root.removeAttribute('data-print'); addEventListener('load', () => setTimeout(print, 400)); }
 })();

@@ -206,7 +206,7 @@ async function standaloneDoc({ print = false } = {}) {
       styles: `<style>${await fetchText('lexdoc/base.css')}</style>`
         + (await Promise.all(Object.entries(DOC_STYLES).map(([k, fs]) => styleTag(k, fs)))).join('')
         + `<style>${await fetchText('lexdoc/print.css')}</style><style>${await fetchText('lexdoc/viewer.css')}</style>`,
-      viewer: `<script>${await fetchText('lexdoc/viewer.js')}</script>`,
+      viewer: `<script>${await fetchText('lexdoc/save.js')}\n${await fetchText('lexdoc/viewer.js')}</script>`,
     };
   })();
   const p = await standaloneParts;
@@ -231,13 +231,7 @@ async function openDoc(print) {
 }
 $('doc-open').onclick = () => openDoc(false);
 $('doc-print').onclick = () => openDoc(true);
-$('doc-download').onclick = async () => {
-  const a = document.createElement('a');
-  a.href = URL.createObjectURL(new Blob([await standaloneDoc()], { type: 'text/html' }));
-  a.download = docName();
-  a.click();
-  setTimeout(() => URL.revokeObjectURL(a.href), 60000);
-};
+$('doc-download').onclick = async () => lexSaveHtml(await standaloneDoc(), docName());
 
 // ---- Output: MFOTL next to the editor, Lexdoc in its own section below ------
 let lastDocResult = null;

@@ -45,9 +45,10 @@ function showTab(name) {
 
 // ---- Z3, loaded on the first query --------------------------------------
 let z3 = null;
-const loadScript = (src) => new Promise((ok, err) => {
+const loaded = new Set();
+const loadScript = (src) => loaded.has(src) ? Promise.resolve() : new Promise((ok, err) => {
   const s = document.createElement('script');
-  s.src = src; s.onload = ok; s.onerror = () => err(new Error('cannot load ' + src));
+  s.src = src; s.onload = () => { loaded.add(src); ok(); }; s.onerror = () => { s.remove(); err(new Error('cannot load ' + src)); };
   document.head.append(s);
 });
 function loadZ3() {
@@ -62,6 +63,8 @@ function loadZ3() {
     console.log(`Z3 ready in ${Math.round(performance.now() - t)} ms`);
     return { Z3, ctx };
   })();
+  // A failed load (say, the network dropped) is tried again on the next run.
+  z3.catch(() => { z3 = null; });
   return z3;
 }
 async function solve(script) {
@@ -378,7 +381,14 @@ $('run').onclick = async () => {
     const d = r.ok ? await runLex('doc', main, files) : null;
     showResult(r, d);
   }
-  catch (e) { $('run').disabled = false; status(String(e)); }
+  catch (e) {
+    // Do not leave the previous program's output standing next to the error.
+    $('run').disabled = false;
+    $('status').className = 'status bad';
+    status(String(e));
+    lastResult = null;
+    renderOutput({ ok: false, output: String(e), log: '', smt: [] });
+  }
 };
 $('engine').onchange = () => loadLex($('engine').value);
 $('example').onchange = () => { current = null; setFiles(examples[$('example').value]); };

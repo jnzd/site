@@ -239,6 +239,7 @@ jobs:
         env:
           OCAMLRUNPARAM: b
         run: |
+          mkdir -p _build/default/bin/assets && cp -r assets/. _build/default/bin/assets/
           for f in example/tutorial/tutorial.lex evaluation/01_formalization/minitwit_gdpr.rex; do
             echo "=== $f"
             out=$(opam exec --switch native -- ./_build/default/bin/main.exe -mode doc -o /tmp/doc.html "$f" 2>&1) && code=0 || code=$?

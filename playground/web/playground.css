@@ -223,6 +223,8 @@ body.running .button.primary::before {
   }
   body.layout-tabbed { padding-bottom: calc(3.4rem + env(safe-area-inset-bottom)); }
   body.layout-tabbed .workbench { padding-top: .75rem; }
+  /* Lexdoc alone: the empty workbench would leave a gap above it. */
+  body.layout-tabbed .workbench:not(:has(> .pane:not(.off-view))) { display: none; }
   body.layout-tabbed #output-pane .frame { height: calc(100dvh - 13rem); }
   body.layout-tabbed .lexdoc-section { padding-top: 1rem; }
   body.layout-tabbed .lexdoc-section .frame { height: calc(100dvh - 9rem); }

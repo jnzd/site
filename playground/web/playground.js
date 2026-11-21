@@ -476,24 +476,32 @@ const SECTIONS = ['source-pane', 'output-pane', 'lexdoc'];
 // What each tab shows. In "two", Result holds both (Lexdoc is a file tab).
 const VIEW = layout === 'two' ? { 'source-pane': ['source-pane'], 'output-pane': ['output-pane', 'lexdoc'] } : null;
 let currentView = 'source-pane';
-// Each view keeps its own scroll position. Once the page has scrolled past
-// the title, switching views keeps it out of sight (the bar stays on top)
-// rather than jumping back to the top of the page.
+// Switching views never moves the bar on top: if it was stuck to the top of
+// the screen it stays there (and each view gets back its own scroll
+// position); otherwise the page scrolls so the bar keeps its place, also
+// when the title above it (shown with the source only) comes or goes.
 const viewScroll = {};
-const titleBottom = () => { const h = document.querySelector('header.intro'); return h ? h.offsetTop + h.offsetHeight : 0; };
+const topBar = () => [$('jump'), $('strip')].find((b) => b && b.offsetParent && getComputedStyle(b).position === 'sticky');
+// Where the bar would sit, unstuck, in page coordinates.
+function barHome(bar) {
+  let e = bar.previousElementSibling;
+  while (e && !e.offsetHeight) e = e.previousElementSibling;
+  return e ? e.getBoundingClientRect().bottom + scrollY : 0;
+}
 function setView(id) {
-  const pin0 = titleBottom(), y0 = scrollY;
+  const bar = topBar(), y0 = scrollY, home0 = bar ? barHome(bar) : 0;
   viewScroll[currentView] = y0;
   currentView = id;
   const show = VIEW ? VIEW[id] : [id];
   for (const s of SECTIONS) $(s).classList.toggle('off-view', !show.includes(s));
   for (const l of jumpLinks) l.classList.toggle('current', l.dataset.for === id);
   for (const l of jumpLinks) if (l.dataset.for === id) l.classList.remove('fresh');
-  // The title shows only with the source: when it comes back, scroll by its
-  // height, so the bar stays where it was.
-  const pin = titleBottom(), h = document.querySelector('header.intro');
-  if (pin0 === 0 && pin > 0) scrollTo(0, Math.max(y0 + h.offsetHeight, viewScroll[id] ?? 0)); // the bar stays put
-  else scrollTo(0, y0 >= pin0 ? Math.max(pin, viewScroll[id] ?? pin) : y0);
+  if (bar) {
+    const home = barHome(bar);
+    // Room to scroll the bar to the top even when this view is short.
+    document.body.style.minHeight = `${home + innerHeight}px`;
+    scrollTo(0, y0 >= home0 - 1 ? Math.max(home, viewScroll[id] ?? home) : y0 + home - home0);
+  } else scrollTo(0, 0);
   requestAnimationFrame(fitDoc);
   renderStrip();
 }

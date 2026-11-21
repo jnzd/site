@@ -233,3 +233,16 @@ jobs:
             echo "exit=$code, $(echo "$out" | wc -c) bytes of output"
           done
 
+
+      - name: Lexdoc of the examples (does native Lex build it?)
+        working-directory: lex
+        env:
+          OCAMLRUNPARAM: b
+        run: |
+          for f in example/tutorial/tutorial.lex evaluation/01_formalization/minitwit_gdpr.rex; do
+            echo "=== $f"
+            out=$(opam exec --switch native -- ./_build/default/bin/main.exe -mode doc -o /tmp/doc.html "$f" 2>&1) && code=0 || code=$?
+            echo "$out" | grep -vE "^(g = |\{p = |-> )" | tail -25
+            echo "exit=$code, html: $(wc -c < /tmp/doc.html 2>/dev/null || echo none) bytes"
+            rm -f /tmp/doc.html
+          done

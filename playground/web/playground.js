@@ -294,7 +294,8 @@ function renderDoc() {
   $('doc').srcdoc = withTheme(lastDoc)
     .replace(BOOTSTRAP, '<link rel="stylesheet" href="vendor/bootstrap.min.css">')
     .replace(JQUERY, '<script src="vendor/jquery.min.js"></script>')
-    .replace('</head>', links + '</head>');
+    .replace('</head>', links + '</head>')
+    .replace('</body>', '<script src="lexdoc/tap.js"></script></body>');
 }
 $('docstyle').onchange = () => {
   try { localStorage.setItem('lexdoc-style', $('docstyle').value); } catch {}
@@ -327,7 +328,7 @@ async function standaloneDoc({ print = false } = {}) {
       styles: `<style>${await fetchText('lexdoc/base.css')}</style>`
         + (await Promise.all(Object.entries(DOC_STYLES).map(([k, fs]) => styleTag(k, fs)))).join('')
         + `<style>${await fetchText('lexdoc/print.css')}</style><style>${await fetchText('lexdoc/viewer.css')}</style>`,
-      viewer: `<script>${await fetchText('lexdoc/save.js')}\n${await fetchText('lexdoc/viewer.js')}</script>`,
+      viewer: `<script>${await fetchText('lexdoc/save.js')}\n${await fetchText('lexdoc/viewer.js')}\n${await fetchText('lexdoc/tap.js')}</script>`,
     };
   })();
   const p = await standaloneParts;

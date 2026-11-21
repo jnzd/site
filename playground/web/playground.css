@@ -175,3 +175,80 @@ body.running #run { cursor: progress; }
   .status.running::before { animation-duration: 2.4s; }
   body.running .pane.output .frame::before { animation: none; width: 100%; opacity: .6; }
 }
+
+/* The Run button spins while Lex runs, wherever it is on screen. */
+body.running .button.primary .icon { display: none; }
+body.running .button.primary::before {
+  content: ""; width: .8em; height: .8em; margin-right: .4em; border-radius: 50%;
+  border: 2px solid color-mix(in srgb, currentColor 30%, transparent); border-top-color: currentColor;
+  animation: lex-spin .8s linear infinite;
+}
+
+/* ---- Phones: section bar ---- */
+.jump { display: none; }
+@media (max-width: 860px) {
+  .jump {
+    display: flex; align-items: center; gap: .25rem; position: sticky; top: 0; z-index: 10;
+    padding: .45rem 1rem; background: color-mix(in srgb, var(--bg) 88%, transparent);
+    -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px); border-bottom: 1px solid var(--line);
+  }
+  .jump a {
+    position: relative; font: .78rem var(--mono); color: var(--muted); padding: .35rem .7rem; border-radius: 999px;
+    text-decoration: none; white-space: nowrap;
+  }
+  .jump a:hover { text-decoration: none; color: var(--text); }
+  .jump a.current { color: var(--strong); background: var(--panel); }
+  .jump-state { position: absolute; top: .3rem; right: .25rem; width: .4rem; height: .4rem; border-radius: 50%; }
+  .jump a.fresh .jump-state { background: var(--accent); }
+  body.running .jump a[data-for="output-pane"] .jump-state {
+    top: .2rem; right: .1rem; width: .55rem; height: .55rem; background: none;
+    border: 1.5px solid var(--line); border-top-color: var(--accent); animation: lex-spin .8s linear infinite;
+  }
+  .jump .button.primary { margin-left: auto; padding: .3rem .85rem; font-size: .8rem; }
+  /* The editor's own Run stays; sections stop below the bar when jumped to. */
+  #source-pane, #output-pane, #lexdoc { scroll-margin-top: 3.4rem; }
+  .intro { padding-bottom: .25rem; }
+}
+/* On phones the section bar's Run is always in reach: one Run is enough. */
+@media (max-width: 860px) { .pane.editor #run { display: none; } }
+
+.site-footer .proto a.here { color: var(--accent); text-decoration-color: var(--accent); }
+.sheet-backdrop { display: none; }
+@media (max-width: 860px) {
+  /* Tabs: one section at a time, the bar at the bottom. */
+  body.layout-tabs .off-view { display: none !important; }
+  body.layout-tabs .jump {
+    position: fixed; top: auto; bottom: 0; left: 0; right: 0;
+    border-bottom: 0; border-top: 1px solid var(--line);
+    padding-bottom: calc(.45rem + env(safe-area-inset-bottom));
+  }
+  body.layout-tabs { padding-bottom: calc(3.4rem + env(safe-area-inset-bottom)); }
+  body.layout-tabs .workbench { padding-top: .75rem; }
+  body.layout-tabs #output-pane .frame { height: calc(100dvh - 13rem); }
+  body.layout-tabs .lexdoc-section { padding-top: 1rem; }
+  body.layout-tabs .lexdoc-section .frame { height: calc(100dvh - 9rem); }
+  body.layout-tabs:not(:has(#source-pane:not(.off-view))) .intro { display: none; }
+
+  /* Sheet: the output is a panel that peeks from the bottom and slides up. */
+  body.layout-sheet { padding-bottom: calc(4rem + env(safe-area-inset-bottom)); }
+  body.layout-sheet #output-pane {
+    position: fixed; left: 0; right: 0; bottom: 0; z-index: 20; height: 84dvh;
+    padding: .45rem 1rem calc(.8rem + env(safe-area-inset-bottom));
+    background: var(--bg); border-top: 1px solid var(--line); border-radius: 16px 16px 0 0;
+    box-shadow: 0 -10px 30px rgb(0 0 0 / .25);
+    transform: translateY(calc(100% - 3.7rem - env(safe-area-inset-bottom))); transition: transform .3s ease;
+  }
+  body.layout-sheet.sheet-open #output-pane { transform: none; }
+  body.layout-sheet #output-pane::before {
+    content: ""; display: block; flex: none; width: 2.6rem; height: 4px; margin: 0 auto .4rem;
+    border-radius: 2px; background: var(--faint);
+  }
+  body.layout-sheet #output-pane > .bar { cursor: pointer; }
+  body.layout-sheet #output-pane .frame { height: auto; flex: 1; }
+  body.layout-sheet .sheet-backdrop {
+    display: block; position: fixed; inset: 0; z-index: 15; background: rgb(0 0 0 / .35);
+    opacity: 0; pointer-events: none; transition: opacity .3s;
+  }
+  body.layout-sheet.sheet-open .sheet-backdrop { opacity: 1; pointer-events: auto; }
+  body.layout-sheet.sheet-open { overflow: hidden; }
+}

@@ -18,7 +18,7 @@ async function open(opts) {
 }
 async function run(page, example, mode = 'mfotl') {
   await page.selectOption('#example', example);
-  await page.click('#run');
+  await page.evaluate(() => document.getElementById('run').click());
   await page.waitForFunction(() => /^(Done|Errors)/.test(document.getElementById('status').textContent), null, { timeout: 120000 });
   if (mode === 'doc') await page.locator('#lexdoc').scrollIntoViewIfNeeded();
   await page.waitForTimeout(300);

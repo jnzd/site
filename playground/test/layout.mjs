@@ -25,7 +25,7 @@ let failed = 0;
       }
       return out;
     });
-    await p.click('#run');
+    await p.evaluate(() => document.getElementById('run').click());
     await p.waitForFunction(() => /^(Done|Errors)/.test(document.getElementById('status').textContent));
     let o = await pageOverlaps(); failed += o.length;
     console.log(name, 'mfotl: warnings', await p.$$eval('#warnings li', l => l.length), 'page overlaps', JSON.stringify(o));

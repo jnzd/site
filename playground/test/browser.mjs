@@ -29,7 +29,7 @@ try {
   for (const ex of examples) {
     await page.selectOption('#example', ex);
     const t = Date.now();
-    await page.click('#run');
+    await page.evaluate(() => document.getElementById('run').click());
     try {
       await page.waitForFunction(() => /^(Done|Errors)/.test(document.getElementById('status').textContent), null, { timeout: 120000 });
     } catch (e) {

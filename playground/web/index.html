@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Lex playground</title>
 <meta name="description" content="Write Lex, a language for legal rules, and compile it to temporal logic in your browser.">
 <!-- z3-solver uses threads, so it needs SharedArrayBuffer and thus COOP/COEP
@@ -16,6 +16,7 @@
 <script src="theme.js" defer></script>
 </head>
 <body>
+<script>/* phone layout prototype, set before the first paint (see playground.js) */document.body.classList.add("layout-"+({tabs:1,sheet:1}[new URLSearchParams(location.search).get("layout")]?new URLSearchParams(location.search).get("layout"):"scroll"))</script>
 <nav class="site-nav" aria-label="Site"><a class="site-name" href="https://degelo.dev/">degelo.dev</a><span class="crumb">Lex playground</span></nav>
 
 <header class="intro">
@@ -26,8 +27,18 @@
   one needs it (about 9&nbsp;MB).</p>
 </header>
 
+<!-- Phones: the panes stack, so a bar that stays on top jumps between them,
+     shows which one is in view, and keeps Run in reach. Hidden on wider screens. -->
+<nav class="jump" id="jump" aria-label="Sections">
+  <a href="#source-pane" data-for="source-pane">Source</a>
+  <a href="#output-pane" data-for="output-pane">Output<span class="jump-state" aria-hidden="true"></span></a>
+  <a href="#lexdoc" data-for="lexdoc">Lexdoc<span class="jump-state" aria-hidden="true"></span></a>
+  <button id="run-mini" class="button primary" disabled aria-label="Run">
+    <svg class="icon" viewBox="0 0 16 16" aria-hidden="true"><path d="M5 3.5v9l7-4.5z" fill="currentColor"/></svg>Run</button>
+</nav>
+
 <main class="workbench">
-  <section class="pane editor">
+  <section class="pane editor" id="source-pane">
     <div class="bar">
       <label class="field"><span>Example</span><select id="example"></select></label>
       <label class="field"><span>Engine</span><select id="engine"><option value="js">JavaScript</option><option value="wasm">WebAssembly</option></select></label>
@@ -40,7 +51,7 @@
       <div id="source" class="source"></div>
     </div>
   </section>
-  <section class="pane output">
+  <section class="pane output" id="output-pane">
     <div class="bar">
       <span id="status" class="status" role="status">Loading Lex…</span>
     </div>
@@ -81,7 +92,10 @@
   </div>
 </section>
 
+<div id="sheet-backdrop" class="sheet-backdrop"></div>
+
 <footer class="site-footer">
+  <span class="proto">Phone layout prototype: <a href="?layout=scroll">Scroll</a> · <a href="?layout=tabs">Tabs</a> · <a href="?layout=sheet">Sheet</a></span>
   <span><a href="https://github.com/francois-hublet/lex">Lex source</a>, compiled for the browser with js_of_ocaml and wasm_of_ocaml</span>
   <span class="shortcut"><kbd class="mod">Ctrl</kbd>&thinsp;+&thinsp;<kbd>Enter</kbd> runs</span>
 </footer>

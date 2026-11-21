@@ -352,6 +352,8 @@ function showResult(r, d) {
   lastResult = r;
   lastDocResult = d;
   document.body.classList.remove('running');
+  // On a phone, a dot on Output and Lexdoc in the section bar until seen.
+  for (const l of jumpLinks) if (!l.classList.contains('current') && l.dataset.for !== 'source-pane') l.classList.add('fresh');
   lastDoc = d && d.ok ? d.output : null;
   if (lastDoc !== null) renderDoc();
   showWarnings(r, d);
@@ -379,6 +381,7 @@ $('run').onclick = async () => {
   document.body.classList.add('running');
   status('Running Lex…');
   runStart = performance.now();
+  await showOutputPane();
   // Let the spinner paint before Lex takes over the page's thread.
   await new Promise((r) => requestAnimationFrame(() => setTimeout(r, 0)));
   try {
@@ -408,6 +411,66 @@ if (webkit && !wantWasm) {
   o.textContent = 'WebAssembly (not in Safari yet)';
 }
 $('engine').onchange = () => loadLex($('engine').value);
+
+// ---- Phones: the section bar ---------------------------------------------
+const phone = matchMedia('(max-width: 860px)');
+// The bar's Run mirrors the main one (enabled, disabled, running).
+new MutationObserver(() => { $('run-mini').disabled = $('run').disabled; })
+  .observe($('run'), { attributes: true, attributeFilter: ['disabled'] });
+$('run-mini').onclick = () => $('run').click();
+// Marks the section that fills most of the screen.
+const jumpLinks = [...document.querySelectorAll('#jump a')];
+const inView = new Map();
+const sectionObserver = new IntersectionObserver((entries) => {
+  if (document.body.classList.contains('layout-tabs') && phone.matches) return;
+  for (const e of entries) inView.set(e.target.id, e.isIntersecting ? e.intersectionRect.height : 0);
+  const [best, seen] = [...inView].sort((x, y) => y[1] - x[1])[0] || [];
+  for (const l of jumpLinks) l.classList.toggle('current', seen > 0 && l.dataset.for === best);
+  // A result not looked at yet keeps its dot until its section is in view.
+  for (const l of jumpLinks) if (l.classList.contains('current')) l.classList.remove('fresh');
+}, { threshold: [0, .1, .2, .3, .4, .5, .6, .7, .8, .9, 1] });
+for (const id of ['source-pane', 'output-pane', 'lexdoc']) sectionObserver.observe($(id));
+// On a phone the output is below the editor: bring it into view on Run, so
+// the progress shows, and wait for the scroll before Lex blocks the page.
+// Phone layouts, prototypes for now (?layout=…, links in the footer):
+//   scroll  panes stacked, the section bar on top jumps between them
+//   tabs    one section at a time, the section bar at the bottom like an app
+//   sheet   the editor fills the screen, the output slides up from below
+const layout = ['scroll', 'tabs', 'sheet'].includes(new URLSearchParams(location.search).get('layout'))
+  ? new URLSearchParams(location.search).get('layout') : 'scroll';
+for (const a of document.querySelectorAll('.proto a')) if (a.search === '?layout=' + layout) a.classList.add('here');
+const SECTIONS = ['source-pane', 'output-pane', 'lexdoc'];
+function setView(id) {
+  for (const s of SECTIONS) $(s).classList.toggle('off-view', s !== id);
+  for (const l of jumpLinks) l.classList.toggle('current', l.dataset.for === id);
+  for (const l of jumpLinks) if (l.dataset.for === id) l.classList.remove('fresh');
+  scrollTo(0, 0);
+}
+const setSheet = (open) => document.body.classList.toggle('sheet-open', open);
+if (layout === 'tabs') setView('source-pane');
+for (const l of jumpLinks) l.addEventListener('click', (e) => {
+  if (!phone.matches) return;
+  if (layout === 'tabs') { e.preventDefault(); setView(l.dataset.for); }
+  else if (layout === 'sheet' && l.dataset.for === 'output-pane') { e.preventDefault(); setSheet(!document.body.classList.contains('sheet-open')); }
+  else if (layout === 'sheet') setSheet(false);
+});
+$('sheet-backdrop').onclick = () => setSheet(false);
+document.querySelector('#output-pane > .bar').addEventListener('click', (e) => {
+  if (layout === 'sheet' && phone.matches && !e.target.closest('input, label, button, select')) setSheet(!document.body.classList.contains('sheet-open'));
+});
+
+// On a phone the output is out of sight when Run is pressed: bring it into
+// view, so the progress shows, before Lex blocks the page.
+async function showOutputPane() {
+  if (!phone.matches) return;
+  if (layout === 'tabs') { setView('output-pane'); return; }
+  if (layout === 'sheet') { setSheet(true); await new Promise((r) => setTimeout(r, 320)); return; }
+  const pane = $('output-pane'), top = pane.getBoundingClientRect().top;
+  if (top >= 0 && top < innerHeight / 3) return;
+  pane.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  await new Promise((r) => { addEventListener('scrollend', r, { once: true }); setTimeout(r, 700); });
+}
+
 $('example').onchange = () => { current = null; setFiles(examples[$('example').value]); };
 
 (async () => {

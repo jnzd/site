@@ -351,6 +351,7 @@ function showDoc() {
 function showResult(r, d) {
   lastResult = r;
   lastDocResult = d;
+  document.body.classList.remove('running');
   lastDoc = d && d.ok ? d.output : null;
   if (lastDoc !== null) renderDoc();
   showWarnings(r, d);
@@ -374,9 +375,12 @@ $('run').onclick = async () => {
   if (typeof self.lexRun !== 'function') return;
   files[current] = editor.value;
   $('run').disabled = true;
-  $('status').className = 'status';
+  $('status').className = 'status running';
+  document.body.classList.add('running');
   status('Running Lex…');
   runStart = performance.now();
+  // Let the spinner paint before Lex takes over the page's thread.
+  await new Promise((r) => requestAnimationFrame(() => setTimeout(r, 0)));
   try {
     const r = await runLex('mfotl', main, files);
     // Lexdoc from the same sources; Z3's answers are cached, so this is quick.
@@ -386,6 +390,7 @@ $('run').onclick = async () => {
   catch (e) {
     // Do not leave the previous program's output standing next to the error.
     $('run').disabled = false;
+    document.body.classList.remove('running');
     $('status').className = 'status bad';
     status(String(e));
     lastResult = null;

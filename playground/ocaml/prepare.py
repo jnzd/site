@@ -61,7 +61,7 @@ patch("src/reading.ml",
       | None ->
          let s1 = String.strip s in
          let short = if String.length s1 > 70 then String.prefix s1 67 ^ "..." else s1 in
-         Errors.warn (Printf.sprintf "Lexdoc: {%s} in the docstring \"%s\" is not one of the event's arguments" p short) None;
+         Errors.warn (Printf.sprintf "Lexdoc: {%s} in the docstring '%s' is not one of the event's arguments" p short) None;
          "{" ^ p ^ "}" in""")
 
 # Ontology diagrams pipe through Graphviz: not available in the browser.

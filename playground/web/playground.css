@@ -152,3 +152,26 @@ details pre { font: .72rem/1.5 var(--mono); background: var(--panel); border-rad
   .lexdoc-section .frame { height: 80vh; height: 80dvh; }
   .button.primary { margin-left: 0; }
 }
+
+/* While Lex runs: a spinner in the status line and a bar sliding along the
+   top of the output. Lex blocks the page's thread, so both animate only
+   transform, which the browser runs off that thread. */
+.status.running::before {
+  content: ""; display: inline-block; width: .7rem; height: .7rem; margin-right: .5rem; vertical-align: -.08rem;
+  border: 2px solid var(--line); border-top-color: var(--accent); border-radius: 50%;
+  animation: lex-spin .8s linear infinite;
+}
+.pane.output .frame { position: relative; }
+body.running .pane.output .frame::before {
+  content: ""; position: absolute; top: 0; left: 0; width: 35%; height: 2px; z-index: 1;
+  background: var(--accent); border-radius: 2px;
+  animation: lex-slide 1.2s ease-in-out infinite;
+}
+body.running pre#output, body.running .trace { opacity: .45; transition: opacity .2s; }
+body.running #run { cursor: progress; }
+@keyframes lex-spin { to { transform: rotate(360deg); } }
+@keyframes lex-slide { from { transform: translateX(-100%); } to { transform: translateX(290%); } }
+@media (prefers-reduced-motion: reduce) {
+  .status.running::before { animation-duration: 2.4s; }
+  body.running .pane.output .frame::before { animation: none; width: 100%; opacity: .6; }
+}

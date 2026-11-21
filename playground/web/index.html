@@ -43,12 +43,20 @@
   <section class="pane output">
     <div class="bar">
       <span id="status" class="status" role="status">Loading Lex…</span>
-      <label class="debug"><input type="checkbox" id="debug"> Debug output</label>
     </div>
     <ul id="warnings" class="warnings" aria-label="Warnings" hidden></ul>
     <div class="frame">
-      <div class="tabs-row"><div class="tabs"><span class="pane-title">MFOTL</span></div></div>
+      <!-- One tab per file Lex writes (name.sig, name.mfotl, as lex -o name
+           does), errors instead when it fails, and what Lex printed on the way. -->
+      <div class="tabs-row"><div class="tabs" id="out-tabs" role="tablist"><span class="pane-title">MFOTL</span></div>
+        <div class="doc-tools" id="out-tools" hidden>
+          <button class="icon-button" id="out-copy" title="Copy this file" aria-label="Copy">
+            <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M5.5 5.5h8v8h-8zM10.5 5.5v-3h-8v8h3"/></svg></button>
+          <button class="icon-button" id="out-download" title="Download this file" aria-label="Download">
+            <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 1.5v9M4.5 7 8 10.5 11.5 7M2 12.5V14.5h12v-2"/></svg></button>
+        </div></div>
       <pre id="output"></pre>
+      <div id="trace" class="trace" hidden></div>
     </div>
     <details id="smt" hidden><summary>SMT-LIB queries sent to Z3</summary><div id="smt-list"></div></details>
   </section>

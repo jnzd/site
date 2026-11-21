@@ -93,7 +93,7 @@ select:hover, select:focus-visible { border-color: var(--accent); outline: none;
 }
 .warnings::before { content: "!"; position: absolute; left: .75rem; top: .45rem; font-weight: 600; color: var(--accent); }
 .warnings li + li { margin-top: .25rem; }
-pre#output, details, .tabs { overscroll-behavior: none; }
+pre#output, .trace, details, .tabs { overscroll-behavior: none; }
 /* The keyboard shortcut means nothing without a keyboard. */
 @media (hover: none) and (pointer: coarse) { .shortcut { display: none; } }
 pre#output {
@@ -107,13 +107,25 @@ iframe { flex: 1; border: 0; background: white; }
 .status { color: var(--muted); font-variant-numeric: tabular-nums; }
 .status.ok::before, .status.bad::before { content: ""; display: inline-block; width: .5rem; height: .5rem; border-radius: 50%; margin-right: .45rem; vertical-align: .05rem; background: var(--tok-op); }
 .status.bad::before { background: var(--accent); }
-.debug { margin-left: auto; color: var(--muted); display: inline-flex; gap: .35rem; align-items: center; cursor: pointer; }
-.debug input { accent-color: var(--accent); }
 
 details { margin-top: .75rem; font-size: .82rem; max-height: 40%; overflow: auto; flex: none; }
 details summary { cursor: pointer; color: var(--muted); }
 details summary:hover { color: var(--accent); }
 details pre { font: .72rem/1.5 var(--mono); background: var(--panel); border-radius: 6px; padding: .6rem .8rem; margin: .5rem 0; white-space: pre-wrap; overflow-wrap: anywhere; }
+
+/* The trace tab: Lex's compiler output, one block per defined predicate. */
+.trace { flex: 1; min-height: 0; overflow: auto; padding: .75rem 1rem 1rem; font-size: .8rem; }
+.trace-intro { margin: 0 0 .9rem; color: var(--muted); font-size: .8rem; line-height: 1.5; text-wrap: pretty; }
+.trace-def { padding: .6rem 0 .7rem; border-top: 1px solid var(--line); }
+.trace-def h3 { margin: 0 0 .4rem; font: 600 .8rem/1.45 var(--mono); color: var(--strong); overflow-wrap: anywhere; }
+.trace-def dl { margin: 0; display: grid; grid-template-columns: max-content minmax(0, 1fr); gap: .3rem .9rem; }
+.trace-def dt { color: var(--faint); font-size: .72rem; text-transform: uppercase; letter-spacing: .04em; padding-top: .1rem; }
+.trace-def dd { margin: 0; font: .76rem/1.5 var(--mono); overflow-wrap: anywhere; }
+.trace-def ol { margin: 0; padding-left: 1.3rem; }
+.trace-def ol li + li { margin-top: .15rem; }
+.trace-formula, .trace-def pre { font: .76rem/1.55 var(--mono); white-space: pre-wrap; overflow-wrap: anywhere; margin: 0; }
+@media (max-width: 520px) { .trace-def dl { grid-template-columns: minmax(0, 1fr); } .trace-def dd { margin-bottom: .3rem; } }
+.icon-button.done { color: var(--tok-op); }
 
 /* Code colours, as in the listings on the thesis pages. */
 .tok-kw { color: var(--tok-kw); font-weight: 600; }

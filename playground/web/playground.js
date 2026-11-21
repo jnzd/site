@@ -126,29 +126,126 @@ async function runLex(mode, main, files) {
   }
 }
 
-// Lex prints debug lines while compiling ("g = …", "{p = ; fs = …}", "-> …").
-// They are hidden unless "Show debug output" is ticked; warnings stay.
-// Warnings go in their own strip above the output; every other line Lex
-// prints on the way (debug lines, the typed formula) only with "Debug output".
+// ---- MFOTL output: one tab per file, plus Lex's own trace ------------------
+// Lex writes the signature and the formula as two files (lex -o name gives
+// name.sig and name.mfotl); the playground shows them as two tabs. Warnings go
+// in their own strip above. Everything else Lex prints while compiling is
+// in the "trace" tab, laid out by renderTrace.
 const WARNING = /^Warning\b/;
-let lastResult = null;
+let lastResult = null, outFiles = [], outTab = null;
+const esc = (s) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;');
+const hl = (s) => LexEditor.highlightMfotl(s);
 
-function outputText(r) {
-  const lines = r.log.split('\n').filter((l) => l.trim() !== '' && !WARNING.test(l));
-  return ($('debug').checked && lines.length ? lines.join('\n') + '\n\n' : '') + r.output;
-}
 function showWarnings(r) {
   const ws = r.log.split('\n').filter((l) => WARNING.test(l)).map((l) => l.replace(/^Warning( at [^:]*)?:\s*/, (m, at) => (at ? at.slice(4) + ': ' : '')));
   $('warnings').hidden = ws.length === 0;
   $('warnings').replaceChildren(...ws.map((w) => Object.assign(document.createElement('li'), { textContent: w })));
 }
 
-// MFOTL output is highlighted; error lines are marked.
-const esc = (s) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;');
+// Clex.to_string prints "Signature:\n<sig>\n\nFormula:\n<formula>\n".
+function splitOutput(text) {
+  const m = text.match(/^Signature:\n([\s\S]*?)\n\nFormula:\n([\s\S]*?)\n*$/);
+  return m ? { sig: m[1], mfotl: m[2] } : null;
+}
+
+// Splits "a, f(b, c), d" at the commas outside brackets.
+function splitTop(s) {
+  const out = []; let depth = 0, from = 0;
+  for (let i = 0; i < s.length; i++) {
+    const c = s[i];
+    if ('([{'.includes(c)) depth++;
+    else if (')]}'.includes(c)) depth--;
+    else if (c === ',' && depth === 0) { out.push(s.slice(from, i).trim()); from = i + 1; }
+  }
+  if (s.slice(from).trim()) out.push(s.slice(from).trim());
+  return out;
+}
+
+// For each predicate a rule defines, the compiler prints three lines
+// (Compiler.compile_let_rule):
+//   g = Head(x:sort, ...)                   the predicate
+//   {p = <pattern>; fs = [f1, f2, ...]}     its temporal pattern and conditions
+//   -> f1 ∧ f2 ∧ ...                        the formula that defines it
+// and at the end the whole formula, still with each variable's sort.
+function parseTrace(log, ok) {
+  const lines = log.split('\n').filter((l) => l.trim() !== '' && !WARNING.test(l));
+  const defs = [], other = [];
+  let d = null, formula = null;
+  for (const l of lines) {
+    let m;
+    if ((m = l.match(/^g = (.*)$/))) defs.push(d = { head: m[1], pattern: '', parts: [], body: '' });
+    else if (d && (m = l.match(/^\{p = (.*?); fs = \[(.*)\]\}$/))) { d.pattern = m[1].trim(); d.parts = splitTop(m[2]); }
+    else if (d && (m = l.match(/^-> (.*)$/))) { d.body = m[1]; d = null; }
+    else other.push(l);
+  }
+  // Compiler.compile prints the formula last.
+  if (ok && other.length) formula = other.pop();
+  return { defs, formula, other };
+}
+
+function renderTrace(r) {
+  const { defs, formula, other } = parseTrace(r.log, r.ok);
+  const parts = [];
+  if (!defs.length && !formula && !other.length) {
+    parts.push('<p class="trace-intro">Lex printed nothing else for this program.</p>');
+  } else {
+    parts.push('<p class="trace-intro">What Lex prints while it compiles. Each predicate that a rule defines, with the conditions it combines and the formula it becomes; '
+      + 'then the whole formula with the sort of each variable (in the .mfotl file every sort is <code>int</code>).</p>');
+  }
+  for (const d of defs) {
+    parts.push(`<section class="trace-def"><h3>${hl(d.head)}</h3><dl>`
+      + (d.pattern ? `<dt>Pattern</dt><dd>${hl(d.pattern)}</dd>` : '')
+      + `<dt>Conditions</dt><dd><ol>${d.parts.map((p) => `<li>${hl(p)}</li>`).join('')}</ol></dd>`
+      + `<dt>Defined as</dt><dd>${hl(d.body)}</dd></dl></section>`);
+  }
+  if (formula) parts.push(`<section class="trace-def"><h3>Formula, with sorts</h3><div class="trace-formula">${hl(formula)}</div></section>`);
+  if (other.length) parts.push(`<section class="trace-def"><h3>Other output</h3><pre>${esc(other.join('\n'))}</pre></section>`);
+  return parts.join('');
+}
+
 function renderOutput(r) {
-  const text = outputText(r);
-  $('output').innerHTML = r.ok ? LexEditor.highlightMfotl(text)
-    : text.split('\n').map((l) => (/error|exception|cannot/i.test(l) ? `<span class="err">${esc(l)}</span>` : esc(l))).join('\n');
+  const base = (main || 'lex').split('/').pop().replace(/\.\w+$/, '');
+  const split = r.ok ? splitOutput(r.output) : null;
+  outFiles = split
+    ? [{ id: 'sig', name: base + '.sig', text: split.sig }, { id: 'mfotl', name: base + '.mfotl', text: split.mfotl }]
+    : [{ id: 'errors', name: r.ok ? 'output' : 'errors', text: r.output.trim() }];
+  outFiles.push({ id: 'trace', name: 'trace', text: r.log.split('\n').filter((l) => l.trim() !== '' && !WARNING.test(l)).join('\n'), html: renderTrace(r) });
+  if (!outFiles.some((f) => f.id === outTab)) outTab = outFiles[split ? 1 : 0].id;
+  showOutTab(outTab);
+}
+function showOutTab(id) {
+  outTab = id;
+  const f = outFiles.find((x) => x.id === id);
+  $('out-tabs').replaceChildren(...outFiles.map((x) => {
+    const b = document.createElement('button');
+    b.textContent = x.name;
+    b.className = x.id === id ? 'active' : '';
+    b.setAttribute('role', 'tab');
+    b.setAttribute('aria-selected', String(x.id === id));
+    b.onclick = () => showOutTab(x.id);
+    return b;
+  }));
+  $('out-tools').hidden = false;
+  $('trace').hidden = id !== 'trace';
+  $('output').hidden = id === 'trace';
+  if (id === 'trace') { $('trace').innerHTML = f.html; return; }
+  $('output').className = id === 'errors' ? 'error' : '';
+  $('output').innerHTML = id === 'errors'
+    ? f.text.split('\n').map((l) => (/error|exception|cannot/i.test(l) ? `<span class="err">${esc(l)}</span>` : esc(l))).join('\n')
+    : hl(f.text);
+}
+$('out-copy').onclick = async () => {
+  const f = outFiles.find((x) => x.id === outTab);
+  try { await navigator.clipboard.writeText(f.text); flash($('out-copy'), 'Copied'); } catch { flash($('out-copy'), 'Copy failed'); }
+};
+$('out-download').onclick = () => {
+  const f = outFiles.find((x) => x.id === outTab);
+  lexSaveHtml(f.text + '\n', f.id === 'trace' ? f.name + '.txt' : f.id === 'errors' ? f.name + '.txt' : f.name, 'text/plain');
+};
+function flash(button, text) {
+  const t = button.title;
+  button.title = text; button.classList.add('done');
+  setTimeout(() => { button.title = t; button.classList.remove('done'); }, 1200);
 }
 
 // Lexdoc styles: extra style sheets laid over Lex's own (see web/lexdoc/).
@@ -267,8 +364,6 @@ function showResult(r, d) {
     return p;
   }));
 }
-
-$('debug').onchange = () => { if (lastResult) renderOutput(lastResult); };
 
 $('run').onclick = async () => {
   if (typeof self.lexRun !== 'function') return;
